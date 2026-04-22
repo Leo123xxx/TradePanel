@@ -1,0 +1,801 @@
+ma_crossover:
+  name: Moving Average Crossover
+  category: Trend Following
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - EURUSD
+  timeframes:
+  - H1
+  parameters:
+    fast_period: 9
+    slow_period: 21
+    ma_type: EMA
+    atr_period: 14
+    tp_atr_mult: 2.0
+    sl_atr_mult: 1.0
+    adx_filter: 20
+  pair_overrides:
+    USDJPY:
+      fast_period: 10
+      slow_period: 25
+      adx_filter: 20
+    XAGUSD:
+      fast_period: 9
+      slow_period: 21
+      sl_atr_mult: 1.2
+      tp_atr_mult: 2.5
+    GBPUSD:
+      fast_period: 9
+      slow_period: 21
+      adx_filter: 22
+  mode: trade
+rsi_bounce:
+  name: RSI Mean Reversion
+  category: Mean Reversion
+  status: implemented
+  regime:
+  - RANGING
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - EURUSD
+  timeframes:
+  - H1
+  parameters:
+    rsi_period: 14
+    oversold: 30
+    overbought: 70
+    atr_period: 14
+    tp_atr_mult: 1.5
+    sl_atr_mult: 0.8
+    adx_max: 20
+  pair_overrides:
+    XAUUSD:
+      oversold: 28
+      overbought: 72
+      sl_atr_mult: 1.0
+    XAGUSD:
+      oversold: 25
+      overbought: 75
+      sl_atr_mult: 1.2
+  mode: trade
+range_breakout:
+  name: Range Breakout
+  category: Breakout
+  status: implemented
+  regime:
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H4
+  parameters:
+    consolidation_bars: 20
+    vol_threshold_mult: 1.5
+    tp_range_mult: 3.0
+    sl_buffer_pips: 15
+    adx_min_filter: 22
+    ema_period: 20
+    use_regime_filter: true
+    confirm_timeframe: D1
+  pair_overrides:
+    XAUUSD:
+      sl_buffer_pips: 25
+      tp_range_mult: 2.5
+  mode: trade
+rsi_pullback:
+  name: RSI Pullback in Trend
+  category: Trend + Reversion Hybrid
+  status: implemented
+  regime:
+  - TRENDING
+  enabled: true
+  tier: TIER_2
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H4
+  parameters:
+    rsi_period: 14
+    rsi_pullback_lower: 35
+    rsi_pullback_upper: 50
+    fast_ema: 20
+    slow_ema: 50
+    atr_period: 14
+    use_regime_filter: true
+    confirm_timeframe: D1
+    tp_atr_mult: 3
+    sl_bars_lookback: 5
+  pair_overrides:
+    USDJPY:
+      rsi_pullback_lower: 35
+      rsi_pullback_upper: 55
+  mode: trade
+bb_mean_reversion:
+  name: Bollinger Band Mean Reversion
+  category: Mean Reversion
+  status: implemented
+  regime:
+  - RANGING
+  - HIGH_VOL
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H1
+  parameters:
+    sma_period: 20
+    bb_period: 20
+    bb_deviation: 2.5
+    atr_period: 14
+    rsi_period: 14
+    rsi_oversold: 25
+    rsi_overbought: 75
+    vol_threshold_mult: 1.2
+    adx_max: 22
+  pair_overrides:
+    XAUUSD:
+      bb_deviation: 2.5
+      rsi_oversold: 25
+      rsi_overbought: 75
+  mode: trade
+swing_pullback:
+  name: Swing Pullback (Price Action)
+  category: Price Action
+  status: implemented
+  regime:
+  - RANGING
+  - ANY
+  enabled: false
+  pairs:
+  - XAUUSD
+  - GBPUSD
+  timeframes:
+  - H4
+  - D1
+  parameters:
+    swing_lookback: 5
+    swing_buffer_pips: 20
+    tp_pips: 100
+    sl_pips: 30
+    atr_period: 14
+    min_adx_filter: 15
+    bars_to_confirm: 1
+    use_regime_filter: true
+    confirm_timeframe: D1
+  pair_overrides:
+    XAUUSD:
+      swing_buffer_pips: 35
+      tp_pips: 200
+      sl_pips: 60
+  tier: DISABLED
+  mode: trade
+news_breakout:
+  name: News Event Breakout
+  category: Event-Driven
+  status: planned
+  regime:
+  - HIGH_VOL
+  - ANY
+  enabled: false
+  pairs:
+  - XAUUSD
+  - EURUSD
+  timeframes:
+  - M15
+  - H1
+  parameters:
+    atr_spike_mult: 2.2
+    atr_period: 14
+    tp_atr_mult: 1.8
+    sl_buffer_pips: 25
+    candles_to_wait: 1
+    exit_time_min: 60
+    min_move_pips: 30
+  pair_overrides:
+    XAUUSD:
+      atr_spike_mult: 2.5
+      sl_buffer_pips: 40
+      min_move_pips: 60
+  tier: DISABLED
+  mode: trade
+session_momentum:
+  name: London/NY Session Momentum
+  category: Session-Based
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  tier: TIER_2
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H1
+  parameters:
+    session_start_utc: 13
+    session_end_utc: 17
+    bars_lookback: 5
+    high_low_buffer_pips: 20
+    atr_period: 14
+    tp_atr_mult: 2.0
+    sl_atr_mult: 0.8
+    min_adx_filter: 20
+    fast_ema: 20
+    slow_ema: 50
+  pair_overrides:
+    XAUUSD:
+      high_low_buffer_pips: 40
+      tp_atr_mult: 2.5
+    GBPUSD:
+      session_start_utc: 8
+      session_end_utc: 17
+  mode: trade
+regime_aware:
+  name: Multi-Asset Regime-Aware Trading
+  category: Regime Filter
+  status: planned
+  regime:
+  - ANY
+  enabled: false
+  pairs:
+  - XAUUSD
+  timeframes:
+  - D1
+  parameters:
+    dxy_ma_period: 50
+    vix_threshold_high: 15
+    vix_threshold_low: 12
+    yields_ma_period: 30
+    regime_check_freq: 1
+    regime_confirmation_candles: 2
+  tier: DISABLED
+  mode: trade
+stoch_divergence:
+  name: Stochastic Divergence Bounce
+  category: Divergence
+  status: implemented
+  regime:
+  - RANGING
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - EURUSD
+  timeframes:
+  - H4
+  parameters:
+    stoch_period: 14
+    stoch_smooth_k: 3
+    stoch_smooth_d: 3
+    divergence_bars_lookback: 10
+    stoch_oversold: 25
+    stoch_overbought: 75
+    atr_period: 14
+    tp_atr_mult: 2.5
+    sl_buffer_pips: 25
+  pair_overrides:
+    XAUUSD:
+      sl_buffer_pips: 50
+    USDJPY:
+      stoch_oversold: 25
+      stoch_overbought: 75
+  mode: trade
+ensemble:
+  name: Ensemble Voting System
+  category: Ensemble
+  status: implemented
+  regime:
+  - ANY
+  enabled: false
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - XAGUSD
+  timeframes:
+  - H1
+  - H4
+  - D1
+  parameters:
+    min_agreement: 2
+    sub_strategies:
+    - range_breakout
+    - rsi_pullback
+    - swing_pullback
+  notes: 'Combines signals from the 3 best-performing Tier-1 strategies. Only trades
+    when at least 2 strategies agree on direction. Expected improvement: +5-10% win
+    rate, -30% false signals. This is the foundation for Path B enhancements.
+
+    '
+  tier: DISABLED
+  mode: trade
+ema_ribbon_trend:
+  name: EMA Ribbon Trend
+  category: Trend Following
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - BTCUSD
+  timeframes:
+  - H4
+  parameters:
+    fast_ema: 12
+    mid_ema: 26
+    slow_ema: 55
+    adx_min: 25
+    rsi_period: 14
+    atr_period: 14
+    vol_threshold_mult: 1.3
+    tp_atr_mult: 4.0
+    sl_atr_mult: 1.5
+  pair_overrides:
+    XAUUSD:
+      fast_ema: 12
+      mid_ema: 26
+      slow_ema: 55
+      adx_min: 25
+    ETHUSD:
+      tp_atr_mult: 4.0
+      sl_atr_mult: 1.8
+  mode: trade
+crypto_rsi_extremes:
+  name: Crypto RSI Extremes
+  category: Mean Reversion
+  status: implemented
+  regime:
+  - RANGING
+  - CHOPPY
+  - ANY
+  enabled: true
+  pairs:
+  - USDJPY
+  timeframes:
+  - H4
+  - D1
+  parameters:
+    rsi_period: 14
+    rsi_oversold: 25
+    rsi_overbought: 75
+    bb_period: 20
+    bb_deviation: 2.0
+    adx_max: 35
+    vol_spike_mult: 1.5
+    atr_period: 14
+    tp_atr_mult: 2.5
+    sl_atr_mult: 1.0
+  pair_overrides:
+    ETHUSD:
+      rsi_oversold: 22
+      rsi_overbought: 78
+      bb_deviation: 2.2
+    XAUUSD:
+      adx_max: 25
+      rsi_oversold: 28
+      rsi_overbought: 72
+  tier: TIER_3
+  mode: trade
+volatility_squeeze_breakout:
+  name: Volatility Squeeze Breakout
+  category: Breakout
+  status: implemented
+  regime:
+  - ANY
+  enabled: true
+  pairs:
+  - GBPUSD
+  timeframes:
+  - H4
+  - D1
+  parameters:
+    bb_period: 20
+    bb_deviation: 2.0
+    squeeze_pct: 0.03
+    squeeze_bars: 3
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    atr_period: 14
+    tp_atr_mult: 3.0
+    sl_atr_mult: 1.5
+  pair_overrides:
+    BTCUSD:
+      squeeze_pct: 0.04
+      tp_atr_mult: 4.0
+    ETHUSD:
+      squeeze_pct: 0.04
+    XAUUSD:
+      squeeze_pct: 0.015
+      squeeze_bars: 4
+  tier: TIER_3
+  mode: trade
+ml_classifier:
+  name: ML Binary Signal Classifier
+  category: Machine Learning
+  status: planned
+  regime:
+  - ANY
+  enabled: false
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H1
+  - H4
+  parameters:
+    ml_model_type: lgbm
+    signal_threshold: 0.65
+    atr_period: 14
+    tp_atr_mult: 2.0
+    sl_atr_mult: 1.0
+    ema_period: 20
+    min_adx_filter: 15
+    refit_freq_days: 3
+  tier: DISABLED
+  mode: trade
+institutional_silver_bullet:
+  name: Institutional Silver Bullet
+  category: SMC
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  pairs:
+  - EURUSD
+  timeframes:
+  - M15
+  - M5
+  parameters:
+    ny_offset_hours: 7
+    lookback_sweep: 20
+    fvg_min_size_pct: 0.0001
+    risk_reward: 2.0
+    atr_period: 14
+  tier: TIER_3
+  mode: trade
+ict_judas_swing:
+  name: ICT Judas Swing
+  category: SMC
+  status: implemented
+  regime:
+  - LOW_VOL
+  - TRENDING
+  enabled: true
+  tier: STAGING
+  mode: monitor_only
+  pairs:
+  - EURUSD
+  timeframes:
+  - M15
+  - H1
+  parameters:
+    ny_offset_hours: 7
+    asian_range_start: 22
+    asian_range_end: 4
+    judas_window_start: 2
+    judas_window_end: 5
+    fakeout_magnitude_pct: 0.002
+    atr_period: 14
+    vol_p: 20
+turtle_soup:
+  name: Turtle Soup
+  category: SMC
+  status: implemented
+  regime:
+  - RANGING
+  - ANY
+  enabled: true
+  pairs:
+  - EURUSD
+  timeframes:
+  - H1
+  - H4
+  parameters:
+    lookback: 20
+    min_penetration_pips: 5
+    max_penetration_pips: 30
+    atr_period: 14
+    tp_atr_mult: 2.0
+    sl_buffer_pips: 5
+  tier: TIER_2
+  mode: trade
+dual_ema_momentum:
+  name: Dual EMA Momentum Continuity
+  category: Trend Following
+  status: implemented
+  regime:
+  - TRENDING
+  enabled: true
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H1
+  - H4
+  parameters:
+    fast_ema: 20
+    slow_ema: 50
+    adx_min: 25
+    atr_period: 14
+    tp_atr_mult: 2.5
+    sl_atr_mult: 1.5
+  tier: TIER_2
+  mode: trade
+triple_macd_scalping:
+  name: Triple MACD Momentum Scalping
+  category: Trend Following
+  status: implemented
+  regime:
+  - TRENDING
+  - HIGH_VOL
+  enabled: true
+  pairs:
+  - USDJPY
+  timeframes:
+  - H1
+  parameters:
+    fast_m:
+    - 12
+    - 26
+    - 9
+    mid_m:
+    - 24
+    - 52
+    - 18
+    slow_m:
+    - 48
+    - 104
+    - 36
+    tp_atr_mult: 1.5
+    sl_atr_mult: 1.0
+  tier: TIER_3
+  mode: trade
+dual_ema_fractal:
+  name: Dual EMA Fractal Breaker
+  category: Trend Following
+  status: implemented
+  regime:
+  - TRENDING
+  enabled: true
+  tier: TIER_3
+  pairs:
+  - EURUSD
+  timeframes:
+  - H1
+  parameters:
+    ema_period: 200
+    tp_atr_mult: 2.0
+    sl_atr_mult: 1.5
+    atr_period: 14
+  mode: trade
+rsi_2:
+  name: Extreme RSI (2)
+  category: Mean Reversion
+  status: implemented
+  regime:
+  - RANGING
+  - TRENDING
+  enabled: true
+  pairs:
+  - USDJPY
+  timeframes:
+  - H4
+  - D1
+  parameters:
+    rsi_period: 2
+    sma_filter: 200
+    oversold: 10
+    overbought: 90
+    exit_ema: 5
+  tier: TIER_3
+  mode: trade
+vwap_momentum:
+  name: VWAP Momentum Shift
+  category: Mean Reversion
+  status: implemented
+  regime:
+  - RANGING
+  - HIGH_VOL
+  enabled: true
+  pairs:
+  - GBPUSD
+  timeframes:
+  - M15
+  - M30
+  parameters:
+    std_dev_mult: 2.0
+    atr_period: 14
+    tp_atr_mult: 1.5
+    sl_atr_mult: 1.5
+  tier: TIER_2
+  mode: trade
+hikkake_trap:
+  name: Hikkake Inside Bar Trap
+  category: Mean Reversion
+  status: implemented
+  regime:
+  - CHOPPY
+  - RANGING
+  enabled: true
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H4
+  - D1
+  parameters:
+    lookback_bars: 3
+    atr_period: 14
+    tp_atr_mult: 2.0
+    sl_atr_mult: 1.5
+  tier: TIER_2
+  mode: trade
+orb:
+  name: Opening Range Breakout
+  category: Breakout
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  pairs:
+  - XAGUSD
+  timeframes:
+  - M15
+  - H1
+  parameters:
+    ny_offset_hours: 7
+    range_start_ny: 9.5
+    range_duration_mins: 60
+    vol_filter: 1.2
+    tp_atr_mult: 2.0
+    sl_atr_mult: 1.0
+  tier: TIER_2
+  mode: trade
+rvgi_cci_confluence:
+  name: RVGI-CCI Confluence
+  category: Breakout
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  pairs:
+  - EURUSD
+  timeframes:
+  - H1
+  parameters:
+    rvgi_period: 10
+    cci_period: 20
+    sma_period: 30
+    tp_atr_mult: 1.5
+    sl_atr_mult: 1.0
+  tier: TIER_2
+  mode: trade
+volatility_contraction:
+  name: Volatility Contraction Breakout
+  category: Breakout
+  status: implemented
+  regime:
+  - LOW_VOL
+  - ANY
+  enabled: false
+  pairs:
+  - USDJPY
+  - ETHUSD
+  timeframes:
+  - D1
+  - H4
+  parameters:
+    atr_period: 20
+    atr_lookback: 100
+    range_bars: 10
+    vol_spike: 1.5
+    tp_atr_mult: 3.0
+    sl_atr_mult: 1.5
+  tier: DISABLED
+  mode: trade
+stat_arb_gold_silver:
+  name: Stat Arb (Gold/Silver)
+  category: Advanced
+  status: implemented
+  regime:
+  - RANGING
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  timeframes:
+  - H4
+  parameters:
+    window: 100
+    z_entry: 2.5
+    z_exit: 0.0
+    secondary_symbol: XAGUSD
+  mode: trade
+naked_price_action:
+  name: Naked Price Action (Engulfing)
+  category: Price Action
+  status: implemented
+  regime:
+  - ANY
+  - RANGING
+  enabled: true
+  tier: TIER_3
+  pairs:
+  - USDJPY
+  timeframes:
+  - H4
+  parameters:
+    level_lookback: 50
+    engulf_buffer_pct: 0.05
+    tp_atr_mult: 2.0
+    sl_atr_mult: 1.5
+  mode: trade
+cot_sentiment:
+  name: COT Sentiment Swing
+  category: Advanced
+  status: disabled
+  regime:
+  - TRENDING
+  enabled: false
+  tier: DISABLED
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  timeframes:
+  - D1
+  - W1
+  parameters:
+    sentiment_threshold: 80
+    ema_filter: 50
+  mode: trade
+macd_trend:
+  name: MACD Trend
+  category: Trend Following
+  status: implemented
+  parameters:
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    adx_length: 14
+    adx_threshold: 25
+  tier: TIER_1
+  enabled: true
+  pairs:
+  - EURUSD
+  - USDJPY
+  timeframes:
+  - H1
+  mode: trade
+gold_momentum_breakout:
+  name: Gold Momentum Breakout
+  category: Breakout
+  status: implemented
+  parameters:
+    bb_length: 20
+    bb_std: 2.0
+    rsi_length: 14
+    rsi_buy_min: 50
+    rsi_sell_max: 50
+    squeeze_threshold_pct: 0.05
+  tier: TIER_1
+  enabled: true
+  pairs:
+  - XAUUSD
+  - GBPUSD
+  timeframes:
+  - H1
+  mode: trade
