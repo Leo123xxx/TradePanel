@@ -1,0 +1,218 @@
+# TradePanel Configuration
+# ============================================================
+# SECRETS: All credentials loaded from .env — never hardcode here.
+# PAIRS:   Per-pair cost assumptions are the single source of truth
+#          for the backtesting engine, paper engine, and risk manager.
+# ============================================================
+
+system:
+  mode: paper # paper | live
+  log_level: INFO
+  heartbeat_interval: 60 # seconds
+
+platform:
+  platform_name: MT5_Algorithmic_Trading_Platform
+  version: 1.0
+
+# ============================================================
+# TRADING PAIRS — 5 approved pairs with per-pair cost model
+# The backtesting engine must load spread/slippage from here,
+# NOT use a single global default.
+# ============================================================
+pairs:
+
+  XAUUSD:
+    display_name: "Gold (Spot)"
+    enabled: true
+    spread_pips: 5.0 # Realistic: 3–5 pip-equivalent on H1
+    slippage_pips: 2.0 # Wide spread = higher slippage assumption
+    commission_per_lot: 7.0 # Round-turn ($3.50 entry + $3.50 exit)
+    min_lot: 0.01
+    max_lot: 1.0
+    pip_value_per_lot: 10.0 # $10 per pip per 1.0 lot (standard)
+    typical_daily_range_pips: 250
+    session_bias: london_ny # London/NY overlap is primary
+    data_start: "2022-01-01" # Pull history from this date
+    notes: "Primary instrument. High volatility. Wide spreads must be reflected in
+      cost model."
+
+  EURUSD:
+    display_name: "Euro / US Dollar"
+    enabled: true
+    spread_pips: 1.0
+    slippage_pips: 0.5
+    commission_per_lot: 7.0
+    min_lot: 0.01
+    max_lot: 10.0
+    pip_value_per_lot: 10.0
+    typical_daily_range_pips: 80
+    session_bias: all # Balanced across all sessions
+    data_start: "2022-01-01"
+    notes: "Benchmark pair. Tightest spreads. Use as strategy calibration pair."
+
+  GBPUSD:
+    display_name: "British Pound / US Dollar"
+    enabled: true
+    spread_pips: 1.5
+    slippage_pips: 0.8
+    commission_per_lot: 7.0
+    min_lot: 0.01
+    max_lot: 10.0
+    pip_value_per_lot: 10.0
+    typical_daily_range_pips: 110
+    session_bias: london # London session dominant
+    data_start: "2022-01-01"
+    notes: "Higher volatility than EURUSD. Good for session-based and breakout
+      strategies."
+
+  USDJPY:
+    display_name: "US Dollar / Japanese Yen"
+    enabled: true
+    spread_pips: 1.0
+    slippage_pips: 0.5
+    commission_per_lot: 7.0
+    min_lot: 0.01
+    max_lot: 10.0
+    pip_value_per_lot: 9.0 # ~$9 per pip per lot (varies with exchange rate)
+    typical_daily_range_pips: 80
+    session_bias: tokyo_ny # Tokyo open + NY session
+    data_start: "2022-01-01"
+    notes: >
+      Tends to trend persistently. Strong correlation with US yields. BoJ
+      intervention risk in 2022–2024 walk-forward windows — flag anomalies.
+
+  XAGUSD:
+    display_name: "Silver (Spot)"
+    enabled: true
+    spread_pips: 6.0 # Wider than Gold — budget 5–8 pip-equivalent
+    slippage_pips: 3.0
+    commission_per_lot: 7.0
+    min_lot: 0.01
+    max_lot: 3.0 # Smaller max due to high volatility
+    pip_value_per_lot: 5.0
+    typical_daily_range_pips: 400
+    session_bias: london_ny
+    data_start: "2022-01-01"
+    notes: >
+      High correlation with XAUUSD (0.7–0.85). Use for stress testing Gold
+      strategies. Will trigger strategy correlation warning (>0.7) if running
+      alongside XAUUSD — this is intentional and expected.
+
+  BTCUSD:
+    display_name: "Bitcoin / US Dollar"
+    enabled: true
+    spread_pips: 50.0 # Floating spread — $50 estimate for cost modelling
+    slippage_pips: 25.0 # High slippage on large orders
+    commission_per_lot: 2.0 # CONFIRMED: 2 USD per lot (Exness MT5 spec, 2026-04-19)
+    min_lot: 0.01 # CONFIRMED: Exness minimum volume
+    max_lot: 200.0 # CONFIRMED: Exness maximum volume (use ≤1.0 in paper mode)
+    pip_value_per_lot: 1.0 # $1 per point per lot (1 BTC contract size, profit in USD)
+    typical_daily_range_pips: 1500 # ~$1,500/day typical
+    session_bias: all_24_7 # 24/7: Sun–Sat 00:00–24:00 CONFIRMED
+    swap_long_pts: -1378.3 # CONFIRMED: Exness swap long (in points)
+    swap_short_pts: 0.0 # CONFIRMED: Exness swap short
+    data_start: "2022-01-01"
+    notes: >
+      Bitcoin. Symbol CONFIRMED as 'BTCUSD' on Exness MT5 (verified 2026-04-19).
+      24/7 market — ideal for weekend paper trading. High volatility — use
+      larger ATR multipliers for TP/SL (minimum 2.0x ATR). Correlation with
+      ETHUSD is typically 0.85–0.95; avoid running same strategy on both. Paper
+      mode: keep lot_size ≤ 0.01–0.05 due to high notional value per lot.
+
+  ETHUSD:
+    display_name: "Ethereum / US Dollar"
+    enabled: true
+    spread_pips: 5.0 # Floating spread — $5 estimate for cost modelling
+    slippage_pips: 3.0
+    commission_per_lot: 0.5 # CONFIRMED: 0.5 USD per lot (Exness MT5 spec, 2026-04-19)
+    min_lot: 0.1 # CONFIRMED: Exness minimum volume
+    max_lot: 2000.0 # CONFIRMED: Exness maximum volume (use ≤2.0 in paper mode)
+    pip_value_per_lot: 1.0 # $1 per point per lot (1 ETH contract size, profit in USD)
+    typical_daily_range_pips: 80 # ~$80/day typical
+    session_bias: all_24_7 # 24/7: Sun–Sat 00:00–24:00 CONFIRMED
+    swap_long_pts: -43.6 # CONFIRMED: Exness swap long (in points)
+    swap_short_pts: 0.0 # CONFIRMED: Exness swap short
+    data_start: "2022-01-01"
+    notes: >
+      Ethereum. Symbol CONFIRMED as 'ETHUSD' on Exness MT5 (verified
+      2026-04-19). 24/7 market. Historically more volatile than BTC on a %
+      basis. Strong positive correlation with BTCUSD — avoid running identical
+      strategies on both. Paper mode: keep lot_size ≤ 0.1 (minimum volume on
+      Exness).
+
+# ============================================================
+# BACKTESTING — cost model applied to all backtest runs
+# ============================================================
+backtesting:
+  slippage_model: per_pair # per_pair | standard (use per_pair — loads from pairs above)
+  default_spread: 2.0 # Fallback only — always prefer pairs[pair].spread_pips
+  commission_per_lot: 7.0 # Fallback only
+  swaps_enabled: true
+  data_split:
+    in_sample_pct: 0.70 # 70% IS
+    out_of_sample_pct: 0.20 # 20% OOS (never touched during optimisation)
+    forward_test_pct: 0.10 # 10% most recent for paper confirmation
+
+# ============================================================
+# RISK MANAGEMENT
+# ============================================================
+risk_management:
+  risk_per_trade_pct: 2.0 # % of account balance risked per trade
+  max_lot_size: 1.0 # Hard ceiling on any single trade
+  max_concurrent_positions: 5 # Across ALL strategies combined
+  max_spread_pips: 5.0 # Skip trade if live spread exceeds this
+  max_drawdown_warning_pct: 12.0 # Telegram warning fires at this level
+  max_drawdown_hard_pct: 15.0 # Strategy auto-pauses; open positions closed
+  strategy_correlation_threshold: 0.7 # Monthly correlation check — alert above this
+  use_macro_regime_filter: true # PATH B: Enable macro-based bias filter
+  use_multi_tf_confirmation: true # PATH B: Enable higher-TF trend confirmation
+  signal_validity_bars: 2 # Minimum period a signal is considered "active"
+  trading_hours:
+    start: "00:30"
+    end: "23:59"
+    days: [ 0, 1, 2, 3, 4 ] # Monday–Friday (0=Mon) for FX/metals
+  crypto_trading_hours:
+    start: "00:10"
+    end: "23:59"
+    days: [ 0, 1, 2, 3, 4, 5, 6 ] # All 7 days — crypto never closes
+    pairs: [ "BTCUSD", "ETHUSD" ]
+
+# ============================================================
+# NOTIFICATIONS
+# ============================================================
+notifications:
+  telegram_enabled: true
+  min_alert_interval: 300 # Seconds between repeated alerts (prevent spam)
+  daily_summary_time: "18:00" # Send daily P&L summary
+  weekly_report_day: monday
+  weekly_report_time: "08:00"
+
+# ============================================================
+# SCHEDULER
+# ============================================================
+scheduler:
+  heartbeat_interval_sec: 60
+  mt5_check_interval_sec: 60
+  position_sync_interval_sec: 300
+  signal_check_interval_sec: 900 # 15 minutes
+  pnl_rollup_interval_sec: 3600 # 1 hour
+  regime_detect_interval_sec: 3600 # 1 hour
+  data_ingest_time: "00:00"
+  db_cleanup_day: sunday
+  db_cleanup_time: "00:00"
+  db_retention_days: 120
+
+# ============================================================
+# ACTIVE STRATEGIES (loaded by scheduler and paper engine)
+# Full parameter definitions in strategies.yaml
+# ============================================================
+strategies:
+  - name: triple_macd_scalping
+    enabled: true # Tier 1 Ensemble
+    pairs: [ "XAUUSD" ]
+    timeframes: [ "H1" ]
+
+  - name: stat_arb_gold_silver
+    enabled: true # Tier 1 Ensemble
+    pairs: [ "XAUUSD" ]
+    timeframes: [ "H4" ]

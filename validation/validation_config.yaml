@@ -1,0 +1,323 @@
+# Validation Configuration for Trading Strategies
+# This file defines the acceptance criteria, KPIs, and test progression
+# for all XAU/USD trading strategies
+
+validation_framework:
+  version: "2.0"
+  last_updated: "2026-04-17"
+  asset: "XAU/USD"
+
+# ===== ACCEPTANCE CRITERIA (ALL MUST PASS) =====
+acceptance_criteria:
+  
+  backtesting:
+    minimum_win_rate: 0.50  # 50% or higher
+    minimum_sharpe_ratio: 1.0  # Sharpe >= 1.0 in sample
+    maximum_drawdown_percent: 15.0  # Max 15% of account
+    minimum_trade_sample: 50  # At least 50 trades in backtest
+    expected_monthly_return_percent: 1.0  # Risk-adjusted ≥1%
+    
+  forward_testing:
+    minimum_win_rate: 0.48  # Slightly lower than backtest
+    minimum_sharpe_ratio: 0.8  # Forward-test Sharpe >= 0.8
+    maximum_drawdown_percent: 15.0  # Max 15% of account
+    minimum_trade_sample: 30  # At least 30 trades
+    expected_monthly_return_percent: 0.8  # ≥0.8% monthly
+    
+  consistency:
+    win_rate_variance_tolerance: 0.05  # ±5% across folds
+    sharpe_ratio_oos_min_ratio: 0.70  # OOS Sharpe >= 70% of IS
+    equity_curve_consecutive_loss_limit: 5  # Max 5 losing trades in a row
+    
+# ===== TEST PROGRESSION PHASES =====
+test_phases:
+  
+  phase_1_unit_test:
+    name: "Unit Test"
+    description: "Verify entry/exit logic is programmatically correct"
+    validation_checks:
+      - entry_rules_parseable: true
+      - exit_rules_parseable: true
+      - parameters_in_bounds: true
+      - no_syntax_errors: true
+    success_criteria:
+      - all_rules_execute_without_error: true
+      - no_null_or_nan_signals: true
+    estimated_duration_hours: 1
+    
+  phase_2_backtest:
+    name: "Backtesting"
+    description: "Run 2+ years historical data with walk-forward analysis"
+    validation_checks:
+      - minimum_years_of_data: 2
+      - walk_forward_folds: 4
+      - no_curve_fitting_beyond_sample: true
+      - slippage_assumption_realistic: true
+      - commission_deducted: true
+    success_criteria:
+      - win_rate: 0.50
+      - sharpe_ratio: 1.0
+      - max_drawdown_percent: 15.0
+      - trades: 50
+    estimated_duration_hours: 4
+    
+  phase_3_out_of_sample_validation:
+    name: "Out-of-Sample Validation"
+    description: "Test on 20% held-out data (no optimization)"
+    validation_checks:
+      - holdout_data_percentage: 0.20
+      - no_parameter_optimization_on_holdout: true
+      - metrics_tracked: [win_rate, sharpe, max_dd, trades]
+    success_criteria:
+      - sharpe_ratio_oos: 0.70  # At least 70% of IS Sharpe
+      - win_rate_degradation: 0.03  # Max 3% drop from IS
+    estimated_duration_hours: 2
+    
+  phase_4_forward_test:
+    name: "Forward Testing (Paper Trading)"
+    description: "Paper trade 50–100 real trades, log all metrics"
+    validation_checks:
+      - minimum_paper_trades: 50
+      - log_slippage: true
+      - log_execution_delays: true
+      - log_liquidity_issues: true
+      - monitor_daily: true
+    success_criteria:
+      - win_rate: 0.48
+      - sharpe_ratio: 0.80
+      - max_drawdown_percent: 15.0
+      - trades: 30
+    estimated_duration_weeks: 4
+    
+  phase_5_acceptance_decision:
+    name: "Acceptance Review"
+    description: "Pass all criteria above → candidate for micro-live"
+    validation_checks:
+      - phase_1_pass: true
+      - phase_2_pass: true
+      - phase_3_pass: true
+      - phase_4_pass: true
+      - metrics_consistency: true
+      - regime_analysis_complete: true
+    success_criteria:
+      - all_phases_pass: true
+      - confidence_score_oos: 0.75  # 75%+ confidence
+    estimated_duration_hours: 2
+    
+  phase_6_live_micro_lot:
+    name: "Live Micro-Lot Trading"
+    description: "Risk 0.5% account per trade, monitor for 100 trades"
+    validation_checks:
+      - micro_lot_size_calculated: true
+      - drawdown_alert_threshold_set: true
+      - daily_monitoring: true
+    success_criteria:
+      - win_rate_minimum: 0.45  # Relaxed due to live conditions
+      - sharpe_minimum: 0.70
+      - equity_drawdown_not_exceeded: true
+    estimated_duration_weeks: 6
+
+# ===== OPTIMIZATION CONSTRAINTS =====
+optimization_constraints:
+  
+  backtesting:
+    walk_forward_validation:
+      enabled: true
+      folds: 4
+      description: "Cross-validate to prevent curve-fitting"
+      
+    overfitting_penalty:
+      enabled: true
+      method: "sharpe_ratio_oos_ratio"
+      threshold: 0.70  # OOS Sharpe must be >= 70% of IS Sharpe
+      action_if_exceeded: "flag_for_review"
+      
+    parameter_grid:
+      max_combinations: 100  # Prevent grid-search explosion
+      description: "Limit combinatorial search to 100 parameter sets"
+      
+    parameter_bounds:
+      enforce_strict_ranges: true
+      description: "All parameters must stay within [Min..Max] defined in strategy"
+      
+# ===== FAILURE CRITERIA (STOP TESTING IF ANY TRIGGERED) =====
+failure_criteria:
+  
+  backtesting_failure:
+    condition: "sharpe_ratio < 0.6"
+    action: "ARCHIVE"
+    description: "Archive strategy; revisit later or abandon"
+    
+  win_rate_failure:
+    condition: "win_rate < 0.45 across all folds"
+    action: "ABANDON"
+    description: "Edge too weak; abandon strategy"
+    
+  drawdown_failure:
+    condition: "max_drawdown > 0.20"
+    action: "REDESIGN"
+    description: "Risk too high; redesign with tighter stops"
+    
+  forward_test_failure:
+    condition: "forward_test_metrics diverge > 3σ from backtest"
+    action: "INVESTIGATE"
+    description: "Flag data quality, execution issues, or model drift"
+    
+  live_trading_failure:
+    condition: "equity_drawdown > acceptance_criteria.maximum_drawdown_percent"
+    action: "HALT_AND_REVIEW"
+    description: "Halt live trading; analyze live vs. paper divergence"
+
+# ===== AI RESPONSIBILITIES BY PHASE =====
+ai_responsibilities:
+  
+  phase_1_unit_test:
+    - "Parse strategy rules from markdown"
+    - "Build entry/exit logic programmatically"
+    - "Verify no syntax errors in rule definitions"
+    - "Test with sample market data"
+    - "Report any logic ambiguities or parsing failures"
+    
+  phase_2_backtest:
+    - "Auto-optimize parameters within [Min..Max] ranges"
+    - "Run walk-forward cross-validation (4 folds)"
+    - "Plot equity curves for each fold"
+    - "Report key metrics: Sharpe, win rate, max DD"
+    - "Flag if OOS Sharpe < 70% of IS Sharpe (overfitting)"
+    - "Generate performance summary by regime (trend vs. range)"
+    
+  phase_3_oos_validation:
+    - "Re-test best parameters on held-out 20% data"
+    - "Compare OOS metrics to IS metrics"
+    - "Flag if metrics degrade > 3σ from backtest"
+    - "Validate that no optimization was done on holdout set"
+    - "Generate side-by-side metric comparison table"
+    
+  phase_4_forward_test:
+    - "Monitor paper trades daily"
+    - "Log all trades: entry price, exit price, slippage, delay"
+    - "Detect and flag: liquidity issues, execution delays, spread widening"
+    - "Track daily equity, drowdown, win-rate evolution"
+    - "Alert if drawdown approaches acceptance threshold"
+    - "Generate daily/weekly performance report"
+    
+  phase_5_acceptance_decision:
+    - "Compare all 4 phases: IS vs. OOS vs. Paper vs. KPIs"
+    - "Calculate confidence score (0–1) based on metric stability"
+    - "Recommend PASS/FAIL + confidence level"
+    - "Highlight any red flags or areas of concern"
+    - "Provide summary recommendation for engine integration"
+    
+  phase_6_live_micro_lot:
+    - "Calculate micro-lot size = (1% account) / (max loss per trade)"
+    - "Monitor live trades 24/7 (or during liquid hours)"
+    - "Alert on drawdown threshold breaches"
+    - "Log live execution metrics (slippage, fills, timing)"
+    - "Compare live metrics to paper trading baseline"
+    - "Halt trading if equity drawdown > threshold"
+    - "Generate daily/weekly live performance report"
+
+# ===== PERFORMANCE METRICS & KPIs =====
+metrics:
+  
+  profitability:
+    - net_pnl_absolute: "Total profit/loss in currency"
+    - net_pnl_percent: "Total return as % of account"
+    - avg_trade_pnl: "Average profit per trade"
+    - monthly_pnl: "Average monthly return"
+    
+  risk:
+    - max_drawdown_percent: "Largest peak-to-trough decline"
+    - consecutive_losses: "Longest losing streak"
+    - avg_loss: "Average loss on losing trades"
+    - risk_per_trade: "Amount at risk per trade"
+    
+  efficiency:
+    - win_rate: "% of trades that profit"
+    - avg_reward_risk_ratio: "Average RR per trade"
+    - sharpe_ratio: "Risk-adjusted return metric"
+    - sortino_ratio: "Return per unit of downside deviation"
+    - profit_factor: "Gross profit / gross loss"
+    - recovery_factor: "Net profit / max drawdown"
+    
+  consistency:
+    - sharpe_ratio_monthly: "Sharpe by month (consistency)"
+    - win_rate_by_regime: "Win % in trend vs. range markets"
+    - trade_frequency: "Trades per month"
+    - slippage_impact: "% of gross pnl lost to slippage"
+
+# ===== REGIME-SPECIFIC ANALYSIS =====
+regime_analysis:
+  
+  trend_regime:
+    condition: "ADX > 25 for 10+ consecutive days"
+    performance_expectation: "Higher win rate in trend strategies"
+    
+  range_regime:
+    condition: "ADX < 20 for 10+ consecutive days"
+    performance_expectation: "Higher win rate in mean-reversion strategies"
+    
+  breakout_regime:
+    condition: "Volatility spike + price at extremes"
+    performance_expectation: "Breakout and volatility-based strategies outperform"
+    
+  news_regime:
+    condition: "Scheduled economic event + ATR spike"
+    performance_expectation: "News-event strategies have edge immediately post-event"
+
+# ===== DATA REQUIREMENTS =====
+data_requirements:
+  
+  backtesting:
+    minimum_history_years: 2
+    minimum_candles: 100000  # ~2 years of H1 data
+    required_fields: ["open", "high", "low", "close", "volume"]
+    data_quality_checks:
+      - no_gaps_in_ohlc: true
+      - no_negative_volumes: true
+      - high_>=_low_and_close: true
+      - no_extreme_outliers: true  # flag if HL range > 5× normal
+    
+  forward_testing:
+    real_time_data: "Live market feeds (DMA broker or API)"
+    slippage_assumption: "2–5 pips on typical entry/exit"
+    spread_assumption: "1.0–1.5 pips on AUS/USD"
+    
+  live_trading:
+    broker_integration: "FIX protocol or REST API"
+    execution_logs: "Timestamp, entry price, exit price, actual fill"
+    risk_management: "Hard stop-loss; auto-close if drawdown exceeds threshold"
+
+# ===== INTEGRATION CHECKLIST =====
+engine_integration_checklist:
+  - "All 6 phases completed and passed"
+  - "Strategies in /validation/strategies_structured.md folder"
+  - "Validation config in /validation/validation_config.yaml"
+  - "Test runner script executed and approved"
+  - "Regime analysis completed (trend vs. range performance)"
+  - "Parameter bounds verified and locked"
+  - "Slippage assumptions validated against live execution"
+  - "Drawdown thresholds set; alert system configured"
+  - "Daily monitoring script deployed"
+  - "Fallback/disable logic for underperforming strategies"
+  - "Documentation for engine maintainers completed"
+
+# ===== STRATEGY RETIREMENT CRITERIA =====
+retirement_criteria:
+  
+  automated_retirement:
+    condition: "Sharpe < 0.8 OOS for 2 consecutive weeks"
+    action: "AUTO_DISABLE"
+    notification: "Alert maintainer; log to strategy_retirement.log"
+    
+  manual_review_trigger:
+    condition: "Win rate < 45% for 50+ consecutive trades"
+    action: "MANUAL_REVIEW"
+    notification: "Flag for strategy review; consider disabling"
+    
+  complete_retirement:
+    condition: "Strategy disabled for 6+ months; no recovery"
+    action: "ARCHIVE"
+    destination: "/validation/archive/disabled_strategies/"
+
+# END OF VALIDATION CONFIGURATION

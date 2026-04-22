@@ -1,0 +1,42 @@
+# ============================================================
+# TradePanel — Core Dependencies
+# ============================================================
+# Install:  pip install -r requirements.txt
+# Tested:   Python 3.11+ including 3.14
+#
+# NOTE: pandas-ta is NOT listed here — it was replaced by
+#       ta_compat.py (pure pandas/numpy shim in project root)
+#       to avoid the numba/Python 3.14 incompatibility.
+#       No extra install step needed for TA indicators.
+#
+# NOTE: vectorbt and backtrader (Step 11 backtesting) require
+#       Python <3.14 due to numba. Install separately when ready:
+#       pip install -r requirements-backtesting.txt
+#       (in a Python 3.11/3.12 venv)
+# ============================================================
+
+# ── MT5 & Database ───────────────────────────────────────────
+MetaTrader5
+psycopg2-binary
+
+# ── Data & Analysis ─────────────────────────────────────────
+pandas
+numpy
+
+# ── Scheduler ───────────────────────────────────────────────
+apscheduler
+
+# ── Telegram Bot ────────────────────────────────────────────
+python-telegram-bot>=20.0
+
+# ── Config & Environment ────────────────────────────────────
+pyyaml
+ruamel.yaml
+python-dotenv
+
+# ── API Server (dashboard / webhook) ────────────────────────
+fastapi
+uvicorn
+
+# ── Testing ─────────────────────────────────────────────────
+pytest

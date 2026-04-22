@@ -1,0 +1,45 @@
+============================================
+TradePanel Final Directory Structure
+Date: 2026-04-22 09:50
+============================================
+
+F:\REPOS\leo123xxx\TradePanel\
+├── main.py                             (Fixed logging)
+├── dashboard.py                        (Fixed logging & async)
+│
+├── start_all.bat                       
+├── setup_scheduler.bat                 (Requires Admin)
+├── test_health.bat                     
+├── tail_logs.bat                       
+├── stop_services.bat                   
+│
+├── DELIVERY_SUMMARY.md                 
+├── SETUP_AND_RUN.md                    
+├── WINDOWS_SETUP.md                    
+├── AUTOMATION_GUIDE.md                 
+├── QUICK_REFERENCE.md                  
+├── AGENT_MIGRATION_PLAN_PHASE4.md      
+│
+├── logs/                               
+│   ├── main.log                        (Verified)
+│   ├── dashboard.log                   (Verified)
+│   └── telegram_bot.log                
+│
+├── results/                            
+│   └── daily_validation/               
+│       ├── dashboard_20260422_074745.json
+│       └── summary_20260422_074745.csv
+│
+├── archive/                            (Legacy files backup)
+│   ├── PHASE_0_AGENT_HANDOFF.docx
+│   ├── PHASE_2_AGENT_HANDOVER.docx
+│   └── ...
+│
+├── config/                             
+├── scripts/                            
+├── data/                               
+├── mt5_bridge/                         
+├── notifications/                      
+│
+├── .env                                
+└── requirements.txt                    

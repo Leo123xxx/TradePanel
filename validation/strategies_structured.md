@@ -1,0 +1,709 @@
+# Gold (XAU/USD) Trading Strategies - Structured Format
+
+> **Format Version:** 2.0  
+> **Last Updated:** April 17, 2026  
+> **Asset:** XAU/USD (Gold)  
+> **All strategies must pass validation framework before engine integration**
+
+---
+
+## STRATEGY #1: MA Crossover Trend Following
+
+**STRATEGY:** MA Crossover Trend Following  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H1, D1  
+**CATEGORY:** Trend Following  
+
+### ENTRY RULES (Long)
+- Fast EMA crosses ABOVE Slow EMA
+- Price is ABOVE both moving averages
+- ADX > 20 (optional trend confirmation)
+
+### ENTRY RULES (Short)
+- Fast EMA crosses BELOW Slow EMA
+- Price is BELOW both moving averages
+- ADX > 20 (optional trend confirmation)
+
+### EXIT RULES
+- **Take Profit:** Close >= SMA(20) + (ATR × TP_Multiplier)
+- **Stop Loss:** Close < SMA(20) - ATR
+- **Time Exit:** None (hold until reversal signal)
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| fast_ma_period | [5..20] | 10 | EMA for fast MA |
+| slow_ma_period | [40..100] | 50 | EMA for slow MA |
+| atr_period | [10..20] | 14 | ATR lookback |
+| tp_atr_multiplier | [1.5..3.0] | 2.0 | Take profit distance |
+| sl_atr_multiplier | [0.5..1.5] | 1.0 | Stop loss distance |
+| min_adx_filter | [15..25] | 20 | Optional trend filter (0=disabled) |
+
+### REGIME CONDITIONS
+- **Works Best In:** Strong trending markets (ADX > 25), sustained directional moves
+- **Avoid In:** Choppy/ranging markets (ADX < 20), news volatility, dead hours (Tokyo)
+- **Best Time:** London/NY overlap for H1; any time for D1
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 52–58%
+- **Avg R:R Ratio:** 1:1.5 to 1:2.5
+- **Sharpe (Backtest):** ~1.2–1.5
+- **Typical Drawdown:** 8–12%
+- **Trades/Month:** 8–15 (H1), 3–6 (D1)
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Whipsaws in choppy markets; lag in trend reversals
+- **Data Needs:** Min 2 years daily OHLC + 1-minute for H1 backtest
+- **AI Should Check:**
+  - Walk-forward validation across 4+ folds
+  - Win rate degradation in ranging vs. trending periods
+  - Out-of-sample Sharpe < 0.8 → flag for review
+  - Equity curve consistency across all folds
+
+### IMPLEMENTATION NOTES
+- Use EMA crossover with close prices
+- ADX filter optional but recommended to reduce false signals
+- Consider adding volume confirmation for breakout trades
+
+---
+
+## STRATEGY #2: Breakout from Consolidation (Range)
+
+**STRATEGY:** Range Breakout  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H4, D1  
+**CATEGORY:** Breakout  
+
+### ENTRY RULES (Long)
+- Price closes ABOVE resistance (highest high of last N bars)
+- Close is above EMA(20)
+- Volume spike >= 1.3× average volume OR ADX > 20
+
+### ENTRY RULES (Short)
+- Price closes BELOW support (lowest low of last N bars)
+- Close is below EMA(20)
+- Volume spike >= 1.3× average volume OR ADX > 20
+
+### EXIT RULES
+- **Take Profit:** Range Size × 2–3 (measured from breakout point)
+- **Stop Loss:** Just below resistance (for long) or above support (for short)
+- **Time Exit:** Close if ADX drops below 15 after entry
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| consolidation_bars | [10..40] | 20 | Bars to identify range |
+| vol_threshold_mult | [1.2..1.8] | 1.3 | Volume spike multiplier |
+| tp_range_mult | [1.5..3.5] | 2.5 | TP = Range × this |
+| sl_buffer_pips | [10..30] | 15 | SL below support/above resistance |
+| adx_min_filter | [15..25] | 20 | Trend confirmation filter |
+| ema_period | [15..30] | 20 | EMA for bias confirmation |
+
+### REGIME CONDITIONS
+- **Works Best In:** Consolidation followed by breakout, low-volatility environments
+- **Avoid In:** Strong existing trends (too early breakout), high-volatility spikes
+- **Best Time:** Start of London session (13:00 UTC), before major news
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 50–56%
+- **Avg R:R Ratio:** 1:2.0 to 1:3.0
+- **Sharpe (Backtest):** ~1.1–1.4
+- **Typical Drawdown:** 10–15%
+- **Trades/Month:** 4–8
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** False breakouts in choppy ranges; retracements into range
+- **Data Needs:** Min 2 years H4/D1 OHLC + volume data
+- **AI Should Check:**
+  - Range identification accuracy (is consolidation real?)
+  - Win rate in first 50 pips of breakout vs. extended moves
+  - Volume spike reliability as filter
+  - Out-of-sample Sharpe < 0.8 → investigate false breakouts
+
+### IMPLEMENTATION NOTES
+- Identify consolidation using highest high/lowest low over N bars
+- Confirm breakout with volume spike or ADX
+- Target = range size (highest - lowest) × multiplier from breakout point
+
+---
+
+## STRATEGY #3: RSI-Based Trend-Pullback
+
+**STRATEGY:** RSI Pullback in Trend  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H4, D1  
+**CATEGORY:** Trend + Reversion Hybrid  
+
+### ENTRY RULES (Long)
+- Trend is UP (EMA(20) > EMA(50) OR ADX > 25 + Price > EMA(20))
+- RSI(14) pulls back into 30–50 range (not < 30)
+- Price is still above EMA(20)
+- Engulfing bar or bullish candle pattern (optional confirmation)
+
+### ENTRY RULES (Short)
+- Trend is DOWN (EMA(20) < EMA(50) OR ADX > 25 + Price < EMA(20))
+- RSI(14) pulls back into 50–70 range (not > 70)
+- Price is still below EMA(20)
+- Engulfing bar or bearish candle pattern (optional confirmation)
+
+### EXIT RULES
+- **Take Profit:** ATR × TP_Multiplier from entry
+- **Stop Loss:** Highest high (last 5 bars) above entry for long; lowest low for short
+- **Time Exit:** Exit if RSI moves beyond 70 (long) or below 30 (short) without profit
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| rsi_period | [10..20] | 14 | RSI lookback |
+| rsi_pullback_lower | [25..35] | 30 | Lower RSI threshold (long) |
+| rsi_pullback_upper | [50..60] | 50 | Upper RSI threshold (long) |
+| fast_ema | [10..20] | 20 | Fast trend EMA |
+| slow_ema | [40..60] | 50 | Slow trend EMA |
+| atr_period | [10..20] | 14 | ATR for stops |
+| tp_atr_mult | [1.5..3.0] | 2.0 | Take profit ATR multiple |
+| sl_bars_lookback | [3..7] | 5 | Bars for stop loss |
+
+### REGIME CONDITIONS
+- **Works Best In:** Trending markets with pullbacks (ADX > 20), strong directional bias
+- **Avoid In:** Choppy/ranging markets (ADX < 15), ranging RSI (near 50)
+- **Best Time:** After confirmed trend establishment (H4+)
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 54–62%
+- **Avg R:R Ratio:** 1:1.5 to 1:2.5
+- **Sharpe (Backtest):** ~1.3–1.6
+- **Typical Drawdown:** 7–10%
+- **Trades/Month:** 5–10
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Trend reversal during pullback; RSI doesn't recover; whipsaws
+- **Data Needs:** Min 2 years H4/D1 OHLC data
+- **AI Should Check:**
+  - Confirm trend before entry (EMA alignment + ADX)
+  - RSI pullback zone probability (does RSI reliably bounce from 30–50?)
+  - Win rate if trend reverses after entry
+  - Out-of-sample Sharpe < 0.8 → flag for review
+
+### IMPLEMENTATION NOTES
+- Use RSI as pullback filter, NOT primary entry signal
+- Require trend confirmation (EMA or ADX) before taking pullback trades
+- RSI thresholds tunable; test different ranges ([20–40] vs. [30–50])
+
+---
+
+## STRATEGY #4: Moving Average + Bollinger Bands Mean Reversion
+
+**STRATEGY:** BB Mean Reversion  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H1, H4  
+**CATEGORY:** Mean Reversion  
+
+### ENTRY RULES (Long)
+- Price touches or closes below lower Bollinger Band
+- Price is ABOVE SMA(20) (not below the center)
+- Volatility is elevated: ATR > SMA(ATR, 20) OR BB width > median BB width
+- RSI(14) is oversold but not extreme (20–40)
+
+### ENTRY RULES (Short)
+- Price touches or closes above upper Bollinger Band
+- Price is BELOW SMA(20) (not above the center)
+- Volatility is elevated: ATR > SMA(ATR, 20) OR BB width > median BB width
+- RSI(14) is overbought but not extreme (60–80)
+
+### EXIT RULES
+- **Take Profit:** Price returns to SMA(20) OR upper BB (short) / lower BB (long)
+- **Stop Loss:** Opposite band + 1 ATR (e.g., long stop = lower BB - ATR)
+- **Time Exit:** Exit if trade doesn't profit within 50 candles on H1
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| sma_period | [15..30] | 20 | Center moving average |
+| bb_period | [15..30] | 20 | Bollinger Band period |
+| bb_deviation | [1.5..2.5] | 2.0 | BB std deviation |
+| atr_period | [10..20] | 14 | ATR for volatility |
+| rsi_period | [10..20] | 14 | RSI for confirmation |
+| rsi_oversold | [20..40] | 30 | Oversold threshold (long) |
+| rsi_overbought | [60..80] | 70 | Overbought threshold (short) |
+| vol_threshold_mult | [0.9..1.3] | 1.1 | ATR multiplier for vol filter |
+
+### REGIME CONDITIONS
+- **Works Best In:** Mean-reverting, choppy markets (ADX < 20), elevated volatility
+- **Avoid In:** Strong trends (ADX > 25), low-volatility consolidation
+- **Best Time:** Dead hours (Tokyo close, early London) for H1; any for H4
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 55–65%
+- **Avg R:R Ratio:** 1:1.0 to 1:1.5
+- **Sharpe (Backtest):** ~1.2–1.4
+- **Typical Drawdown:** 9–13%
+- **Trades/Month:** 10–20 (H1), 5–10 (H4)
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Trend continuation instead of reversion; band touch = trend start
+- **Data Needs:** Min 2 years H1/H4 OHLC data
+- **AI Should Check:**
+  - Win rate if ADX > 20 (should be lower)
+  - BB touch → revert vs. BB touch → trend continuation ratio
+  - RSI overbought/oversold reliability
+  - Out-of-sample Sharpe < 0.8 → flag strategy drift
+
+### IMPLEMENTATION NOTES
+- Bollinger Bands = SMA(20) ± (StdDev(20) × 2.0)
+- Only trade if volatility elevated; avoid quiet consolidation touches
+- Use RSI as confirmation, not primary entry
+- Tighter BB deviation (1.5–1.8) catches more reversions but with lower win rate
+
+---
+
+## STRATEGY #5: Price-Action Swing Pattern (ICT-Style)
+
+**STRATEGY:** Swing Pullback  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H4, D1  
+**CATEGORY:** Price Action / Pattern  
+
+### ENTRY RULES (Long)
+- Identify recent swing low (2–5 bars back, below preceding bars)
+- Price pulls back and tests the swing low (+/- 20 pips)
+- Price bounces (close > open of pullback bar) at swing low
+- ADX > 15 (optional confirmation of directional intent)
+
+### ENTRY RULES (Short)
+- Identify recent swing high (2–5 bars back, above preceding bars)
+- Price pulls back and tests the swing high (+/- 20 pips)
+- Price bounces downward (close < open of pullback bar) at swing high
+- ADX > 15 (optional confirmation of directional intent)
+
+### EXIT RULES
+- **Take Profit:** Previous swing high (short) / swing low (long) + buffer
+- **Stop Loss:** Just beyond the swing (20–50 pips depending on volatility)
+- **Time Exit:** Exit if no profit after 100 candles; trailing stop after 2 ATR profit
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| swing_lookback | [3..8] | 5 | Bars to identify swing high/low |
+| swing_buffer_pips | [10..40] | 20 | Pips tolerance for swing test |
+| tp_pips | [50..200] | 100 | Take profit distance |
+| sl_pips | [20..50] | 30 | Stop loss distance from swing |
+| atr_period | [10..20] | 14 | ATR for scaling |
+| min_adx_filter | [10..20] | 15 | Optional trend filter (0=disabled) |
+| bars_to_confirm | [1..3] | 1 | Bars to confirm bounce at swing |
+
+### REGIME CONDITIONS
+- **Works Best In:** Ranging/choppy markets with clear swing patterns, pullback confirmations
+- **Avoid In:** Gapping markets (overnight gaps), strong directional thrust
+- **Best Time:** Any time; more setups in choppy periods
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 50–58%
+- **Avg R:R Ratio:** 1:1.5 to 1:2.0
+- **Sharpe (Backtest):** ~1.0–1.3
+- **Typical Drawdown:** 8–12%
+- **Trades/Month:** 6–12
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Swing identification is subjective; false bounces; weak pullbacks
+- **Data Needs:** Min 2 years H4/D1 OHLC data
+- **AI Should Check:**
+  - Swing identification algorithm consistency
+  - Win rate if swing is retested multiple times (compound entries)
+  - False bounces (close > open but no follow-through)
+  - Out-of-sample Sharpe < 0.8 → validate swing detection
+
+### IMPLEMENTATION NOTES
+- Swing high = bar higher than lookback-period neighbors
+- Swing low = bar lower than lookback-period neighbors
+- Define pullback = price returns to within buffer_pips of swing level
+- Confirm with engulfing bar or bullish/bearish candle pattern
+
+---
+
+## STRATEGY #6: News-Impact Volatility Expansion
+
+**STRATEGY:** News Event Breakout  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** M15, H1  
+**CATEGORY:** News / Event-Driven  
+
+### ENTRY RULES (Long)
+- Major economic event triggers (CPI, NFP, Fed decision, Real Yields shift)
+- First 15-min candle post-event shows ATR spike > 2× normal
+- Close > open on candle (bullish direction)
+- Price is above previous 5-bar high (directional bias)
+
+### ENTRY RULES (Short)
+- Major economic event triggers (CPI, NFP, Fed decision, Real Yields shift)
+- First 15-min candle post-event shows ATR spike > 2× normal
+- Close < open on candle (bearish direction)
+- Price is below previous 5-bar low (directional bias)
+
+### EXIT RULES
+- **Take Profit:** 1.5–2× ATR from entry, OR close at previous swing high/low
+- **Stop Loss:** Opposite side of entry candle (for news trades, tight stops)
+- **Time Exit:** Exit entire position 60 min after entry OR at EOD, whichever first
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| atr_spike_mult | [1.8..3.0] | 2.2 | ATR multiplier to trigger |
+| atr_period | [10..20] | 14 | ATR lookback |
+| tp_atr_mult | [1.2..2.5] | 1.8 | TP distance |
+| sl_buffer_pips | [15..40] | 25 | SL buffer from candle |
+| candles_to_wait | [0..3] | 1 | Candles to wait post-event |
+| exit_time_min | [30..120] | 60 | Minutes to hold position |
+| min_move_pips | [20..60] | 30 | Minimum directional move confirmation |
+
+### REGIME CONDITIONS
+- **Works Best In:** Scheduled economic events (calendar dates), risk-on/off regimes
+- **Avoid In:** Surprise gaps (unscheduled news), illiquid times
+- **Best Time:** 13:30 UTC (CPI/NFP), Fed decision times, BoE meetings
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 48–55%
+- **Avg R:R Ratio:** 1:1.2 to 1:1.8
+- **Sharpe (Backtest):** ~0.9–1.2
+- **Typical Drawdown:** 10–15%
+- **Trades/Month:** 5–10 (event-dependent)
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Initial spike reversal; gap and reverse pattern; slippage on entry
+- **Data Needs:** Min 2 years of scheduled event times + M15/H1 OHLC data
+- **AI Should Check:**
+  - Scheduled event calendar integration
+  - ATR spike detection post-event (within first 5 candles)
+  - Win rate by event type (CPI vs. NFP vs. Fed)
+  - Slippage impact on tight stops
+  - Out-of-sample Sharpe < 0.8 → events may not repeat performance
+
+### IMPLEMENTATION NOTES
+- Maintain calendar of scheduled economic events
+- ATR spike = (event close - event open) / average ATR
+- Use tight stops (25–30 pips) for news trades; expect slippage
+- Post-event trades higher volatility but lower edge post-spike
+- Risk/reward should favor quick exits (1:1.2 min)
+
+---
+
+## STRATEGY #7: Session-Based Momentum (London/NY Overlap)
+
+**STRATEGY:** London/NY Session Breakout  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H1  
+**CATEGORY:** Session-Based / Momentum  
+
+### ENTRY RULES (Long)
+- Current time is 13:00–17:00 UTC (London/NY overlap)
+- Price is near 5-bar high (within 20 pips)
+- ADX > 20 (trend established)
+- Volume > average (optional confirmation)
+- EMA(20) > EMA(50) (uptrend bias)
+
+### ENTRY RULES (Short)
+- Current time is 13:00–17:00 UTC (London/NY overlap)
+- Price is near 5-bar low (within 20 pips)
+- ADX > 20 (trend established)
+- Volume > average (optional confirmation)
+- EMA(20) < EMA(50) (downtrend bias)
+
+### EXIT RULES
+- **Take Profit:** 1.5–2.5 ATR from entry
+- **Stop Loss:** 0.7–1.0 ATR from entry
+- **Time Exit:** Exit at 17:00 UTC (end of NY open) OR at profit target
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| session_start_utc | [12..14] | 13 | London open hour |
+| session_end_utc | [16..18] | 17 | NY open end hour |
+| bars_lookback | [3..7] | 5 | Bars to identify high/low |
+| high_low_buffer_pips | [10..30] | 20 | Pips from 5-bar extreme |
+| atr_period | [10..20] | 14 | ATR period |
+| tp_atr_mult | [1.2..2.5] | 2.0 | TP multiplier |
+| sl_atr_mult | [0.5..1.0] | 0.8 | SL multiplier |
+| min_adx_filter | [15..25] | 20 | ADX trend filter |
+| fast_ema | [15..25] | 20 | Fast EMA |
+| slow_ema | [45..55] | 50 | Slow EMA |
+
+### REGIME CONDITIONS
+- **Works Best In:** London/NY overlap (strongest Gold volatility), trending sessions
+- **Avoid In:** Outside session (Tokyo, early London), low-volatility times
+- **Best Time:** 13:00–17:00 UTC only; most setups occur at session open
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 52–60%
+- **Avg R:R Ratio:** 1:1.8 to 1:2.5
+- **Sharpe (Backtest):** ~1.2–1.5
+- **Typical Drawdown:** 7–10%
+- **Trades/Month:** 6–12 (session-dependent)
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Session times vary daylight saving; breakouts fail; slippage at open
+- **Data Needs:** Min 2 years H1 OHLC data with correct UTC timezone
+- **AI Should Check:**
+  - Session time boundaries across daylight savings
+  - Win rate inside session vs. outside session
+  - ADX > 20 filter effectiveness in session
+  - Out-of-sample Sharpe < 0.8 → session seasonality changed
+
+### IMPLEMENTATION NOTES
+- Adjust UTC times for daylight saving (US and UK change on different dates)
+- London open = 13:00 UTC (8 AM London time)
+- NY open = 13:30 UTC (8:30 AM Eastern time, first 30 min high-volume)
+- Strongest setups: 13:30–15:30 UTC (overlapping volumes)
+
+---
+
+## STRATEGY #8: Multi-Asset Regime Filter (FX + Yields + Equities)
+
+**STRATEGY:** Regime-Aware Trading  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** D1 (regime checked on D1)  
+**CATEGORY:** Regime / Multi-Asset  
+
+### ENTRY RULES (Long)
+**Regime Condition:** Risk-Off (DXY > 50-day MA AND 10Y real yields rising AND VIX > 15)
+- Gold bias = Long (risk-off environment favors gold)
+- Apply any baseStrategy (MA crossover, RSI pullback, etc.) on D1
+- Only take long setups, skip shorts
+
+### ENTRY RULES (Short)
+**Regime Condition:** Risk-On (DXY < 50-day MA AND 10Y real yields falling AND VIX < 15)
+- Gold bias = Short (risk-on environment weakens gold)
+- Apply any baseStrategy on D1
+- Only take short setups, skip longs
+
+### EXIT RULES
+- **Take Profit:** Standard per baseStrategy
+- **Stop Loss:** Standard per baseStrategy
+- **Time Exit:** Exit entire position if regime flips (recheck daily)
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| dxy_ma_period | [40..60] | 50 | DXY moving average |
+| dxy_threshold_high | [100..102] | 101 | DXY level for strong $ |
+| dxy_threshold_low | [98..100] | 99 | DXY level for weak $ |
+| vix_threshold_high | [12..20] | 15 | VIX overbought |
+| vix_threshold_low | [10..15] | 12 | VIX oversold |
+| yields_ma_period | [20..40] | 30 | Real yields MA |
+| regime_check_freq | [1..7] | 1 | Days between regime checks |
+| regime_confirmation_candles | [1..5] | 2 | Candles to confirm regime shift |
+
+### REGIME CONDITIONS
+- **Risk-Off (Long Gold):** Rising yields, strong $, VIX > 15, geopolitical stress
+- **Risk-On (Short Gold):** Falling yields, weak $, VIX < 15, equity rally
+- **Transition (Avoid):** Regime inflection points, ambiguous regime readings
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 55–62% (regime-dependent)
+- **Avg R:R Ratio:** 1:1.5 to 1:2.5
+- **Sharpe (Backtest):** ~1.3–1.6
+- **Typical Drawdown:** 7–11%
+- **Trades/Month:** 5–12 (regime-filtered, fewer trades)
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Regime lag (indicators lag actual risk sentiment); mixed signals
+- **Data Needs:** Min 2 years DXY, VIX, 10Y real yields, S&P 500, XAU/USD daily data
+- **AI Should Check:**
+  - Regime identification consistency (no flip-flopping)
+  - Correlation between regime indicators (should move together)
+  - Win rate filtered by regime (long only in risk-off, short in risk-on)
+  - Out-of-sample Sharpe < 0.8 → regime relationship weakened
+
+### IMPLEMENTATION NOTES
+- **Risk-Off Indicators:** DXY rising, real yields rising, VIX rising, SPX declining
+- **Risk-On Indicators:** DXY falling, real yields falling, VIX falling, SPX rising
+- **Real Yields = 10Y nominal - inflation expectation** (use 5Y-5Y forward if available)
+- Regime regime flip detection = indicator crosses MA or threshold breach
+- Use regime as bias filter, NOT entry signal
+
+---
+
+## STRATEGY #9: Stochastic Divergence Mean Reversion
+
+**STRATEGY:** Stochastic Divergence Bounce  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H4, D1  
+**CATEGORY:** Divergence / Mean Reversion  
+
+### ENTRY RULES (Long)
+**Signal Pattern:** Hidden Bullish Divergence
+- Price makes lower low (LL)
+- Stochastic(14,3,3) makes higher low (HL) — divergence signal
+- Stochastic is in oversold zone (< 30) OR just bounced from < 30
+- Engulfing bar or bullish candle at divergence point (confirmation)
+
+### ENTRY RULES (Short)
+**Signal Pattern:** Hidden Bearish Divergence
+- Price makes higher high (HH)
+- Stochastic(14,3,3) makes lower high (LH) — divergence signal
+- Stochastic is in overbought zone (> 70) OR just bounced from > 70
+- Engulfing bar or bearish candle at divergence point (confirmation)
+
+### EXIT RULES
+- **Take Profit:** Previous swing high (short) / swing low (long) OR 2 ATR
+- **Stop Loss:** Opposite of divergence point + buffer (e.g., LL - 20 pips for long)
+- **Time Exit:** Exit if Stochastic moves to opposite extreme (>70 for long, <30 for short)
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| stoch_period | [10..20] | 14 | Stochastic %K period |
+| stoch_smooth_k | [1..5] | 3 | Stochastic %K smooth |
+| stoch_smooth_d | [1..5] | 3 | Stochastic %D smooth |
+| divergence_bars_lookback | [3..8] | 5 | Bars to identify divergence |
+| stoch_oversold | [20..35] | 30 | Oversold threshold |
+| stoch_overbought | [65..80] | 70 | Overbought threshold |
+| atr_period | [10..20] | 14 | ATR for TP/SL |
+| tp_atr_mult | [1.5..2.5] | 2.0 | TP multiplier |
+| sl_buffer_pips | [15..40] | 25 | SL distance |
+
+### REGIME CONDITIONS
+- **Works Best In:** Mean-reverting markets (ADX < 20), after strong moves, oversold/overbought
+- **Avoid In:** Strong trends (ADX > 25), divergence with continued trend
+- **Best Time:** After sharp moves (panic selloffs, relief rallies)
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 52–60%
+- **Avg R:R Ratio:** 1:1.5 to 1:2.0
+- **Sharpe (Backtest):** ~1.1–1.4
+- **Typical Drawdown:** 8–12%
+- **Trades/Month:** 4–8
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** False divergences (price follows Stochastic, not reverses); trend continuation
+- **Data Needs:** Min 2 years H4/D1 OHLC data
+- **AI Should Check:**
+  - Divergence detection algorithm accuracy (LL + HL identification)
+  - Hidden divergence (LL + HL) vs. regular divergence (HH + LH) performance difference
+  - Win rate if divergence is confirmed with engulfing/candle pattern vs. without
+  - Out-of-sample Sharpe < 0.8 → divergences may not be reliable
+
+### IMPLEMENTATION NOTES
+- **Hidden Bullish Divergence:** Price LL + Stoch HL (in downtrend, suggests exhaustion)
+- **Hidden Bearish Divergence:** Price HH + Stoch LH (in uptrend, suggests exhaustion)
+- Divergence = last swing low/high vs. previous swing low/high
+- Confirm with candle pattern (engulfing, bullish hammer, etc.)
+- Stochastic = (close - lowest low) / (highest high - lowest low) × 100
+
+---
+
+## STRATEGY #10: Machine-Learning-Enhanced Pattern Recognition
+
+**STRATEGY:** ML Binary Signal Classifier  
+**ASSET:** XAU/USD  
+**TIMEFRAME:** H1, H4  
+**CATEGORY:** Machine Learning / Pattern  
+
+### ENTRY RULES (Long)
+- ML model outputs "High Probability Bullish" signal (score > 0.65)
+- Price is above EMA(20) (no counter-trend entry)
+- ADX > 15 (optional confirmation)
+
+### ENTRY RULES (Short)
+- ML model outputs "High Probability Bearish" signal (score > 0.65)
+- Price is below EMA(20) (no counter-trend entry)
+- ADX > 15 (optional confirmation)
+
+### EXIT RULES
+- **Take Profit:** ATR × 2 from entry
+- **Stop Loss:** ATR × 1 from entry
+- **Time Exit:** Exit if model signal flips (re-score every bar)
+
+### PARAMETERS (AI-Tunable)
+| Parameter | Range | Default | Notes |
+|-----------|-------|---------|-------|
+| ml_model_type | {lgbm, xgb, neural} | lgbm | Model algorithm (0=lgbm, 1=xgb, 2=neural) |
+| signal_threshold | [0.55..0.75] | 0.65 | Confidence threshold |
+| atr_period | [10..20] | 14 | ATR for TP/SL |
+| tp_atr_mult | [1.5..2.5] | 2.0 | TP distance |
+| sl_atr_mult | [0.7..1.2] | 1.0 | SL distance |
+| ema_period | [15..30] | 20 | EMA bias filter |
+| min_adx_filter | [10..20] | 15 | Trend confirmation (optional) |
+| refit_freq_days | [1..7] | 3 | Days between model retraining |
+
+### MODEL INPUT FEATURES
+- **OHLC Candles:** Last 10 candles (40 features: open, high, low, close)
+- **Volume:** Current bar, 20-bar MA
+- **Indicators:**
+  - RSI(14)
+  - MACD (12,26,9)
+  - ATR(14)
+  - EMA(20), EMA(50)
+  - Bollinger Bands (20,2)
+- **Lagged Returns:** Last 1, 5, 10 bars
+- **Total Features:** ~60–80
+
+### MODEL OUTPUT
+- Binary classification: 0 = Bearish, 1 = Bullish
+- Confidence score: 0–1 (use > 0.65 for high-confidence trades only)
+
+### REGIME CONDITIONS
+- **Works Best In:** Diverse market conditions (model learns across regimes)
+- **Avoid In:** Black-swan events, market dislocations (out-of-training-data behavior)
+- **Best Time:** Any time; retrain model on new data every 3–7 days
+
+### EXPECTED BASELINE (Historical)
+- **Win Rate:** 55–68% (depends on feature engineering)
+- **Avg R:R Ratio:** 1:1.5 to 1:2.5
+- **Sharpe (Backtest):** ~1.2–1.6
+- **Typical Drawdown:** 8–12%
+- **Trades/Month:** 15–30 (high signal frequency)
+
+### RISK FACTORS & VALIDATION
+- **Failure Modes:** Overfitting to historical data; model drift; concept drift; data leakage
+- **Data Needs:** Min 3 years H1/H4 OHLC + volume data for training
+- **AI Should Check:**
+  - Feature importance ranking (which features drive predictions?)
+  - Backtest Sharpe vs. out-of-sample Sharpe (overfitting detection)
+  - Model retrained every N days; old model performance < new model → drift
+  - Sharpe < 0.8 OOS → model degradation, retrain required
+  - Confusion matrix: False Positive rate (bad shorts), False Negative rate (missed longs)
+
+### IMPLEMENTATION NOTES
+- **Feature Engineering:** Normalize all features to 0–1 range
+- **Training/Validation Split:** 70% train, 15% validation, 15% test (out-of-sample)
+- **Rebalancing:** Retrain model every 3–7 days on rolling window of data
+- **Deployment:** Use best model from validation set; monitor OOS performance
+- **Fallback:** If model Sharpe degrades < 0.8, revert to simpler strategies
+- **Risk Management:** Start with micro-lots (0.1% risk per trade); scale up slowly
+
+### MODEL TUNING (Hyperparameters)
+- **LGBM:** num_leaves: [20..50], learning_rate: [0.01..0.1], n_estimators: [100..500]
+- **XGBoost:** max_depth: [3..7], learning_rate: [0.01..0.1], n_estimators: [100..500]
+- **Neural Network:** hidden_layers: [2–3], neurons: [64–256], dropout: [0.1–0.3]
+
+---
+
+## SUMMARY TABLE
+
+| # | Strategy | Timeframe | Category | Win% | Sharpe | Drawdown | Trades/Mo |
+|----|----------|-----------|----------|------|--------|----------|-----------|
+| 1 | MA Crossover | H1, D1 | Trend | 52–58% | 1.2–1.5 | 8–12% | 8–15 |
+| 2 | Range Breakout | H4, D1 | Breakout | 50–56% | 1.1–1.4 | 10–15% | 4–8 |
+| 3 | RSI Pullback | H4, D1 | Trend+Reversion | 54–62% | 1.3–1.6 | 7–10% | 5–10 |
+| 4 | BB Mean Reversion | H1, H4 | Reversion | 55–65% | 1.2–1.4 | 9–13% | 10–20 |
+| 5 | Swing Pullback | H4, D1 | Price Action | 50–58% | 1.0–1.3 | 8–12% | 6–12 |
+| 6 | News Breakout | M15, H1 | Event-Driven | 48–55% | 0.9–1.2 | 10–15% | 5–10 |
+| 7 | Session Momentum | H1 | Session-Based | 52–60% | 1.2–1.5 | 7–10% | 6–12 |
+| 8 | Regime-Aware | D1 | Regime Filter | 55–62% | 1.3–1.6 | 7–11% | 5–12 |
+| 9 | Stoch Divergence | H4, D1 | Divergence | 52–60% | 1.1–1.4 | 8–12% | 4–8 |
+| 10 | ML Classifier | H1, H4 | ML Pattern | 55–68% | 1.2–1.6 | 8–12% | 15–30 |
+
+---
+
+## VALIDATION NOTES FOR AI/DEVELOPER
+
+1. **All strategies require walk-forward backtesting** across 4+ folds
+2. **Out-of-sample performance** must be >= 70% of in-sample Sharpe
+3. **Parameter optimization** must stay within defined [Min..Max] ranges
+4. **No single parameter** should account for >30% of total P&L (diversify alpha)
+5. **Engine integration** only after passing all 6-phase validation framework
+6. **Monthly performance review** required; disable strategies with Sharpe < 0.8 OOS
+
+---
+
+**End of Strategies Document**  
+*Format Version 2.0 | Last Updated: April 17, 2026*

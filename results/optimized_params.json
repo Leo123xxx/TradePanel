@@ -1,0 +1,25 @@
+{
+    "institutional_silver_bullet": {
+        "params": {
+            "lookback_sweep": 10,
+            "risk_reward": 1.5
+        },
+        "PF": 0.5061,
+        "Sharpe": -3.9016,
+        "WR": 37.5,
+        "Trades": 16,
+        "Score": 0.06094051232221636
+    },
+    "swing_pullback": {
+        "params": {
+            "swing_lookback": 8,
+            "tp_pips": 100,
+            "sl_pips": 30
+        },
+        "PF": 1.0574,
+        "Sharpe": 0.2814,
+        "WR": 36.43,
+        "Trades": 1164,
+        "Score": 0.9122815449414253
+    }
+}

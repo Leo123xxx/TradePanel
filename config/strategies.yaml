@@ -1,4 +1,23 @@
-ma_crossover:
+# ============================================================================
+# ACTIVE STRATEGIES - TOP 10 BY WIN RATE (Updated 2026-04-22)
+# ============================================================================
+active:
+  - dual_ema_fractal          # 55.62% win rate - BEST OVERALL
+  - cot_sentiment             # 52.55% win rate
+  - rsi_bounce                # 52.16% win rate
+  - vwap_momentum             # 51.05% win rate
+  - session_momentum          # 50.70% win rate
+  - moving_average_crossover  # 50.38% win rate
+  - rsi_2                     # 49.98% win rate
+  - range_breakout            # 49.59% win rate
+  - turtle_soup               # 49.25% win rate
+  - orb                       # 49.22% win rate
+
+# ============================================================================
+# ALL STRATEGY DEFINITIONS
+# ============================================================================
+
+moving_average_crossover:
   name: Moving Average Crossover
   category: Trend Following
   status: implemented

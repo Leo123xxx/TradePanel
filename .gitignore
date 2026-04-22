@@ -137,3 +137,73 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# ============================================================================
+# PYTHON & PROJECT SPECIFIC
+# ============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Project Secrets & Sensitive Data
+broker_details.txt
+credentials.json
+.env.production
+secrets.yaml
+
+# Database Files
+*.db
+*.dump
+*.sqlite
+*.sqlite3
+postgres_data/
+
+# Cache & Build
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backups & Old Files
+backup_*/
+old_*/
+test_old_*/
+*.backup
+*.bak
+*.orig
+
+# Logs (except important ones)
+logs/*.log
+*.log
+
+# Results (Optional - uncomment to exclude)
+# results/daily_validation/*.json
+# results/daily_validation/*.csv
+# results/backtests/
+
+# Temporary Files
+*.tmp
+*.temp
+.DS_Store
+
+# Project Data
+backtesting/journals/*.csv
+data/*.json
+!data/registry_template.json

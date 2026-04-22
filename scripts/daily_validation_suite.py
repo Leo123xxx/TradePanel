@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 scripts/daily_validation_suite.py â€” Daily validation suite for all 25 strategies.
 
@@ -101,7 +101,7 @@ class DailyValidationSuite:
             "status": "SUCCESS" if failed == 0 else "WARNING",
         }
 
-        logger.info(f"[{summary['timestamp']}] Validated 25 strategies: {passed} PASS, {failed} FAIL, {warned} WARN")
+        logger.info(f"[{summary['timestamp']}] Validated {len(self.validation_results)} strategies: {passed} PASS, {failed} FAIL, {warned} WARN")
         logger.info(f"[{summary['timestamp']}] Data sync: All 7 pairs current (< 24h old)")
         logger.info(f"[{summary['timestamp']}] Generated optimization recommendations ({len(self.optimization_queue)} queued)")
         logger.info(f"[{summary['timestamp']}] Created visualization data (5 charts ready for web)")
@@ -111,41 +111,81 @@ class DailyValidationSuite:
         return {**summary, "dashboard": dashboard_data}
 
     def validate_all_strategies(self):
-        """Validate all 25 strategies against quality thresholds."""
+        """Validate strategies from config file."""
         logger.info("Starting strategy validation...")
 
         pairs = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD"]
         timeframes = ["H1"]
 
-        strategies_to_test = [
-            # Original 10 strategies
-            "moving_average_crossover",
-            "rsi_bounce",
-            "macd_trend",
-            "gold_momentum_breakout",
-            "range_breakout",
-            "bb_mean_reversion",
-            "session_momentum",
-            "crypto_rsi_extremes",
-            "stoch_divergence",
-            "volatility_squeeze_breakout",
-            # New 15 LeoDeX V2 strategies
-            "institutional_silver_bullet",
-            "ict_judas_swing",
-            "turtle_soup",
-            "dual_ema_momentum",
-            "triple_macd_scalping",
-            "dual_ema_fractal",
-            "rsi_2",
-            "vwap_momentum",
-            "hikkake_trap",
-            "orb",
-            "rvgi_cci_confluence",
-            "volatility_contraction",
-            "stat_arb_gold_silver",
-            "naked_price_action",
-            "cot_sentiment",
-        ]
+        # READ FROM CONFIG FILE INSTEAD OF HARDCODED LIST
+        config_path = PROJECT_ROOT / "config" / "strategies.yaml"
+        try:
+            with open(config_path, 'r') as f:
+                config_data = yaml.safe_load(f)
+            
+            # Get active strategies from config
+            strategies_to_test = config_data.get('active', [])
+            
+            if not strategies_to_test:
+                logger.warning("No active strategies found in config. Using all 25 strategies.")
+                strategies_to_test = [
+                    "moving_average_crossover",
+                    "rsi_bounce",
+                    "macd_trend",
+                    "gold_momentum_breakout",
+                    "range_breakout",
+                    "bb_mean_reversion",
+                    "session_momentum",
+                    "crypto_rsi_extremes",
+                    "stoch_divergence",
+                    "volatility_squeeze_breakout",
+                    "institutional_silver_bullet",
+                    "ict_judas_swing",
+                    "turtle_soup",
+                    "dual_ema_momentum",
+                    "triple_macd_scalping",
+                    "dual_ema_fractal",
+                    "rsi_2",
+                    "vwap_momentum",
+                    "hikkake_trap",
+                    "orb",
+                    "rvgi_cci_confluence",
+                    "volatility_contraction",
+                    "stat_arb_gold_silver",
+                    "naked_price_action",
+                    "cot_sentiment",
+                ]
+            else:
+                logger.info(f"Loaded {len(strategies_to_test)} active strategies from config")
+        except Exception as e:
+            logger.error(f"Error reading config: {e}. Using all 25 strategies.")
+            strategies_to_test = [
+                "moving_average_crossover",
+                "rsi_bounce",
+                "macd_trend",
+                "gold_momentum_breakout",
+                "range_breakout",
+                "bb_mean_reversion",
+                "session_momentum",
+                "crypto_rsi_extremes",
+                "stoch_divergence",
+                "volatility_squeeze_breakout",
+                "institutional_silver_bullet",
+                "ict_judas_swing",
+                "turtle_soup",
+                "dual_ema_momentum",
+                "triple_macd_scalping",
+                "dual_ema_fractal",
+                "rsi_2",
+                "vwap_momentum",
+                "hikkake_trap",
+                "orb",
+                "rvgi_cci_confluence",
+                "volatility_contraction",
+                "stat_arb_gold_silver",
+                "naked_price_action",
+                "cot_sentiment",
+            ]
 
         logger.info(f"Testing {len(strategies_to_test)} strategies x {len(pairs)} pairs x {len(timeframes)} timeframes")
 
@@ -313,7 +353,7 @@ class DailyValidationSuite:
         dashboard = {
             "last_update": datetime.utcnow().isoformat() + "Z",
             "validation_summary": {
-                "total_strategies": 25,
+                "total_strategies": len(set(r["strategy"] for r in self.validation_results)),
                 "total_tests": total,
                 "passed": passed,
                 "failed": failed,

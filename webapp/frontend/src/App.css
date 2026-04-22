@@ -1,0 +1,9 @@
+/* App.css - Cleaned up to avoid conflicts */
+#root {
+  width: 100%;
+}
+
+.offline {
+  background-color: var(--critical) !important;
+  box-shadow: 0 0 8px var(--critical) !important;
+}

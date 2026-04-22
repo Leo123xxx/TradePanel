@@ -1,0 +1,11 @@
+# Backtesting dependencies — Step 11 only
+# Requires Python 3.11 or 3.12 (numba does NOT support Python 3.14+)
+#
+# Setup:
+#   py -3.11 -m venv .venv-backtest
+#   .venv-backtest\Scripts\activate
+#   pip install -r requirements.txt
+#   pip install -r requirements-backtesting.txt
+
+vectorbt
+backtrader

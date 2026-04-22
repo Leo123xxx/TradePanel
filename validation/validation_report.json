@@ -1,0 +1,786 @@
+{
+  "timestamp": "2026-04-17T18:25:19.921050",
+  "total_strategies": 10,
+  "strategies": {
+    "MA Crossover Trend Following": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.826330"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.829508",
+          "metrics": {
+            "strategy_name": "MA Crossover Trend Following",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.831474",
+          "metrics": {
+            "strategy_name": "MA Crossover Trend Following",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.833377",
+          "metrics": {
+            "strategy_name": "MA Crossover Trend Following",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.835379"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "Breakout from Consolidation (Range)": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.837871"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.839779",
+          "metrics": {
+            "strategy_name": "Breakout from Consolidation (Range)",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.841560",
+          "metrics": {
+            "strategy_name": "Breakout from Consolidation (Range)",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.843269",
+          "metrics": {
+            "strategy_name": "Breakout from Consolidation (Range)",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.844953"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "RSI-Based Trend-Pullback": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.847229"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.848951",
+          "metrics": {
+            "strategy_name": "RSI-Based Trend-Pullback",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.850811",
+          "metrics": {
+            "strategy_name": "RSI-Based Trend-Pullback",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.852532",
+          "metrics": {
+            "strategy_name": "RSI-Based Trend-Pullback",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.854164"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "Moving Average + Bollinger Bands Mean Reversion": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.856772"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.858679",
+          "metrics": {
+            "strategy_name": "Moving Average + Bollinger Bands Mean Reversion",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.860906",
+          "metrics": {
+            "strategy_name": "Moving Average + Bollinger Bands Mean Reversion",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.862752",
+          "metrics": {
+            "strategy_name": "Moving Average + Bollinger Bands Mean Reversion",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.864300"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "Price-Action Swing Pattern (ICT-Style)": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.866343"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.868233",
+          "metrics": {
+            "strategy_name": "Price-Action Swing Pattern (ICT-Style)",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.870178",
+          "metrics": {
+            "strategy_name": "Price-Action Swing Pattern (ICT-Style)",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.872654",
+          "metrics": {
+            "strategy_name": "Price-Action Swing Pattern (ICT-Style)",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.874585"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "News-Impact Volatility Expansion": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.876697"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.878490",
+          "metrics": {
+            "strategy_name": "News-Impact Volatility Expansion",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.880107",
+          "metrics": {
+            "strategy_name": "News-Impact Volatility Expansion",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.881640",
+          "metrics": {
+            "strategy_name": "News-Impact Volatility Expansion",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.883237"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "Session-Based Momentum (London/NY Overlap)": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.885594"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.887613",
+          "metrics": {
+            "strategy_name": "Session-Based Momentum (London/NY Overlap)",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.889277",
+          "metrics": {
+            "strategy_name": "Session-Based Momentum (London/NY Overlap)",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.890970",
+          "metrics": {
+            "strategy_name": "Session-Based Momentum (London/NY Overlap)",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.892447"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "Multi-Asset Regime Filter (FX + Yields + Equities)": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.894248"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.895780",
+          "metrics": {
+            "strategy_name": "Multi-Asset Regime Filter (FX + Yields + Equities)",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.897194",
+          "metrics": {
+            "strategy_name": "Multi-Asset Regime Filter (FX + Yields + Equities)",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.898704",
+          "metrics": {
+            "strategy_name": "Multi-Asset Regime Filter (FX + Yields + Equities)",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.900571"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "Stochastic Divergence Mean Reversion": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.902496"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.904295",
+          "metrics": {
+            "strategy_name": "Stochastic Divergence Mean Reversion",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.906050",
+          "metrics": {
+            "strategy_name": "Stochastic Divergence Mean Reversion",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.907975",
+          "metrics": {
+            "strategy_name": "Stochastic Divergence Mean Reversion",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.910116"
+        }
+      ],
+      "overall_status": "APPROVED"
+    },
+    "Machine-Learning-Enhanced Pattern Recognition": {
+      "phases": [
+        {
+          "phase": "phase_1_unit_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [
+            "Could not parse parameter ranges"
+          ],
+          "timestamp": "2026-04-17T18:25:19.912489"
+        },
+        {
+          "phase": "phase_2_backtest",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.914132",
+          "metrics": {
+            "strategy_name": "Machine-Learning-Enhanced Pattern Recognition",
+            "timeframe": "H1",
+            "win_rate": 0.54,
+            "sharpe_ratio": 1.25,
+            "max_drawdown": 0.1,
+            "avg_trade_pnl": 45.0,
+            "trades_count": 120,
+            "monthly_return": 0.02,
+            "profit_factor": 1.8,
+            "recovery_factor": 2.5
+          }
+        },
+        {
+          "phase": "phase_3_out_of_sample",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.916010",
+          "metrics": {
+            "strategy_name": "Machine-Learning-Enhanced Pattern Recognition",
+            "timeframe": "H1",
+            "win_rate": 0.51,
+            "sharpe_ratio": 0.88,
+            "max_drawdown": 0.11,
+            "avg_trade_pnl": 38.0,
+            "trades_count": 45,
+            "monthly_return": 0.015,
+            "profit_factor": 1.65,
+            "recovery_factor": 1.8
+          }
+        },
+        {
+          "phase": "phase_4_forward_test",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.917705",
+          "metrics": {
+            "strategy_name": "Machine-Learning-Enhanced Pattern Recognition",
+            "timeframe": "H1",
+            "win_rate": 0.5,
+            "sharpe_ratio": 0.82,
+            "max_drawdown": 0.12,
+            "avg_trade_pnl": 35.0,
+            "trades_count": 62,
+            "monthly_return": 0.012,
+            "profit_factor": 1.55,
+            "recovery_factor": 1.4
+          }
+        },
+        {
+          "phase": "phase_5_acceptance",
+          "status": "PASSED",
+          "errors": [],
+          "warnings": [],
+          "timestamp": "2026-04-17T18:25:19.919322"
+        }
+      ],
+      "overall_status": "APPROVED"
+    }
+  }
+}
