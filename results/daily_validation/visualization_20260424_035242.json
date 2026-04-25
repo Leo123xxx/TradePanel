@@ -1,0 +1,16 @@
+{
+  "data_points": [
+    {
+      "date": "2026-04-24T03:52:42.579700Z",
+      "avg_win_rate": 47.7,
+      "avg_profit_factor": 1.19,
+      "passing_strategies": 50,
+      "total_strategies": 10
+    }
+  ],
+  "metric_definitions": {
+    "avg_win_rate": "Average win rate across all passing strategies",
+    "avg_profit_factor": "Average profit factor (quality metric)",
+    "passing_strategies": "Count of strategies passing validation"
+  }
+}

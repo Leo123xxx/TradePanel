@@ -378,7 +378,7 @@ crypto_rsi_extremes:
   - RANGING
   - CHOPPY
   - ANY
-  enabled: true
+  enabled: false  # TIER_3: disabled — use Tier1/2 only
   pairs:
   - USDJPY
   timeframes:
@@ -412,7 +412,7 @@ volatility_squeeze_breakout:
   status: implemented
   regime:
   - ANY
-  enabled: true
+  enabled: false  # TIER_3: disabled — use Tier1/2 only
   pairs:
   - GBPUSD
   timeframes:
@@ -470,7 +470,7 @@ institutional_silver_bullet:
   regime:
   - TRENDING
   - ANY
-  enabled: true
+  enabled: false  # TIER_3: disabled — use Tier1/2 only
   pairs:
   - EURUSD
   timeframes:
@@ -491,7 +491,7 @@ ict_judas_swing:
   regime:
   - LOW_VOL
   - TRENDING
-  enabled: true
+  enabled: false  # STAGING: disabled — not yet validated
   tier: STAGING
   mode: monitor_only
   pairs:
@@ -558,9 +558,9 @@ triple_macd_scalping:
   regime:
   - TRENDING
   - HIGH_VOL
-  enabled: true
+  enabled: false  # TIER_3: disabled — use Tier1/2 only
   pairs:
-  - USDJPY
+  - XAUUSD
   timeframes:
   - H1
   parameters:
@@ -587,7 +587,7 @@ dual_ema_fractal:
   regime:
   - TRENDING
   enabled: true
-  tier: TIER_3
+  tier: TIER_1  # Promoted: #1 performer 55.62% WR
   pairs:
   - EURUSD
   timeframes:
@@ -605,7 +605,7 @@ rsi_2:
   regime:
   - RANGING
   - TRENDING
-  enabled: true
+  enabled: false  # TIER_3: disabled — use Tier1/2 only
   pairs:
   - USDJPY
   timeframes:
@@ -750,7 +750,7 @@ naked_price_action:
   regime:
   - ANY
   - RANGING
-  enabled: true
+  enabled: false  # TIER_3: disabled — use Tier1/2 only
   tier: TIER_3
   pairs:
   - USDJPY
@@ -765,11 +765,11 @@ naked_price_action:
 cot_sentiment:
   name: COT Sentiment Swing
   category: Advanced
-  status: disabled
+  status: implemented
   regime:
   - TRENDING
-  enabled: false
-  tier: DISABLED
+  enabled: true
+  tier: TIER_1
   pairs:
   - XAUUSD
   - EURUSD
@@ -817,4 +817,164 @@ gold_momentum_breakout:
   - GBPUSD
   timeframes:
   - H1
+  mode: trade
+
+# ============================================================================
+# NEW: 1m/5m Scalping Strategies (April 24, 2026)
+# 6 strategies optimized for fast timeframes with tight stops/targets
+# ============================================================================
+
+fast_ma_scalper:
+  name: Fast MA Crossover Scalper
+  category: Scalping
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: false  # TIER_4: disabled — use Tier1/2 only
+  tier: TIER_4
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  timeframes:
+  - M1
+  - M5
+  parameters:
+    fast_period: 5
+    slow_period: 12
+    tp_atr_mult: 0.8
+    sl_atr_mult: 0.4
+    atr_period: 14
+    min_adx: 15
+  mode: trade
+
+bb_squeeze_scalp:
+  name: Bollinger Band Squeeze Scalp
+  category: Scalping
+  status: implemented
+  regime:
+  - ANY
+  enabled: false  # TIER_4: disabled — use Tier1/2 only
+  tier: TIER_4
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  timeframes:
+  - M1
+  - M5
+  parameters:
+    bb_period: 15
+    bb_std: 1.8
+    atr_period: 14
+    squeeze_bars: 2
+    tp_atr_mult: 0.9
+    sl_atr_mult: 0.35
+  mode: trade
+
+rsi_extremes_scalp:
+  name: RSI Extremes Scalp
+  category: Scalping
+  status: implemented
+  regime:
+  - RANGING
+  - ANY
+  enabled: false  # TIER_4: disabled — use Tier1/2 only
+  tier: TIER_4
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  timeframes:
+  - M1
+  - M5
+  parameters:
+    rsi_period: 10
+    oversold: 25
+    overbought: 75
+    atr_period: 14
+    tp_atr_mult: 0.85
+    sl_atr_mult: 0.4
+    min_rsi_move: 3
+  mode: trade
+
+macd_zero_scalp:
+  name: MACD Zero-Line Scalp
+  category: Scalping
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: false  # TIER_4: disabled — use Tier1/2 only
+  tier: TIER_4
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - BTCUSD
+  timeframes:
+  - M1
+  - M5
+  parameters:
+    macd_fast: 8
+    macd_slow: 17
+    macd_signal: 9
+    atr_period: 14
+    tp_atr_mult: 0.8
+    sl_atr_mult: 0.35
+    volume_filter: 0.8
+  mode: trade
+
+volatility_breakout_scalp:
+  name: Volatility Breakout Scalp
+  category: Scalping
+  status: implemented
+  regime:
+  - HIGH_VOL
+  - ANY
+  enabled: false  # TIER_4: disabled — use Tier1/2 only
+  tier: TIER_4
+  pairs:
+  - XAUUSD
+  - BTCUSD
+  - ETHUSD
+  timeframes:
+  - M1
+  - M5
+  parameters:
+    atr_period: 10
+    atr_multiplier: 1.5
+    momentum_period: 5
+    tp_atr_mult: 0.95
+    sl_atr_mult: 0.45
+    min_volatility_bars: 2
+  mode: trade
+
+ema_ribbon_scalp:
+  name: EMA Ribbon Scalp
+  category: Scalping
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: false  # TIER_4: disabled — use Tier1/2 only
+  tier: TIER_4
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  timeframes:
+  - M1
+  - M5
+  parameters:
+    fast_ema: 5
+    mid_ema: 10
+    slow_ema: 20
+    atr_period: 14
+    tp_atr_mult: 0.85
+    sl_atr_mult: 0.4
+    min_ribbon_separation: 0.0005
   mode: trade

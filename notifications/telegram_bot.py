@@ -40,7 +40,12 @@ class TelegramBot:
         self.app.add_handler(CommandHandler("analysis", self.analysis_command))
         self.app.add_handler(CommandHandler("risk",    self.risk_command))
         self.app.add_handler(CommandHandler("active",  self.active_command))
-        self.app.add_handler(CommandHandler("dashboard", self.dashboard_command))
+        self.app.add_handler(CommandHandler("dashboard",       self.dashboard_command))
+        self.app.add_handler(CommandHandler("backtest_report", self.backtest_report_command))
+        self.app.add_handler(CommandHandler("best_pairs",      self.best_pairs_command))
+        self.app.add_handler(CommandHandler("top_strategies",  self.top_strategies_command))
+        self.app.add_handler(CommandHandler("backtest_status", self.backtest_status_command))
+        self.app.add_handler(CommandHandler("params",          self.strategy_params_command))
 
         print("Telegram bot is starting...")
         await self.app.initialize()
@@ -101,6 +106,26 @@ class TelegramBot:
         msg += "🌐 <a href='http://localhost:5000'>http://localhost:5000</a>\n\n"
         msg += "<i>Note: This is a local server. Ensure the bot is running on your machine to access.</i>"
         await update.message.reply_html(msg)
+
+    async def backtest_report_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Send the most recent overnight backtest report."""
+        await update.message.reply_html(self.router.get_backtest_report())
+
+    async def best_pairs_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show top pairs by win rate from last backtest."""
+        await update.message.reply_html(self.router.get_best_pairs())
+
+    async def top_strategies_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show top 5 strategies by Sharpe ratio from last backtest."""
+        await update.message.reply_html(self.router.get_top_strategies())
+
+    async def backtest_status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Report whether overnight backtest has run today and key stats."""
+        await update.message.reply_html(self.router.get_backtest_status())
+
+    async def strategy_params_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show current parameter tweak suggestions from last backtest."""
+        await update.message.reply_html(self.router.get_strategy_params())
 
     # Outbound Utility (Standalone)
     async def send_direct_message(self, text: str):

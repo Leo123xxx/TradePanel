@@ -174,7 +174,27 @@ def setup_database():
             );
         """)
         
-        print("SUCCESS: All 10 tables created successfully.")
+        # 11. cot_data — CFTC Commitments of Traders weekly data
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS cot_data (
+                cot_id          SERIAL PRIMARY KEY,
+                pair            VARCHAR(10)  NOT NULL,
+                report_date     DATE         NOT NULL,
+                cftc_code       VARCHAR(10)  NOT NULL,
+                comm_long       BIGINT,
+                comm_short      BIGINT,
+                noncomm_long    BIGINT,
+                noncomm_short   BIGINT,
+                net_commercial  BIGINT,
+                net_noncomm     BIGINT,
+                cot_index       NUMERIC(6,2),
+                open_interest   BIGINT,
+                updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (pair, report_date)
+            );
+        """)
+
+        print("SUCCESS: All 11 tables created successfully.")
         
         cur.close()
         conn.close()

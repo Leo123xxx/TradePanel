@@ -23,6 +23,7 @@ class SessionMomentumStrategy(BaseStrategy):
                 "vol_threshold_mult": 1.2,  # NEW: volume confirmation
                 "fast_ema":           20,
                 "slow_ema":           50,
+                "use_partial_tp":      False,  # 2-hr window — momentum fades, skip partial
             }
         super().__init__(
             name="Session_Momentum",

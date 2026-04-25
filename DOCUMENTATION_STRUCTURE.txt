@@ -1,0 +1,199 @@
+================================================================================
+TRADEPANEL DOCUMENTATION - CONSOLIDATED STRUCTURE
+================================================================================
+
+LOCATION: F:\REPOS\leo123xxx\TradePanel\
+
+6 MAIN DOCUMENTATION FILES (Maximum as requested):
+================================================================================
+
+1️⃣  README.md (1.5 KB)
+   ├─ Project overview
+   ├─ Quick start guide
+   ├─ Key features summary
+   ├─ Documentation links
+   └─ Current status & recent fixes
+
+2️⃣  GETTING_STARTED.md (5.7 KB)
+   ├─ Installation guide
+   ├─ Configuration walkthrough
+   ├─ Running the bot (paper/live/backtest)
+   ├─ Dashboard access
+   ├─ Database setup (optional)
+   └─ Common configuration changes
+
+3️⃣  STRATEGIES.md (9.6 KB)
+   ├─ Strategy overview & structure
+   ├─ Top 5 performers explained
+   ├─ All 23+ strategies listed
+   ├─ Strategy selection guide
+   ├─ Validation framework (6 phases)
+   └─ Creating custom strategies
+
+4️⃣  TROUBLESHOOTING.md (8.5 KB)
+   ├─ 7 Execution Blockers (detailed)
+   ├─ 10+ Common issues & fixes
+   ├─ Debug checklist
+   ├─ Log viewing guide
+   ├─ Risk manager failures
+   └─ Recent fixes (April 24)
+
+5️⃣  ARCHITECTURE.md (15.0 KB)
+   ├─ System overview diagram
+   ├─ Directory structure
+   ├─ Configuration reference (config.yaml)
+   ├─ Strategy configuration (strategies.yaml)
+   ├─ Trade execution flow (8 steps)
+   ├─ Risk management checks
+   ├─ REST API reference
+   ├─ Database schema
+   ├─ Scheduler jobs
+   └─ Performance metrics
+
+6️⃣  DEBUG_SUMMARY.md (4.0 KB) [BONUS - Recent fixes]
+   ├─ 3 critical blockers that were fixed
+   ├─ Summary of changes made
+   ├─ What to expect after fixes
+   ├─ Secondary blockers (if still affecting)
+   └─ Next steps
+
+================================================================================
+TOTAL DOCUMENTATION: ~44 KB across 6 files
+================================================================================
+
+QUICK REFERENCE TABLE:
+┌──────────────────┬────────┬───────────────────────────────────────┐
+│ File             │ Size   │ Best For...                           │
+├──────────────────┼────────┼───────────────────────────────────────┤
+│ README.md        │ 1.5 KB │ Overview & getting started            │
+│ GETTING_STARTED  │ 5.7 KB │ Installation & setup                  │
+│ STRATEGIES.md    │ 9.6 KB │ Understanding trading strategies      │
+│ TROUBLESHOOTING  │ 8.5 KB │ Debugging issues & fixes              │
+│ ARCHITECTURE.md  │15.0 KB │ System design & configuration         │
+│ DEBUG_SUMMARY.md │ 4.0 KB │ Recent changes (April 24, 2026)       │
+└──────────────────┴────────┴───────────────────────────────────────┘
+
+DOCUMENTATION READING ORDER (by use case):
+
+🚀 Getting Started:
+   1. README.md → 2. GETTING_STARTED.md → Start trading
+
+📚 Learning:
+   1. README.md → 2. STRATEGIES.md → 3. ARCHITECTURE.md
+
+🐛 Debugging:
+   1. TROUBLESHOOTING.md → 2. DEBUG_SUMMARY.md → Check logs
+
+⚙️ Configuration:
+   1. GETTING_STARTED.md (config section) → 2. ARCHITECTURE.md (reference)
+
+📊 API/Integration:
+   1. ARCHITECTURE.md (API Reference section)
+
+================================================================================
+WHAT CONTENT IS IN EACH FILE:
+
+README.md:
+  • Project features (23+ strategies, risk mgmt, dashboard)
+  • Quick start (5 minutes)
+  • Current status & fixes
+  • Navigation to other docs
+
+GETTING_STARTED.md:
+  • Python, MT5, PostgreSQL setup
+  • Virtual environment & dependencies
+  • Edit config.yaml (account, pairs, trading hours)
+  • Edit strategies.yaml (enable/disable)
+  • Running paper trading
+  • Dashboard & monitoring
+  • Telegram alerts (optional)
+  • Database setup (optional)
+  • Common config changes
+  • Troubleshooting setup issues
+
+STRATEGIES.md:
+  • 23+ strategies overview
+  • Top 5 performers (Dual EMA, COT Sentiment, RSI Bounce, VWAP, Session)
+  • All strategies table (23 total)
+  • Validation framework (6 phases)
+  • Strategy selection guide (by market condition)
+  • How to create custom strategies
+  • Configuration examples
+
+TROUBLESHOOTING.md:
+  • 7 CRITICAL Execution Blockers (detailed with fixes):
+    1. Pair Mismatch ✅ FIXED
+    2. Regime Filter Blocking ✅ FIXED
+    3. Multi-TF Confirmation Blocking ✅ FIXED
+    4. Risk Manager Check Failures
+    5. Data Staleness
+    6. Strategy Not Running
+    7. Scheduler Not Running
+  • 10+ Common Issues (MT5 connection, port in use, margin, modules)
+  • Debug checklist
+  • Log viewing guide
+  • Recent fixes applied
+
+ARCHITECTURE.md:
+  • System diagram (components & flow)
+  • Directory structure
+  • config.yaml reference (all options explained)
+  • strategies.yaml reference
+  • Trade execution flow (8 detailed steps)
+  • Risk management checks (8 checks)
+  • API reference (GET endpoints)
+  • Database schema (trades, signals, strategies tables)
+  • Execution modes (paper, live, backtest)
+  • Scheduler jobs (all registered)
+  • Performance metrics definitions
+  • Key files to modify
+  • Environment variables
+
+DEBUG_SUMMARY.md:
+  • 3 Critical blockers that were FIXED (April 24, 2026):
+    1. Pair mismatch (USDJPY → XAUUSD)
+    2. Regime filter blocking (now disabled)
+    3. Multi-TF confirmation blocking (now disabled)
+  • Changes applied (line numbers)
+  • 3 strategies added
+  • What to expect now (trades should execute)
+  • Secondary blockers (if still affecting)
+  • When to re-enable filters
+
+================================================================================
+OLD DOCUMENTATION (NO LONGER NEEDED):
+
+These were consolidated into the 6 files above:
+  ❌ validation/README.md → STRATEGIES.md
+  ❌ validation/INDEX.md → This summary
+  ❌ validation/test_workflow.md → STRATEGIES.md (Validation section)
+  ❌ docs/archive/Phase1_Execution_Plan.md → Archived (obsolete)
+
+Note: validation/ folder still exists for reference but not required.
+
+================================================================================
+NEXT STEPS:
+
+1. ✅ Read README.md (2 min)
+2. ✅ Jump to relevant doc (see Quick Reference Table)
+3. ✅ Check logs for real-time info: tail -f logs/*.log
+4. ✅ Use TROUBLESHOOTING.md if issues appear
+5. ✅ Reference ARCHITECTURE.md for technical details
+
+================================================================================
+DOCUMENTATION MANAGEMENT:
+
+All documentation is in root folder (F:\REPOS\leo123xxx\TradePanel\) for:
+  ✓ Easy discovery
+  ✓ Single source of truth
+  ✓ No scattered docs
+  ✓ Maximum 6 files (as requested)
+
+Updates made on April 24, 2026:
+  • Fixed pair mismatch (triple_macd_scalping)
+  • Disabled regime filter (temporarily for testing)
+  • Disabled multi-TF confirmation (temporarily for testing)
+  • Added 3 more strategies to active list
+  • All documented in TROUBLESHOOTING.md & DEBUG_SUMMARY.md
+
+================================================================================

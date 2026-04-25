@@ -1,0 +1,251 @@
+═══════════════════════════════════════════════════════════════════════════════
+                        TRADEPANEL COMMAND CHEAT SHEET
+═══════════════════════════════════════════════════════════════════════════════
+
+                           WINDOWS vs LINUX QUICK REF
+
+═══════════════════════════════════════════════════════════════════════════════
+STARTUP
+═══════════════════════════════════════════════════════════════════════════════
+
+API SERVER
+  Windows:   python -m uvicorn webapp.main:app --host 0.0.0.0 --port 8000 --reload
+  Linux:     python -m uvicorn webapp.main:app --host 0.0.0.0 --port 8000 --reload
+
+TRADING BOT
+  Windows:   python main.py --mode paper-trade
+  Linux:     python main.py --mode paper-trade
+
+═══════════════════════════════════════════════════════════════════════════════
+BOT MODES
+═══════════════════════════════════════════════════════════════════════════════
+
+  --mode paper-trade     Paper trading (simulated)
+  --mode validate        Validate all strategies
+  --mode backtest        Run backtest on historical data
+  --mode health          System health check
+  --mode full            Full pipeline
+  --mode scheduler       Run scheduler
+
+═══════════════════════════════════════════════════════════════════════════════
+API ENDPOINTS (All accept ?lookback_days=30)
+═══════════════════════════════════════════════════════════════════════════════
+
+  Health:      curl http://localhost:8000/api/analytics/health
+  Summary:     curl http://localhost:8000/api/analytics/summary?lookback_days=30
+  Strategy:    curl http://localhost:8000/api/analytics/by-strategy?lookback_days=30
+  Asset:       curl http://localhost:8000/api/analytics/by-asset?lookback_days=30
+  Daily:       curl http://localhost:8000/api/analytics/daily?lookback_days=30
+  Weekly:      curl http://localhost:8000/api/analytics/weekly?lookback_days=30
+  Monthly:     curl http://localhost:8000/api/analytics/monthly?lookback_days=30
+  Heatmap:     curl http://localhost:8000/api/analytics/heatmap?lookback_days=30
+  Correlation: curl http://localhost:8000/api/analytics/correlation?lookback_days=30
+  Dashboard:   curl http://localhost:8000/api/analytics/dashboard?lookback_days=30
+
+═══════════════════════════════════════════════════════════════════════════════
+ESSENTIAL COMMANDS
+═══════════════════════════════════════════════════════════════════════════════
+
+ANALYTICS
+  Windows:     python -m analytics.performance_calculator
+  Linux:       python -m analytics.performance_calculator
+
+VIEW LOGS
+  Windows:     Get-Content logs/main.log -Tail 50
+  Linux:       tail -50 logs/main.log
+
+WATCH LOGS LIVE
+  Windows:     Get-Content logs/main.log -Wait
+  Linux:       tail -f logs/main.log
+
+CHECK DATABASE
+  Windows:     python -c "from data.db_client import DBClient; DBClient()"
+  Linux:       python -c "from data.db_client import DBClient; DBClient()"
+
+TEST MODULE
+  Windows:     python -c "from analytics import PerformanceCalculator; print('OK')"
+  Linux:       python -c "from analytics import PerformanceCalculator; print('OK')"
+
+═══════════════════════════════════════════════════════════════════════════════
+PROCESS MANAGEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+CHECK PORT 8000
+  Windows:     netstat -ano | findstr :8000
+  Linux:       lsof -i :8000
+
+KILL PROCESS
+  Windows:     Get-Process python | Stop-Process -Force
+  Linux:       pkill -f python
+
+LIST RUNNING
+  Windows:     Get-Process python
+  Linux:       ps aux | grep python
+
+═══════════════════════════════════════════════════════════════════════════════
+FILE OPERATIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+VIEW FILE
+  Windows:     Get-Content config/config.yaml
+  Linux:       cat config/config.yaml
+
+EDIT FILE
+  Windows:     code config/config.yaml
+  Linux:       nano config/config.yaml  (or vim, nano, etc.)
+
+SEARCH IN FILE
+  Windows:     Select-String "pattern" config/config.yaml
+  Linux:       grep "pattern" config/config.yaml
+
+SEARCH RECURSIVE
+  Windows:     Get-ChildItem -Recurse | Select-String "pattern"
+  Linux:       grep -r "pattern" .
+
+═══════════════════════════════════════════════════════════════════════════════
+ENVIRONMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+CHECK PYTHON
+  Windows:     python --version
+  Linux:       python --version  (or python3 --version)
+
+CREATE VENV
+  Windows:     python -m venv venv
+  Linux:       python -m venv venv
+
+ACTIVATE VENV
+  Windows:     .\venv\Scripts\Activate.ps1
+  Linux:       source venv/bin/activate
+
+INSTALL REQUIREMENTS
+  Windows:     pip install -r requirements.txt
+  Linux:       pip install -r requirements.txt
+
+═══════════════════════════════════════════════════════════════════════════════
+NAVIGATION
+═══════════════════════════════════════════════════════════════════════════════
+
+GO TO PROJECT
+  Windows:     cd F:\REPOS\leo123xxx\TradePanel
+  Linux:       cd ~/repos/leo123xxx/TradePanel
+
+LIST FILES
+  Windows:     Get-ChildItem  (or ls)
+  Linux:       ls -la
+
+SHOW CURRENT DIR
+  Windows:     Get-Location  (or pwd)
+  Linux:       pwd
+
+═══════════════════════════════════════════════════════════════════════════════
+STATUS CHECK (Run this to test everything)
+═══════════════════════════════════════════════════════════════════════════════
+
+WINDOWS PowerShell:
+  # Check API
+  curl http://localhost:8000/api/analytics/health -UseBasicParsing
+
+  # Check Database
+  python -c "from data.db_client import DBClient; DBClient()"
+
+  # Check Port 8000
+  netstat -ano | findstr :8000
+
+  # View Logs
+  Get-Content logs/main.log -Tail 20
+
+LINUX Bash:
+  # Check API
+  curl http://localhost:8000/api/analytics/health
+
+  # Check Database
+  python -c "from data.db_client import DBClient; DBClient()"
+
+  # Check Port 8000
+  lsof -i :8000
+
+  # View Logs
+  tail -20 logs/main.log
+
+═══════════════════════════════════════════════════════════════════════════════
+EMERGENCY COMMANDS
+═══════════════════════════════════════════════════════════════════════════════
+
+STOP EVERYTHING
+  Windows:     Get-Process python | Stop-Process -Force
+  Linux:       pkill -9 python
+
+CLEAR SCREEN
+  Windows:     Clear-Host  (or cls)
+  Linux:       clear
+
+FIND PROCESS ON PORT
+  Windows:     netstat -ano | findstr :8000
+  Linux:       lsof -i :8000 -t | xargs kill
+
+═══════════════════════════════════════════════════════════════════════════════
+QUICK START SEQUENCE (Total Time: ~5 minutes)
+═══════════════════════════════════════════════════════════════════════════════
+
+FIRST TIME SETUP (Run once):
+  cd F:\REPOS\leo123xxx\TradePanel  [Windows]
+  cd ~/repos/leo123xxx/TradePanel   [Linux]
+  python -m venv venv
+  .\venv\Scripts\Activate.ps1       [Windows] OR source venv/bin/activate [Linux]
+  pip install -r requirements.txt
+
+DAILY STARTUP:
+  TERMINAL 1: python -m uvicorn webapp.main:app --host 0.0.0.0 --port 8000
+  TERMINAL 2: python main.py --mode paper-trade
+
+  Then verify: curl http://localhost:8000/api/analytics/health
+
+═══════════════════════════════════════════════════════════════════════════════
+KEY DIRECTORIES
+═══════════════════════════════════════════════════════════════════════════════
+
+  config/          → Configuration files (config.yaml, strategies.yaml)
+  analytics/       → Performance calculator and analytics engine
+  webapp/          → FastAPI web server and API endpoints
+  logs/            → Application logs
+  data/            → Database client and data processing
+  forward_test/    → Paper trading engine and backtesting
+
+═══════════════════════════════════════════════════════════════════════════════
+PORTS & SERVICES
+═══════════════════════════════════════════════════════════════════════════════
+
+  8000  →  FastAPI server (API)
+  5432  →  PostgreSQL database
+
+═══════════════════════════════════════════════════════════════════════════════
+NOTES
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Always use PowerShell on Windows (not CMD)
+✓ Always activate venv before running anything
+✓ Check logs/ if something breaks
+✓ API server must be running for dashboard
+✓ Database must be running on localhost:5432
+✓ -UseBasicParsing avoids PowerShell security warnings on curl
+
+═══════════════════════════════════════════════════════════════════════════════
+USEFUL ALIASES (Add to shell config)
+═══════════════════════════════════════════════════════════════════════════════
+
+PowerShell ($PROFILE):
+  function api { python -m uvicorn webapp.main:app --host 0.0.0.0 --port 8000 }
+  function bot { python main.py --mode paper-trade }
+  function logs { Get-Content logs/main.log -Wait }
+  function report { python -m analytics.performance_calculator }
+
+Bash (~/.bashrc):
+  alias api='python -m uvicorn webapp.main:app --host 0.0.0.0 --port 8000'
+  alias bot='python main.py --mode paper-trade'
+  alias logs='tail -f logs/main.log'
+  alias report='python -m analytics.performance_calculator'
+
+═══════════════════════════════════════════════════════════════════════════════
+Last Updated: April 24, 2026 | Version: 1.0 | Print & Keep This Page Handy!
+═══════════════════════════════════════════════════════════════════════════════

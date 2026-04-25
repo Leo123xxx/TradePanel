@@ -8,6 +8,8 @@ APPROVED_TIMEFRAMES = ["H4", "D1"]
 class RSIPullbackStrategy(BaseStrategy):
     """
     RSI Pullback in Trend Strategy.
+    Enters on RSI pullback within an established EMA trend.
+    RR = 3:1 (tp_atr_mult=3.0, sl_atr_mult=1.0).
     """
 
     def __init__(self, params: dict = None):
@@ -19,8 +21,9 @@ class RSIPullbackStrategy(BaseStrategy):
                 "fast_ema": 20,
                 "slow_ema": 50,
                 "atr_period": 14,
-                "tp_atr_mult": 2.0,
-                "sl_bars_lookback": 5
+                "tp_atr_mult": 3.0,    # RR 3:1 (was 2:1 with uncontrolled swing SL)
+                "sl_atr_mult": 1.0,    # explicit ATR-based SL
+                "sl_bars_lookback": 5  # kept for signal-entry context only
             }
         super().__init__(
             name="RSI_Pullback",
@@ -46,8 +49,10 @@ class RSIPullbackStrategy(BaseStrategy):
         adx_df = ta.adx(df['high'], df['low'], df['close'], length=14)
         df['adx'] = adx_df["ADX_14"]
 
-        df['trend_up'] = (df['ema_fast'] > df['ema_slow']) | ((df['adx'] > 25) & (df['close'] > df['ema_fast']))
-        df['trend_down'] = (df['ema_fast'] < df['ema_slow']) | ((df['adx'] > 25) & (df['close'] < df['ema_fast']))
+        df['trend_up'] = (df['ema_fast'] > df['ema_slow']) | \
+                         ((df['adx'] > 25) & (df['close'] > df['ema_fast']))
+        df['trend_down'] = (df['ema_fast'] < df['ema_slow']) | \
+                           ((df['adx'] > 25) & (df['close'] < df['ema_fast']))
 
         df['signal'] = 0
         long_cond = df['trend_up'] & df['rsi'].between(p_lower, p_upper) & (df['close'] > df['ema_fast'])
@@ -56,6 +61,7 @@ class RSIPullbackStrategy(BaseStrategy):
         df.loc[long_cond, 'signal'] = 1
         df.loc[short_cond, 'signal'] = -1
 
+        # Suppress consecutive identical signals (only entry, not continuation)
         df.loc[(df['signal'] == 1) & (df['signal'].shift(1) == 1), 'signal'] = 0
         df.loc[(df['signal'] == -1) & (df['signal'].shift(1) == -1), 'signal'] = 0
 

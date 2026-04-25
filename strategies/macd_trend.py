@@ -14,7 +14,10 @@ class MACDTrendStrategy(BaseStrategy):
                 "macd_slow": 26,
                 "macd_signal": 9,
                 "adx_length": 14,
-                "adx_threshold": 25
+                "adx_threshold": 25,
+                "tp_atr_mult": 3.0,    # trend following — wider target
+                "sl_atr_mult": 1.0,
+                "atr_period": 14
             }
         super().__init__("MACD_Trend", "Trend Following", params)
 

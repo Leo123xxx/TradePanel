@@ -43,7 +43,20 @@ class BacktestEngine:
         with open(config_path, "r") as f:
             self._cfg = yaml.safe_load(f)
 
+        # ZAR conversion rates for backtesting (account currency = ZAR)
+        acct = self._cfg.get("account", {})
+        self._usdzar = acct.get("backtesting_usdzar_rate", 18.50)
+        self._jpyzar = acct.get("backtesting_jpyzar_rate", 0.1233)
+        self._account_currency = acct.get("currency", "ZAR")
+
     def run(self, strategy, symbol, timeframe, data_df, silent=False):
+        # Minimum data guard — prevents running on noise
+        if len(data_df) < 200:
+            raise ValueError(
+                f"Insufficient data for {symbol} {timeframe}: "
+                f"{len(data_df)} bars (need >= 200). Run data ingest first."
+            )
+
         if not silent:
             print(f"\nBacktest: {strategy.name} | {symbol} | {timeframe}")
             print(f"  Bars   : {len(data_df):,}")
@@ -58,12 +71,28 @@ class BacktestEngine:
         pair_cfg = self._load_pair_cfg(symbol)
         pip_size = PIP_SIZES.get(symbol, DEFAULT_PIP_SIZE)
 
+        # Pass pair to strategy if it supports pair-specific data loading (e.g. COT)
+        if hasattr(strategy, "set_pair"):
+            strategy.set_pair(symbol)
         df = strategy.generate_signals(data_df.copy())
+
+        # Session-time filter: zero out signals fired outside peak liquidity hours
+        if hasattr(strategy, "filter_by_session"):
+            df = strategy.filter_by_session(df, symbol)
+
         atr_period = strategy.params.get("atr_period", 14)
         df = self._add_atr(df, atr_period, pip_size)
 
         tp_mult = strategy.params.get("tp_atr_mult", 2.0)
         sl_mult = strategy.params.get("sl_atr_mult", 1.0)
+        # use_partial_tp: trend strategies benefit from partial TP + BE; mean-reversion strategies
+        # should set use_partial_tp=False so they run to their (tighter) full TP target.
+        use_partial_tp = strategy.params.get("use_partial_tp", True)
+
+        # Spread guard: max spread above which we skip entry (mirrors live risk/manager.py check)
+        max_spread_pips = pair_cfg.get("max_spread_pips", pair_cfg.get("spread_pips", 2.0) * 3)
+        current_spread_pips = pair_cfg.get("spread_pips", 2.0)
+        skipped_spread = 0
 
         self.trades = []
         active_trade = None
@@ -79,12 +108,17 @@ class BacktestEngine:
                     active_trade = None
 
             if active_trade is None and prev_bar["signal"] != 0:
+                # Spread guard — skip entry if spread exceeds max_spread_pips
+                if current_spread_pips > max_spread_pips:
+                    skipped_spread += 1
+                    continue
                 direction = "BUY" if prev_bar["signal"] == 1 else "SELL"
                 atr_val = prev_bar.get("atr", np.nan)
                 active_trade = self._open_trade(
                     strategy, symbol, direction,
                     bar["open"], ts, atr_val,
-                    tp_mult, sl_mult, pair_cfg, pip_size
+                    tp_mult, sl_mult, pair_cfg, pip_size,
+                    use_partial_tp=use_partial_tp
                 )
 
         if active_trade is not None:
@@ -132,7 +166,8 @@ class BacktestEngine:
         return df
 
     def _open_trade(self, strategy, symbol, direction, entry_open, ts,
-                    atr_pips, tp_mult, sl_mult, pair_cfg, pip_size):
+                    atr_pips, tp_mult, sl_mult, pair_cfg, pip_size,
+                    use_partial_tp=True):
         spread = pair_cfg.get("spread_pips", 2.0)
         slip = pair_cfg.get("slippage_pips", 1.0)
         total_cost_pips = spread + slip
@@ -142,16 +177,20 @@ class BacktestEngine:
         else:
             entry_price = entry_open - total_cost_pips * pip_size
 
-        tp_price = sl_price = None
+        tp_price = sl_price = tp1_price = None
         if atr_pips is not None and not np.isnan(atr_pips) and atr_pips > 0:
             tp_dist = atr_pips * tp_mult * pip_size
             sl_dist = atr_pips * sl_mult * pip_size
             if direction == "BUY":
                 tp_price = entry_open + tp_dist
                 sl_price = entry_open - sl_dist
+                if use_partial_tp:
+                    tp1_price = entry_open + sl_dist   # 1:1 level
             else:
                 tp_price = entry_open - tp_dist
                 sl_price = entry_open + sl_dist
+                if use_partial_tp:
+                    tp1_price = entry_open - sl_dist   # 1:1 level
 
         return {
             "trade_id": str(uuid.uuid4()),
@@ -163,29 +202,58 @@ class BacktestEngine:
             "entry_price": entry_price,
             "entry_cost_pips": total_cost_pips,
             "tp_price": tp_price,
+            "tp1_price": tp1_price,
             "sl_price": sl_price,
             "open_time": ts,
             "status": "OPEN",
+            "partial_tp_hit": False,
+            "tp1_achieved_price": None,
         }
 
     def _check_exit(self, trade, bar, ts, prev_bar, pair_cfg, pip_size):
         direction = trade["direction"]
-        tp = trade.get("tp_price")
-        sl = trade.get("sl_price")
+        tp  = trade.get("tp_price")
+        tp1 = trade.get("tp1_price")
+        sl  = trade.get("sl_price")
         exit_price = None
         reason = None
 
         if direction == "BUY":
-            if sl is not None and bar["low"] <= sl:
-                exit_price, reason = sl, "SL_HIT"
-            elif tp is not None and bar["high"] >= tp:
-                exit_price, reason = tp, "TP_HIT"
-        else:
-            if sl is not None and bar["high"] >= sl:
-                exit_price, reason = sl, "SL_HIT"
-            elif tp is not None and bar["low"] <= tp:
-                exit_price, reason = tp, "TP_HIT"
+            # --- Phase 1: partial TP not yet hit ---
+            if not trade["partial_tp_hit"]:
+                if sl is not None and bar["low"] <= sl:
+                    exit_price, reason = sl, "SL_HIT"
+                elif tp1 is not None and bar["high"] >= tp1:
+                    trade["partial_tp_hit"] = True
+                    trade["tp1_achieved_price"] = tp1
+                    trade["sl_price"] = trade["entry_open"]  # BE = raw open
+                    return False
+                elif tp is not None and bar["high"] >= tp:
+                    exit_price, reason = tp, "TP_HIT"
+            # --- Phase 2: partial TP hit, SL now at BE ---
+            else:
+                if sl is not None and bar["low"] <= sl:
+                    exit_price, reason = sl, "BE_STOP"
+                elif tp is not None and bar["high"] >= tp:
+                    exit_price, reason = tp, "TP2_HIT"
+        else:  # SELL
+            if not trade["partial_tp_hit"]:
+                if sl is not None and bar["high"] >= sl:
+                    exit_price, reason = sl, "SL_HIT"
+                elif tp1 is not None and bar["low"] <= tp1:
+                    trade["partial_tp_hit"] = True
+                    trade["tp1_achieved_price"] = tp1
+                    trade["sl_price"] = trade["entry_open"]
+                    return False
+                elif tp is not None and bar["low"] <= tp:
+                    exit_price, reason = tp, "TP_HIT"
+            else:
+                if sl is not None and bar["high"] >= sl:
+                    exit_price, reason = sl, "BE_STOP"
+                elif tp is not None and bar["low"] <= tp:
+                    exit_price, reason = tp, "TP2_HIT"
 
+        # Signal reversal exit
         if exit_price is None:
             if (direction == "BUY" and prev_bar["signal"] == -1) or \
                (direction == "SELL" and prev_bar["signal"] == 1):
@@ -200,26 +268,48 @@ class BacktestEngine:
     def _close_trade(self, trade, exit_price, ts, reason, pair_cfg, pip_size):
         pip_val = pair_cfg.get("pip_value_per_lot", 10.0)
         commission = pair_cfg.get("commission_per_lot", 7.0)
-        spread = pair_cfg.get("spread_pips", 2.0)
 
         direction = trade["direction"]
         entry_price = trade["entry_price"]
         lot = trade["lot_size"]
 
-        price_diff = (exit_price - entry_price) if direction == "BUY" \
-            else (entry_price - exit_price)
+        # Partial TP blending: 50% closed at tp1, 50% at final exit
+        if trade.get("partial_tp_hit") and trade.get("tp1_achieved_price") is not None:
+            tp1_p = trade["tp1_achieved_price"]
+            diff_tp1 = (tp1_p - entry_price) if direction == "BUY" else (entry_price - tp1_p)
+            diff_full = (exit_price - entry_price) if direction == "BUY" else (entry_price - exit_price)
+            price_diff = 0.5 * diff_tp1 + 0.5 * diff_full
+        else:
+            price_diff = (exit_price - entry_price) if direction == "BUY" \
+                else (entry_price - exit_price)
+
         gross_pips = price_diff / pip_size
         gross_usd = gross_pips * pip_val * lot
 
-        commission_cost = commission * lot * 2
-        spread_cost = spread * pip_val * lot
-        net_pnl = gross_usd - commission_cost - spread_cost
+        # Commission only — spread is already embedded in entry_price via total_cost_pips
+        # (spread + slip). Do NOT deduct spread again here — that was the double-charge bug.
+        commission_cost = commission * lot
+        spread_cost = 0.0  # informational only; already in gross_pnl via entry_price
+        net_pnl = gross_usd - commission_cost
 
         open_time = trade["open_time"]
         try:
             duration_secs = (ts - open_time).total_seconds()
         except Exception:
             duration_secs = 0
+
+        # Convert net P&L to account currency (ZAR)
+        profit_ccy = self._cfg.get("pairs", {}).get(
+            trade.get("pair", ""), {}
+        ).get("profit_currency", "USD")
+        if profit_ccy == "USD":
+            net_pnl_zar = net_pnl * self._usdzar
+        elif profit_ccy == "JPY":
+            net_pnl_zar = net_pnl * self._usdzar
+        else:
+            net_pnl_zar = net_pnl * self._usdzar
+
+        self.balance += net_pnl
 
         trade.update({
             "exit_price": exit_price,
@@ -231,6 +321,9 @@ class BacktestEngine:
             "commission_cost": round(commission_cost, 4),
             "spread_cost": round(spread_cost, 4),
             "net_pnl": round(net_pnl, 4),
+            "net_pnl_zar": round(net_pnl_zar, 2),
+            "profit_currency": profit_ccy,
+            "usdzar_rate": self._usdzar,
             "status": "CLOSED",
         })
         self.trades.append(dict(trade))

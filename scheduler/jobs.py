@@ -30,14 +30,15 @@ class TradingScheduler:
         self.heartbeat_count = 0
         self.dashboard_started = False
         self.last_trade_check = datetime.now()
-        self.hb_interval_mins = 5 # Send report every 5 mins
+        self.last_pos_count = None
+        self.hb_interval_mins = self.config.get("scheduler", {}).get("telegram_heartbeat_interval_mins", 60) # Send report every X mins
 
     def start(self):
         """Register all 11 jobs and start the scheduler."""
 
         self.scheduler.add_job(
             self._heartbeat_wrapper,
-            IntervalTrigger(seconds=60),
+            IntervalTrigger(seconds=self.config.get("scheduler", {}).get("heartbeat_interval_sec", 60)),
             id="heartbeat",
             name="Heartbeat Monitor",
         )
@@ -77,11 +78,15 @@ class TradingScheduler:
             id="regime_detect",
             name="Market Regime Detector",
         )
+        # Data ingest runs 4× daily (00:05, 06:05, 12:05, 18:05 UTC)
+        # Ensures the DB always has fresh bars for backtests and live signals
+        ingest_hours = self.config.get("scheduler", {}).get("data_ingest_hours", "0,6,12,18")
+        ingest_min   = self.config.get("scheduler", {}).get("data_ingest_minute", 5)
         self.scheduler.add_job(
             self._ingest_daily_data,
-            CronTrigger(hour=0, minute=5),
-            id="daily_ingest",
-            name="Daily M1 Data Ingest",
+            CronTrigger(hour=ingest_hours, minute=ingest_min),
+            id="data_ingest_6h",
+            name="6-Hour Market Data Ingest",
         )
         summary_time = (
             self.config.get("notifications", {})
@@ -100,6 +105,22 @@ class TradingScheduler:
             id="weekly_report",
             name="Weekly Performance Report",
         )
+        # Overnight backtest: runs at 02:00 UTC Mon–Fri after the 00:05 ingest
+        bt_hour = self.config.get("scheduler", {}).get("overnight_backtest_hour", 2)
+        bt_min  = self.config.get("scheduler", {}).get("overnight_backtest_minute", 0)
+        self.scheduler.add_job(
+            self._run_overnight_backtest,
+            CronTrigger(day_of_week="mon-fri", hour=bt_hour, minute=bt_min),
+            id="overnight_backtest",
+            name="Overnight Strategy Backtest",
+        )
+        # COT data refresh — every Friday at 21:00 UTC (after CFTC release ~20:30 UTC)
+        self.scheduler.add_job(
+            self._refresh_cot_data,
+            CronTrigger(day_of_week="fri", hour=21, minute=0),
+            id="cot_refresh",
+            name="CFTC COT Weekly Refresh",
+        )
         self.scheduler.add_job(
             self._db_cleanup,
             CronTrigger(day_of_week="sun", hour=0, minute=30),
@@ -115,7 +136,7 @@ class TradingScheduler:
 
         self.scheduler.start()
         n = len(self.scheduler.get_jobs())
-        print(f"[{datetime.now()}] APScheduler started with {n}/12 jobs.")
+        print(f"[{datetime.now()}] APScheduler started with {n}/14 jobs.")
 
     def stop(self):
         self.scheduler.shutdown()
@@ -127,14 +148,25 @@ class TradingScheduler:
         self.health_monitor.logger.heartbeat()
         self.heartbeat_count += 1
         
+        # Get current positions from MT5
+        current_positions = mt5.positions_get()
+        current_count = len(current_positions) if current_positions else 0
+        
+        # Detect manual position changes
+        pos_changed = False
+        if self.last_pos_count is not None and current_count != self.last_pos_count:
+            pos_changed = True
+        
+        self.last_pos_count = current_count
+        
         # Check for trade activity since last check
         activity = self._get_recent_activity()
         
-        # Send Telegram update if activity found or on 5-min interval
+        # Send Telegram update if activity found or on interval or if position count changed
         is_interval = (self.heartbeat_count % self.hb_interval_mins == 0)
         
-        if activity or is_interval:
-            self._send_telegram_heartbeat(activity)
+        if activity or is_interval or pos_changed:
+            self._send_telegram_heartbeat(activity, external_change=pos_changed)
             self.last_trade_check = datetime.now()
 
         # Note: Dashboard is now started by the TelegramBot class for immediate availability
@@ -170,7 +202,7 @@ class TradingScheduler:
             print(f"Error checking activity: {e}")
             return ""
 
-    def _send_telegram_heartbeat(self, activity: str = ""):
+    def _send_telegram_heartbeat(self, activity: str = "", external_change: bool = False):
         """Sends a structured heartbeat report to Telegram."""
         try:
             # Get MT5 Info
@@ -187,6 +219,8 @@ class TradingScheduler:
             
             if activity:
                 msg += f"\n⚡ <b>RECENT ACTIVITY:</b>\n{activity}\n"
+            elif external_change:
+                msg += f"\n⚠️ <b>EXTERNAL CHANGE:</b>\nManual position update detected.\n"
             
             msg += f"━━━━━━━━━━━━━━━\n"
             msg += f"🕒 <i>Next report in {self.hb_interval_mins}m</i>"
@@ -218,11 +252,14 @@ class TradingScheduler:
             self.notif_bot.send_sync_message(f"❌ <b>Dashboard Startup Failed:</b> {e}")
 
     def _check_mt5_connection(self):
-        """Checks MT5 connection and sends template-formatted alert on failure."""
-        if not self.engine.connector.connect():
-            msg = self.health_monitor.check_mt5_connection()
-            if msg:
-                self.notif_bot.send_sync_message(msg)
+        """Checks MT5 connection and retries with backoff before alerting."""
+        if not self.engine.connector.connected:
+            # Use retry logic — alerts Telegram only if all 3 attempts fail
+            self.engine.connector.connect_with_retry(
+                max_attempts=3,
+                delays=[5, 15, 30],
+                notify_fn=self.notif_bot.send_sync_message
+            )
 
     def _sync_positions(self):
         if not self.engine.connector.connect():
@@ -246,29 +283,50 @@ class TradingScheduler:
         # Connector stays connected for next job
 
     def _rollup_pnl(self):
+        # ZAR account config — used for both P&L conversion and drawdown %
+        acct        = self.config.get("account", {})
+        usdzar      = float(acct.get("backtesting_usdzar_rate", 18.50))
+        balance_zar = float(acct.get("backtesting_balance_zar", 180000.0))
+
         cutoff = datetime.now() - timedelta(hours=1)
+        # Use net_pnl (USD, populated by backtest engine) where available;
+        # fall back to raw price-diff for legacy paper trades missing net_pnl.
         rows = self.db.execute_query(
-            "SELECT SUM(exit_price - entry_price), COUNT(*) FROM trades WHERE status='CLOSED' AND close_time >= %s AND mode='PAPER'",
+            """SELECT COALESCE(SUM(net_pnl), SUM(
+                   CASE WHEN direction='BUY'  THEN (exit_price - entry_price)
+                        WHEN direction='SELL' THEN (entry_price - exit_price)
+                        ELSE 0 END
+               )), COUNT(*)
+               FROM trades
+               WHERE status='CLOSED' AND close_time >= %s AND mode='PAPER'""",
             (cutoff,),
         )
         if not rows or rows[0][0] is None:
             return
-        hourly_pnl, trade_count = rows[0]
+        hourly_pnl_usd, trade_count = float(rows[0][0]), int(rows[0][1])
+        hourly_pnl_zar = round(hourly_pnl_usd * usdzar, 2)
+
         today = datetime.now().date()
         self.db.execute_query(
-            "INSERT INTO daily_summary (date, total_pnl, trade_count, updated_at) VALUES (%s, %s, %s, %s) ON CONFLICT (date) DO UPDATE SET total_pnl = daily_summary.total_pnl + EXCLUDED.total_pnl, trade_count = daily_summary.trade_count + EXCLUDED.trade_count, updated_at = EXCLUDED.updated_at",
-            (today, float(hourly_pnl), trade_count, datetime.now()),
+            """INSERT INTO daily_summary (date, total_pnl, trade_count, updated_at)
+               VALUES (%s, %s, %s, %s)
+               ON CONFLICT (date) DO UPDATE
+               SET total_pnl   = daily_summary.total_pnl + EXCLUDED.total_pnl,
+                   trade_count = daily_summary.trade_count + EXCLUDED.trade_count,
+                   updated_at  = EXCLUDED.updated_at""",
+            (today, hourly_pnl_zar, trade_count, datetime.now()),
         )
 
-        # Drawdown alert check
+        # Drawdown alert — daily_summary.total_pnl is now in ZAR
         try:
-            warn_pct  = self.config.get("risk_management", {}).get("max_drawdown_warning_pct", 12.0)
-            hard_pct  = self.config.get("risk_management", {}).get("max_drawdown_hard_pct", 15.0)
-            bal_rows  = self.db.execute_query(
+            warn_pct = self.config.get("risk_management", {}).get("max_drawdown_warning_pct", 12.0)
+            hard_pct = self.config.get("risk_management", {}).get("max_drawdown_hard_pct", 15.0)
+            bal_rows = self.db.execute_query(
                 "SELECT total_pnl FROM daily_summary WHERE date = %s", (today,)
             )
             if bal_rows:
-                daily_loss_pct = abs(float(bal_rows[0][0])) / 10000.0 * 100  # assume $10k base
+                daily_loss_zar  = float(bal_rows[0][0])
+                daily_loss_pct  = abs(daily_loss_zar) / balance_zar * 100
                 threshold = hard_pct if daily_loss_pct >= hard_pct else warn_pct
                 if daily_loss_pct >= warn_pct:
                     data = {"current_drawdown": round(daily_loss_pct, 2), "threshold": threshold}
@@ -293,52 +351,98 @@ class TradingScheduler:
 
     def _send_daily_summary(self):
         today = datetime.now().date()
+        acct        = self.config.get("account", {})
+        usdzar      = float(acct.get("backtesting_usdzar_rate", 18.50))
+        balance_zar = float(acct.get("backtesting_balance_zar", 180000.0))
+
         rows = self.db.execute_query(
             "SELECT total_pnl, trade_count FROM daily_summary WHERE date = %s", (today,)
         )
-        total_pnl = float(rows[0][0] or 0) if rows else 0.0
-        total_trades = int(rows[0][1] or 0) if rows else 0
+        # total_pnl stored in ZAR (after _rollup_pnl fix)
+        total_pnl_zar = float(rows[0][0] or 0) if rows else 0.0
+        total_trades  = int(rows[0][1] or 0) if rows else 0
+
+        # Direction-aware win count: BUY wins when exit > entry, SELL wins when exit < entry
         win_rows = self.db.execute_query(
-            "SELECT COUNT(*) FROM trades WHERE status='CLOSED' AND mode='PAPER' AND DATE(close_time)=%s AND exit_price > entry_price",
+            """SELECT COUNT(*) FROM trades
+               WHERE status='CLOSED' AND mode='PAPER' AND DATE(close_time)=%s
+               AND ((direction='BUY'  AND exit_price > entry_price)
+                 OR (direction='SELL' AND exit_price < entry_price))""",
             (today,),
         )
         wins = int(win_rows[0][0]) if win_rows else 0
-        currency = "USD"
-        if self.engine.connector.connect():
-            info = mt5.account_info()
-            if info:
-                currency = info.currency
-        
-        stats = {"date": str(today), "total_pnl": round(total_pnl, 2),
-                 "win_rate": round(win_rate, 1), "total_trades": total_trades,
-                 "max_dd": 0, "currency": currency}
+
+        # Max drawdown for the day vs ZAR balance
+        max_dd_pct = round(abs(min(total_pnl_zar, 0)) / balance_zar * 100, 2)
+
+        win_rate = round(wins / total_trades * 100, 1) if total_trades > 0 else 0.0
+        stats = {
+            "date":         str(today),
+            "total_pnl":   f"R {total_pnl_zar:,.2f}",
+            "win_rate":    win_rate,
+            "total_trades": total_trades,
+            "max_dd":      max_dd_pct,
+            "currency":    "ZAR",
+        }
         self.notif_bot.send_sync_message(self.notif_router.format_daily_summary(stats))
 
     def _send_weekly_report(self):
-        week_start = datetime.now() - timedelta(days=7)
+        week_start  = datetime.now() - timedelta(days=7)
+        acct        = self.config.get("account", {})
+        usdzar      = float(acct.get("backtesting_usdzar_rate", 18.50))
+        balance_zar = float(acct.get("backtesting_balance_zar", 180000.0))
+
         rows = self.db.execute_query(
-            "SELECT SUM(exit_price-entry_price), COUNT(*), SUM(CASE WHEN exit_price>entry_price THEN 1 ELSE 0 END), SUM(CASE WHEN exit_price<=entry_price THEN 1 ELSE 0 END) FROM trades WHERE status='CLOSED' AND mode='PAPER' AND close_time>=%s",
+            """SELECT
+                 COALESCE(SUM(net_pnl), SUM(
+                   CASE WHEN direction='BUY'  THEN (exit_price - entry_price)
+                        WHEN direction='SELL' THEN (entry_price - exit_price)
+                        ELSE 0 END
+                 )),
+                 COUNT(*),
+                 SUM(CASE WHEN (direction='BUY'  AND exit_price > entry_price)
+                            OR (direction='SELL' AND exit_price < entry_price)
+                          THEN 1 ELSE 0 END),
+                 SUM(CASE WHEN (direction='BUY'  AND exit_price <= entry_price)
+                            OR (direction='SELL' AND exit_price >= entry_price)
+                          THEN 1 ELSE 0 END)
+               FROM trades
+               WHERE status='CLOSED' AND mode='PAPER' AND close_time>=%s""",
             (week_start,),
         )
         if rows and rows[0][0] is not None:
-            pnl, total, wins, losses = float(rows[0][0]), int(rows[0][1]), int(rows[0][2]), int(rows[0][3])
+            pnl_usd, total, wins, losses = float(rows[0][0]), int(rows[0][1]), int(rows[0][2]), int(rows[0][3])
         else:
-            pnl, total, wins, losses = 0.0, 0, 0, 0
+            pnl_usd, total, wins, losses = 0.0, 0, 0, 0
+        pnl_zar = round(pnl_usd * usdzar, 2)
+
         strat_rows = self.db.execute_query(
-            "SELECT s.name, SUM(t.exit_price-t.entry_price) FROM trades t JOIN strategies s ON t.strategy_id=s.strategy_id WHERE t.status='CLOSED' AND t.mode='PAPER' AND t.close_time>=%s GROUP BY s.name ORDER BY 2 DESC",
-            (week_start,),
+            """SELECT s.name,
+                 COALESCE(SUM(t.net_pnl), SUM(
+                   CASE WHEN t.direction='BUY'  THEN (t.exit_price - t.entry_price)
+                        WHEN t.direction='SELL' THEN (t.entry_price - t.exit_price)
+                        ELSE 0 END
+                 )) * %s AS pnl_zar
+               FROM trades t
+               JOIN strategies s ON t.strategy_id = s.strategy_id
+               WHERE t.status='CLOSED' AND t.mode='PAPER' AND t.close_time>=%s
+               GROUP BY s.name
+               ORDER BY pnl_zar DESC""",
+            (usdzar, week_start),
         )
-        currency = "USD"
-        if self.engine.connector.connect():
-            info = mt5.account_info()
-            if info:
-                currency = info.currency
+
+        # Weekly max drawdown
+        max_dd_pct = round(abs(min(pnl_zar, 0)) / balance_zar * 100, 2)
 
         stats = {
-            "week": f"{week_start.strftime('%b %d')} - {datetime.now().strftime('%b %d')}",
-            "total_pnl": pnl, "winning_trades": wins, "losing_trades": losses,
-            "max_dd": 0, "best_strategy": strat_rows[0][0] if strat_rows else "N/A",
-            "worst_strategy": strat_rows[-1][0] if strat_rows else "N/A", "currency": currency,
+            "week":           f"{week_start.strftime('%b %d')} - {datetime.now().strftime('%b %d')}",
+            "total_pnl":     pnl_zar,
+            "winning_trades": wins,
+            "losing_trades":  losses,
+            "max_dd":         max_dd_pct,
+            "best_strategy":  strat_rows[0][0]  if strat_rows else "N/A",
+            "worst_strategy": strat_rows[-1][0] if strat_rows else "N/A",
+            "currency":       "ZAR",
         }
         self.notif_bot.send_sync_message(self.notif_router.format_weekly_report(stats))
 
@@ -348,6 +452,54 @@ class TradingScheduler:
         self.db.execute_query("DELETE FROM regime_log WHERE timestamp < %s", (cutoff90,))
         self.db.execute_query("DELETE FROM bot_health WHERE timestamp < %s", (cutoff30,))
         print(f"[{datetime.now()}] db_cleanup done.")
+
+    def _run_overnight_backtest(self):
+        """Run full backtest on all Tier 1 & 2 strategies and send Telegram report."""
+        try:
+            import subprocess, sys
+            script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                  "scripts", "run_overnight_backtest.py")
+            if not os.path.exists(script):
+                self.notif_bot.send_sync_message("⚠️ Overnight backtest script not found.")
+                return
+            self.notif_bot.send_sync_message(
+                "\U0001f319 <b>Overnight Backtest Started</b>\n"
+                "Running full Tier 1 & 2 strategy suite\u2026\n"
+                "<i>Results will be posted when complete (~30 min)</i>"
+            )
+            result = subprocess.run(
+                [sys.executable, script],
+                capture_output=True, text=True, timeout=3600
+            )
+            if result.returncode != 0:
+                self.notif_bot.send_sync_message(
+                    f"\u274c <b>Overnight Backtest Failed</b>\n"
+                    f"<pre>{result.stderr[-500:]}</pre>"
+                )
+        except subprocess.TimeoutExpired:
+            self.notif_bot.send_sync_message("⏱ Overnight backtest timed out (>60 min).")
+        except Exception as e:
+            self.notif_bot.send_sync_message(f"❌ Overnight backtest error: {e}")
+
+    def _refresh_cot_data(self):
+        """Fetch latest CFTC COT data and update the cot_data table."""
+        try:
+            from data.cot_feed import COTFeed
+            feed = COTFeed()
+            results = feed.fetch_latest()
+            total = sum(results.values())
+            pairs_ok = [p for p, n in results.items() if n > 0]
+            pairs_fail = [p for p, n in results.items() if n == 0]
+            msg = (
+                f"\U0001f4ca <b>COT Data Updated</b>\n"
+                f"Rows upserted: <b>{total}</b>\n"
+                f"\u2705 {', '.join(pairs_ok) if pairs_ok else 'None'}\n"
+            )
+            if pairs_fail:
+                msg += f"\u26a0\ufe0f Failed: {', '.join(pairs_fail)}"
+            self.notif_bot.send_sync_message(msg)
+        except Exception as e:
+            self.notif_bot.send_sync_message(f"\u274c COT refresh failed: {e}")
 
     def _strategy_correlation_check(self):
         import pandas as pd

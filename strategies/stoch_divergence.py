@@ -39,6 +39,7 @@ class StochDivergenceStrategy(BaseStrategy):
                 "atr_period":            14,
                 "tp_atr_mult":            2.0,
                 "sl_atr_mult":            1.0,
+                "use_partial_tp":          False,  # divergence = mean reversion, no partial
             }
         super().__init__(
             name="Stoch_Divergence",

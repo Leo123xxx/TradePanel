@@ -19,126 +19,157 @@ platform:
 # The backtesting engine must load spread/slippage from here,
 # NOT use a single global default.
 # ============================================================
+# ── ACCOUNT CURRENCY ─────────────────────────────────────────────────────────
+# CONFIRMED: Exness account is ZAR-denominated (verified from MT5 margin rates)
+# All P&L and risk calculations must convert from instrument profit currency to ZAR.
+# USD/ZAR rate is fetched live from MT5 (USDZAR tick). Fallback used if MT5 offline.
+account:
+  currency: ZAR
+  backtesting_usdzar_rate: 18.50   # Fixed rate used in backtests (update quarterly)
+  backtesting_jpyzar_rate: 0.1233  # JPY→ZAR rate (USDJPY ~150 × USDZAR ~18.50 / 150)
+  backtesting_balance_zar: 180000  # Default starting balance for backtests (~$10k USD)
+
 pairs:
 
   XAUUSD:
     display_name: "Gold (Spot)"
     enabled: true
-    spread_pips: 5.0 # Realistic: 3–5 pip-equivalent on H1
-    slippage_pips: 2.0 # Wide spread = higher slippage assumption
-    commission_per_lot: 7.0 # Round-turn ($3.50 entry + $3.50 exit)
+    profit_currency: USD          # CONFIRMED: profit in USD, convert to ZAR at close
+    contract_size: 100            # 100 troy oz per lot
+    digits: 3
+    spread_pips: 5.0              # Realistic 3–5 pip-equivalent on H1
+    slippage_pips: 2.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 entry + 3.5 exit (Exness 2026-04)
     min_lot: 0.01
-    max_lot: 1.0
-    pip_value_per_lot: 10.0 # $10 per pip per 1.0 lot (standard)
+    max_lot: 200.0                # CONFIRMED: Exness max volume (was wrongly set to 1.0)
+    pip_value_per_lot: 10.0       # $10 per pip per lot (100 oz × $0.10/oz per pip)
     typical_daily_range_pips: 250
-    session_bias: london_ny # London/NY overlap is primary
-    data_start: "2022-01-01" # Pull history from this date
-    notes: "Primary instrument. High volatility. Wide spreads must be reflected in
-      cost model."
+    session_bias: london_ny
+    swap_long_pts: -571.2         # CONFIRMED: Exness swap long (in points, 2026-04-24)
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short
+    data_start: "2022-01-01"
+    notes: "Primary instrument. ZAR pip value = pip_value_per_lot × USDZAR rate."
 
   EURUSD:
     display_name: "Euro / US Dollar"
     enabled: true
+    profit_currency: USD
+    contract_size: 100000         # 100,000 EUR per lot
+    digits: 5
     spread_pips: 1.0
     slippage_pips: 0.5
-    commission_per_lot: 7.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 + 3.5 (Exness 2026-04-24)
     min_lot: 0.01
-    max_lot: 10.0
-    pip_value_per_lot: 10.0
+    max_lot: 200.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 10.0       # $10 per pip per lot (100,000 × 0.0001)
     typical_daily_range_pips: 80
-    session_bias: all # Balanced across all sessions
+    session_bias: all
+    swap_long_pts: -6.7           # CONFIRMED: Exness swap long (in points, 2026-04-24)
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short
     data_start: "2022-01-01"
     notes: "Benchmark pair. Tightest spreads. Use as strategy calibration pair."
 
   GBPUSD:
     display_name: "British Pound / US Dollar"
     enabled: true
+    profit_currency: USD
+    contract_size: 100000         # 100,000 GBP per lot
+    digits: 5
     spread_pips: 1.5
     slippage_pips: 0.8
-    commission_per_lot: 7.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 + 3.5 (Exness 2026-04-24)
     min_lot: 0.01
-    max_lot: 10.0
-    pip_value_per_lot: 10.0
+    max_lot: 200.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 10.0       # $10 per pip per lot
     typical_daily_range_pips: 110
-    session_bias: london # London session dominant
+    session_bias: london
+    swap_long_pts: -1.1           # CONFIRMED: Exness swap long (in points, 2026-04-24)
+    swap_short_pts: -1.5          # CONFIRMED: Exness swap short (both sides negative)
     data_start: "2022-01-01"
-    notes: "Higher volatility than EURUSD. Good for session-based and breakout
-      strategies."
+    notes: "Higher volatility than EURUSD. Both swap sides negative — avoid weekend holds."
 
   USDJPY:
     display_name: "US Dollar / Japanese Yen"
     enabled: true
+    profit_currency: JPY          # CONFIRMED: profit in JPY — needs JPY→ZAR conversion
+    contract_size: 100000         # 100,000 USD per lot
+    digits: 3
     spread_pips: 1.0
     slippage_pips: 0.5
-    commission_per_lot: 7.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 + 3.5 (Exness 2026-04-24)
     min_lot: 0.01
-    max_lot: 10.0
-    pip_value_per_lot: 9.0 # ~$9 per pip per lot (varies with exchange rate)
+    max_lot: 300.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 9.0        # ~$9 per pip per lot (varies with USDJPY rate — dynamic)
     typical_daily_range_pips: 80
-    session_bias: tokyo_ny # Tokyo open + NY session
+    session_bias: tokyo_ny
+    swap_long_pts: 0.0            # CONFIRMED: Exness swap long (2026-04-24)
+    swap_short_pts: -14.9         # CONFIRMED: Exness swap short (in points, 2026-04-24)
     data_start: "2022-01-01"
     notes: >
-      Tends to trend persistently. Strong correlation with US yields. BoJ
-      intervention risk in 2022–2024 walk-forward windows — flag anomalies.
+      Profit currency is JPY. Engine uses pip_value_per_lot (USD approx) then
+      multiplies by USDZAR. For precise ZAR P&L: use JPYZAR rate directly.
+      BoJ intervention risk in 2022–2024 WFO windows.
 
   XAGUSD:
     display_name: "Silver (Spot)"
     enabled: true
-    spread_pips: 6.0 # Wider than Gold — budget 5–8 pip-equivalent
+    profit_currency: USD
+    contract_size: 5000           # 5,000 troy oz per lot
+    digits: 3
+    spread_pips: 6.0              # Wider than Gold
     slippage_pips: 3.0
-    commission_per_lot: 7.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 + 3.5 (Exness 2026-04-24)
     min_lot: 0.01
-    max_lot: 3.0 # Smaller max due to high volatility
-    pip_value_per_lot: 5.0
+    max_lot: 200.0                # CONFIRMED: Exness max (was wrongly set to 3.0)
+    pip_value_per_lot: 5.0        # $5 per pip per lot (5,000 oz × $0.001/oz per pip)
     typical_daily_range_pips: 400
     session_bias: london_ny
+    swap_long_pts: -9.3           # CONFIRMED: Exness swap long (in points, 2026-04-24)
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short
     data_start: "2022-01-01"
-    notes: >
-      High correlation with XAUUSD (0.7–0.85). Use for stress testing Gold
-      strategies. Will trigger strategy correlation warning (>0.7) if running
-      alongside XAUUSD — this is intentional and expected.
+    notes: "High correlation with XAUUSD. Max lot was critically wrong (3→200)."
 
   BTCUSD:
     display_name: "Bitcoin / US Dollar"
     enabled: true
-    spread_pips: 50.0 # Floating spread — $50 estimate for cost modelling
-    slippage_pips: 25.0 # High slippage on large orders
-    commission_per_lot: 2.0 # CONFIRMED: 2 USD per lot (Exness MT5 spec, 2026-04-19)
-    min_lot: 0.01 # CONFIRMED: Exness minimum volume
-    max_lot: 200.0 # CONFIRMED: Exness maximum volume (use ≤1.0 in paper mode)
-    pip_value_per_lot: 1.0 # $1 per point per lot (1 BTC contract size, profit in USD)
-    typical_daily_range_pips: 1500 # ~$1,500/day typical
-    session_bias: all_24_7 # 24/7: Sun–Sat 00:00–24:00 CONFIRMED
-    swap_long_pts: -1378.3 # CONFIRMED: Exness swap long (in points)
-    swap_short_pts: 0.0 # CONFIRMED: Exness swap short
+    profit_currency: USD
+    contract_size: 1              # 1 BTC per lot
+    digits: 2
+    spread_pips: 50.0             # Floating — ~$50 estimate
+    slippage_pips: 25.0
+    commission_per_lot: 4.0       # CONFIRMED round-turn: 2.0 entry + 2.0 exit (Exness 2026-04-24)
+    min_lot: 0.01                 # CONFIRMED: Exness minimum
+    max_lot: 200.0                # CONFIRMED: Exness maximum (paper mode: use ≤0.05)
+    pip_value_per_lot: 1.0        # $1 per point per lot
+    typical_daily_range_pips: 1500
+    session_bias: all_24_7
+    swap_long_pts: -1459.5        # CONFIRMED: Exness swap long (was wrong: -1378.3)
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short
     data_start: "2022-01-01"
     notes: >
-      Bitcoin. Symbol CONFIRMED as 'BTCUSD' on Exness MT5 (verified 2026-04-19).
-      24/7 market — ideal for weekend paper trading. High volatility — use
-      larger ATR multipliers for TP/SL (minimum 2.0x ATR). Correlation with
-      ETHUSD is typically 0.85–0.95; avoid running same strategy on both. Paper
-      mode: keep lot_size ≤ 0.01–0.05 due to high notional value per lot.
+      Commission corrected to 4.0 round-turn (was 2.0 — caused 2× undercharge in backtests).
+      Swap corrected to -1459.5 (was -1378.3). Paper mode: keep lot_size ≤ 0.01–0.05.
 
   ETHUSD:
     display_name: "Ethereum / US Dollar"
     enabled: true
-    spread_pips: 5.0 # Floating spread — $5 estimate for cost modelling
+    profit_currency: USD
+    contract_size: 1              # 1 ETH per lot
+    digits: 2
+    spread_pips: 5.0
     slippage_pips: 3.0
-    commission_per_lot: 0.5 # CONFIRMED: 0.5 USD per lot (Exness MT5 spec, 2026-04-19)
-    min_lot: 0.1 # CONFIRMED: Exness minimum volume
-    max_lot: 2000.0 # CONFIRMED: Exness maximum volume (use ≤2.0 in paper mode)
-    pip_value_per_lot: 1.0 # $1 per point per lot (1 ETH contract size, profit in USD)
-    typical_daily_range_pips: 80 # ~$80/day typical
-    session_bias: all_24_7 # 24/7: Sun–Sat 00:00–24:00 CONFIRMED
-    swap_long_pts: -43.6 # CONFIRMED: Exness swap long (in points)
-    swap_short_pts: 0.0 # CONFIRMED: Exness swap short
+    commission_per_lot: 1.0       # CONFIRMED round-turn: 0.5 entry + 0.5 exit (Exness 2026-04-24)
+    min_lot: 0.1                  # CONFIRMED: Exness minimum
+    max_lot: 2000.0               # CONFIRMED: Exness maximum (paper mode: use ≤2.0)
+    pip_value_per_lot: 1.0        # $1 per point per lot
+    typical_daily_range_pips: 80
+    session_bias: all_24_7
+    swap_long_pts: -44.2          # CONFIRMED: Exness swap long (was -43.6)
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short
     data_start: "2022-01-01"
     notes: >
-      Ethereum. Symbol CONFIRMED as 'ETHUSD' on Exness MT5 (verified
-      2026-04-19). 24/7 market. Historically more volatile than BTC on a %
-      basis. Strong positive correlation with BTCUSD — avoid running identical
-      strategies on both. Paper mode: keep lot_size ≤ 0.1 (minimum volume on
-      Exness).
+      Commission corrected to 1.0 round-turn (was 0.5 — caused 2× undercharge in backtests).
+      Swap corrected to -44.2 (was -43.6). Strong correlation with BTCUSD — one strategy max.
 
 # ============================================================
 # BACKTESTING — cost model applied to all backtest runs
@@ -157,15 +188,15 @@ backtesting:
 # RISK MANAGEMENT
 # ============================================================
 risk_management:
-  risk_per_trade_pct: 2.0 # % of account balance risked per trade
+  risk_per_trade_pct: 10.0 # % of account balance risked per trade
   max_lot_size: 1.0 # Hard ceiling on any single trade
   max_concurrent_positions: 5 # Across ALL strategies combined
-  max_spread_pips: 5.0 # Skip trade if live spread exceeds this
+  max_spread_pips: 10.0 # Skip trade if live spread exceeds this
   max_drawdown_warning_pct: 12.0 # Telegram warning fires at this level
-  max_drawdown_hard_pct: 15.0 # Strategy auto-pauses; open positions closed
+  max_drawdown_hard_pct: 20.0 # Strategy auto-pauses; open positions closed
   strategy_correlation_threshold: 0.7 # Monthly correlation check — alert above this
-  use_macro_regime_filter: true # PATH B: Enable macro-based bias filter
-  use_multi_tf_confirmation: true # PATH B: Enable higher-TF trend confirmation
+  use_macro_regime_filter: false # PATH B: DISABLED FOR TESTING — Enable macro-based bias filter
+  use_multi_tf_confirmation: false # PATH B: DISABLED FOR TESTING — Enable higher-TF trend confirmation
   signal_validity_bars: 2 # Minimum period a signal is considered "active"
   trading_hours:
     start: "00:30"
@@ -192,27 +223,123 @@ notifications:
 # ============================================================
 scheduler:
   heartbeat_interval_sec: 60
+  telegram_heartbeat_interval_mins: 30
   mt5_check_interval_sec: 60
   position_sync_interval_sec: 300
   signal_check_interval_sec: 900 # 15 minutes
   pnl_rollup_interval_sec: 3600 # 1 hour
   regime_detect_interval_sec: 3600 # 1 hour
-  data_ingest_time: "00:00"
+  data_ingest_hours: "0,6,12,18"   # Pull fresh data 4x daily at :05 past each hour
+  data_ingest_minute: 5
+  overnight_backtest_hour: 2        # Run full backtest at 02:00 UTC Mon-Fri
+  overnight_backtest_minute: 0
   db_cleanup_day: sunday
-  db_cleanup_time: "00:00"
+  db_cleanup_time: "00:30"
   db_retention_days: 120
 
 # ============================================================
-# ACTIVE STRATEGIES (loaded by scheduler and paper engine)
-# Full parameter definitions in strategies.yaml
+# ACTIVE STRATEGIES — TIER 1 & TIER 2 ONLY
+# Updated 2026-04-24: Tier 3 & 4 strategies DISABLED.
+# dual_ema_fractal PROMOTED to Tier 1 (#1 performer, 55.62% WR).
+# Full parameter definitions in config/strategies.yaml
 # ============================================================
 strategies:
-  - name: triple_macd_scalping
-    enabled: true # Tier 1 Ensemble
-    pairs: [ "XAUUSD" ]
+
+  # ── TIER 1: High-conviction strategies (>50% WR, Sharpe > 1.2) ────────────
+
+  - name: dual_ema_fractal          # #1 — 55.62% WR, Trend Following
+    enabled: true
+    pairs: [ "EURUSD", "GBPUSD", "XAUUSD" ]
     timeframes: [ "H1" ]
 
-  - name: stat_arb_gold_silver
-    enabled: true # Tier 1 Ensemble
+  - name: rsi_bounce                # #3 — 52.16% WR, Mean Reversion
+    enabled: true
+    pairs: [ "EURUSD", "XAUUSD", "GBPUSD" ]
+    timeframes: [ "H1" ]
+
+  - name: stat_arb_gold_silver      # Advanced arb — Gold vs Silver spread
+    enabled: true
     pairs: [ "XAUUSD" ]
     timeframes: [ "H4" ]
+
+  - name: moving_average_crossover  # 50.38% WR, Trend Following
+    enabled: true
+    pairs: [ "EURUSD", "GBPUSD", "USDJPY" ]
+    timeframes: [ "H1" ]
+
+  - name: bb_mean_reversion         # Mean Reversion on XAUUSD
+    enabled: true
+    pairs: [ "XAUUSD", "EURUSD" ]
+    timeframes: [ "H1" ]
+
+  - name: stoch_divergence          # Divergence — EURUSD H4
+    enabled: true
+    pairs: [ "EURUSD", "USDJPY" ]
+    timeframes: [ "H4" ]
+
+  - name: macd_trend                # Trend Following — EURUSD/USDJPY
+    enabled: true
+    pairs: [ "EURUSD", "USDJPY" ]
+    timeframes: [ "H1" ]
+
+  - name: gold_momentum_breakout    # Breakout — XAUUSD/GBPUSD H1
+    enabled: true
+    pairs: [ "XAUUSD", "GBPUSD" ]
+    timeframes: [ "H1" ]
+
+  - name: range_breakout            # Breakout — XAUUSD H4
+    enabled: true
+    pairs: [ "XAUUSD" ]
+    timeframes: [ "H4" ]
+
+  - name: ema_ribbon_trend          # Trend — BTCUSD H4
+    enabled: true
+    pairs: [ "BTCUSD", "ETHUSD" ]
+    timeframes: [ "H4" ]
+
+  - name: cot_sentiment             # #2 — 52.55% WR — CFTC COT pipeline active
+    enabled: true                   # ENABLED: data/cot_feed.py populates cot_data table
+    pairs: [ "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD" ]
+    timeframes: [ "D1" ]
+
+  # ── TIER 2: Solid strategies (~49–51% WR, proven through WFO) ─────────────
+
+  - name: session_momentum          # 50.70% WR — London/NY momentum
+    enabled: true
+    pairs: [ "XAUUSD", "GBPUSD" ]
+    timeframes: [ "H1" ]
+
+  - name: rsi_pullback              # Trend + Reversion hybrid — XAUUSD H4
+    enabled: true
+    pairs: [ "XAUUSD", "USDJPY" ]
+    timeframes: [ "H4" ]
+
+  - name: turtle_soup               # SMC reversal — EURUSD H1/H4
+    enabled: true
+    pairs: [ "EURUSD", "GBPUSD" ]
+    timeframes: [ "H1", "H4" ]
+
+  - name: dual_ema_momentum         # Trend continuation — XAUUSD H1/H4
+    enabled: true
+    pairs: [ "XAUUSD" ]
+    timeframes: [ "H1", "H4" ]
+
+  - name: vwap_momentum             # 51.05% WR — GBPUSD M15/M30
+    enabled: true
+    pairs: [ "GBPUSD", "EURUSD" ]
+    timeframes: [ "M15", "M30" ]
+
+  - name: hikkake_trap              # Inside Bar trap — XAUUSD H4
+    enabled: true
+    pairs: [ "XAUUSD" ]
+    timeframes: [ "H4" ]
+
+  - name: orb                       # 49.22% WR — Opening Range Breakout
+    enabled: true
+    pairs: [ "XAGUSD", "EURUSD" ]
+    timeframes: [ "M15", "H1" ]
+
+  - name: rvgi_cci_confluence       # Breakout confluence — EURUSD H1
+    enabled: true
+    pairs: [ "EURUSD", "GBPUSD" ]
+    timeframes: [ "H1" ]

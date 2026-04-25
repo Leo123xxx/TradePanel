@@ -19,12 +19,16 @@ class BBMeanReversionStrategy(BaseStrategy):
                 "atr_period":        14,
                 "rsi_period":        14,
                 "rsi_os_low":        25,   # Tightened: 25 instead of 20
-                "rsi_os_high":       40,
-                "rsi_ob_low":        60,
+                "rsi_os_high":       35,   # tightened from 40 → higher WR bar for long entry
+                "rsi_ob_low":        65,   # tightened from 60 → higher WR bar for short entry
                 "rsi_ob_high":       75,   # Tightened: 75 instead of 80
                 "vol_threshold_mult": 1.1,
                 "vol_spike_mult":    1.3,   # NEW: volume spike confirmation
                 "adx_max":           20,   # Tightened: 20 instead of 22
+                "tp_atr_mult": 2.0,        # mean reversion TP 2:1
+                "sl_atr_mult": 1.0,
+                "atr_period": 14,
+                "use_partial_tp": False,   # run straight to TP — no BE move
                 "support_lookback":  50,   # NEW: bars to look back for support
                 "support_buffer_pips": 10, # NEW: pips from support
             }

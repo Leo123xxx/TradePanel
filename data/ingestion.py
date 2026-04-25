@@ -32,6 +32,7 @@ from mt5_bridge.connector import MT5Connector
 from mt5_bridge.data_feed import MT5DataFeed, DEFAULT_START_DATE
 from data.resampler import DataResampler
 from data.cleaner import DataCleaner
+from data.db_client import DBClient
 
 # ---------------------------------------------------------------
 # Configuration
@@ -185,8 +186,11 @@ def run_full_ingestion():
         print("FATAL: Could not connect to MT5 terminal. Is it running and logged in?")
         return
 
+    # Initialize database client
+    db = DBClient()
+
     feed = MT5DataFeed()
-    resampler = DataResampler()
+    resampler = DataResampler(db)
     cleaner = DataCleaner()
 
     try:

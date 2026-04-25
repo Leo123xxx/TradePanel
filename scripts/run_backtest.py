@@ -50,10 +50,10 @@ from strategies.stat_arb_gold_silver import StatArbGoldSilver
 from strategies.naked_price_action import NakedPriceAction
 from strategies.ensemble import EnsembleStrategy
 
-# NOTE: COT Sentiment strategy DISABLED (2026-04-21)
-# Reason: Requires external CFTC COT data feeds (not available in current setup)
-# Status: 41% WR, 0.92 PF (unprofitable), 51% drawdown (exceeds 50% limit)
-# Action: Disabled to prevent losses. Can be re-enabled if CFTC data source integrated.
+from strategies.cot_sentiment import COTSentimentStrategy
+# NOTE: COT Sentiment RE-ENABLED (2026-04-24)
+# CFTC COT data pipeline operational via data/cot_feed.py
+# Initial setup: python data/cot_feed.py --history (run once)
 
 STRATEGY_MAP = {
     # Original FX/metals strategies
@@ -92,7 +92,7 @@ STRATEGY_MAP = {
     # Advanced (LeoDeX V2)
     "stat_arb_gold_silver":         StatArbGoldSilver,
     "naked_price_action":           NakedPriceAction,
-    # NOTE: "cot_sentiment" REMOVED - requires external CFTC data (not available)
+    "cot_sentiment":            COTSentimentStrategy,
 }
 
 

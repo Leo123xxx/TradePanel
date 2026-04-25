@@ -1,0 +1,500 @@
+{
+  "last_update": "2026-04-23T23:05:06.039970Z",
+  "validation_summary": {
+    "total_strategies": 10,
+    "total_tests": 50,
+    "passed": 50,
+    "failed": 0,
+    "pass_rate": "100.0%"
+  },
+  "charts": {
+    "performance_matrix": [
+      {
+        "strategy": "dual_ema_fractal",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 47.75,
+        "profit_factor": 1.5947,
+        "sharpe_ratio": 1.2867,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "dual_ema_fractal",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 53.85,
+        "profit_factor": 1.5778,
+        "sharpe_ratio": 2.1962,
+        "tier": "TIER_1"
+      },
+      {
+        "strategy": "dual_ema_fractal",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 52.06,
+        "profit_factor": 1.4199,
+        "sharpe_ratio": -0.1971,
+        "tier": "TIER_1"
+      },
+      {
+        "strategy": "dual_ema_fractal",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 50.69,
+        "profit_factor": 1.1354,
+        "sharpe_ratio": 0.4347,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "dual_ema_fractal",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 50.71,
+        "profit_factor": 0.8378,
+        "sharpe_ratio": -0.2955,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "cot_sentiment",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 47.81,
+        "profit_factor": 0.9738,
+        "sharpe_ratio": 2.3534,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "cot_sentiment",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 49.3,
+        "profit_factor": 1.2572,
+        "sharpe_ratio": 1.2188,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "cot_sentiment",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 45.8,
+        "profit_factor": 1.0308,
+        "sharpe_ratio": -0.3308,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "cot_sentiment",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 44.48,
+        "profit_factor": 0.9564,
+        "sharpe_ratio": 1.1064,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "cot_sentiment",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 46.76,
+        "profit_factor": 0.9434,
+        "sharpe_ratio": -0.1917,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_bounce",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 37.06,
+        "profit_factor": 1.3656,
+        "sharpe_ratio": 0.0369,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_bounce",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 50.58,
+        "profit_factor": 1.2315,
+        "sharpe_ratio": 0.6473,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "rsi_bounce",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 37.0,
+        "profit_factor": 1.3953,
+        "sharpe_ratio": 0.5188,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_bounce",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 40.73,
+        "profit_factor": 1.3025,
+        "sharpe_ratio": 0.8527,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_bounce",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 57.15,
+        "profit_factor": 1.772,
+        "sharpe_ratio": -0.2833,
+        "tier": "TIER_1"
+      },
+      {
+        "strategy": "vwap_momentum",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 38.78,
+        "profit_factor": 0.9969,
+        "sharpe_ratio": 1.8024,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "vwap_momentum",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 40.36,
+        "profit_factor": 0.8915,
+        "sharpe_ratio": 2.264,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "vwap_momentum",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 47.78,
+        "profit_factor": 0.9644,
+        "sharpe_ratio": -0.0651,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "vwap_momentum",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 44.88,
+        "profit_factor": 1.2824,
+        "sharpe_ratio": 0.8736,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "vwap_momentum",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 44.53,
+        "profit_factor": 1.6156,
+        "sharpe_ratio": 2.0935,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "session_momentum",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 44.49,
+        "profit_factor": 1.7945,
+        "sharpe_ratio": 0.4776,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "session_momentum",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 35.46,
+        "profit_factor": 0.97,
+        "sharpe_ratio": 1.8726,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "session_momentum",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 36.87,
+        "profit_factor": 1.5376,
+        "sharpe_ratio": 1.5754,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "session_momentum",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 42.46,
+        "profit_factor": 1.4946,
+        "sharpe_ratio": 1.8166,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "session_momentum",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 44.41,
+        "profit_factor": 1.2129,
+        "sharpe_ratio": -0.2649,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "moving_average_crossover",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 54.04,
+        "profit_factor": 1.0908,
+        "sharpe_ratio": -0.4369,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "moving_average_crossover",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 35.45,
+        "profit_factor": 0.8309,
+        "sharpe_ratio": 1.9263,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "moving_average_crossover",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 42.06,
+        "profit_factor": 1.2427,
+        "sharpe_ratio": 0.5246,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "moving_average_crossover",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 47.12,
+        "profit_factor": 1.4812,
+        "sharpe_ratio": 1.8249,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "moving_average_crossover",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 35.49,
+        "profit_factor": 1.6714,
+        "sharpe_ratio": 0.901,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_2",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 42.76,
+        "profit_factor": 0.9074,
+        "sharpe_ratio": 0.9166,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_2",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 56.63,
+        "profit_factor": 1.0096,
+        "sharpe_ratio": 1.5309,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_2",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 46.6,
+        "profit_factor": 0.9889,
+        "sharpe_ratio": 2.0689,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "rsi_2",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 57.33,
+        "profit_factor": 1.5063,
+        "sharpe_ratio": 0.5394,
+        "tier": "TIER_1"
+      },
+      {
+        "strategy": "rsi_2",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 41.48,
+        "profit_factor": 0.9404,
+        "sharpe_ratio": 0.4751,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "range_breakout",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 47.98,
+        "profit_factor": 0.8778,
+        "sharpe_ratio": -0.2811,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "range_breakout",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 59.34,
+        "profit_factor": 1.2861,
+        "sharpe_ratio": 1.5436,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "range_breakout",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 36.2,
+        "profit_factor": 1.3827,
+        "sharpe_ratio": 1.1321,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "range_breakout",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 39.35,
+        "profit_factor": 1.3376,
+        "sharpe_ratio": 0.6834,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "range_breakout",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 46.05,
+        "profit_factor": 1.5205,
+        "sharpe_ratio": 0.9164,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "turtle_soup",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 51.87,
+        "profit_factor": 1.5634,
+        "sharpe_ratio": 0.423,
+        "tier": "TIER_1"
+      },
+      {
+        "strategy": "turtle_soup",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 37.64,
+        "profit_factor": 1.1144,
+        "sharpe_ratio": 1.7304,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "turtle_soup",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 45.9,
+        "profit_factor": 0.9538,
+        "sharpe_ratio": 0.3417,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "turtle_soup",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 46.66,
+        "profit_factor": 1.4407,
+        "sharpe_ratio": 0.0086,
+        "tier": "TIER_2"
+      },
+      {
+        "strategy": "turtle_soup",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 37.34,
+        "profit_factor": 1.6242,
+        "sharpe_ratio": 1.2519,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "orb",
+        "pair": "XAUUSD",
+        "timeframe": "H1",
+        "win_rate": 42.36,
+        "profit_factor": 1.297,
+        "sharpe_ratio": 1.6066,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "orb",
+        "pair": "EURUSD",
+        "timeframe": "H1",
+        "win_rate": 41.46,
+        "profit_factor": 1.5796,
+        "sharpe_ratio": -0.0609,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "orb",
+        "pair": "GBPUSD",
+        "timeframe": "H1",
+        "win_rate": 48.92,
+        "profit_factor": 0.889,
+        "sharpe_ratio": 0.7533,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "orb",
+        "pair": "USDJPY",
+        "timeframe": "H1",
+        "win_rate": 56.55,
+        "profit_factor": 1.065,
+        "sharpe_ratio": 0.4764,
+        "tier": "TIER_3"
+      },
+      {
+        "strategy": "orb",
+        "pair": "XAGUSD",
+        "timeframe": "H1",
+        "win_rate": 45.24,
+        "profit_factor": 1.6415,
+        "sharpe_ratio": 1.7683,
+        "tier": "TIER_2"
+      }
+    ],
+    "tier_distribution": {
+      "TIER_1": 5,
+      "TIER_2": 9,
+      "TIER_3": 36
+    },
+    "correlation_matrix": {
+      "note": "Correlation check for strategy redundancy (>0.7 = correlated)",
+      "correlated_pairs": [
+        {
+          "strategy_1": "stat_arb_gold_silver",
+          "strategy_2": "institutional_silver_bullet",
+          "correlation": 0.75,
+          "recommendation": "Consider reducing concurrent positions"
+        },
+        {
+          "strategy_1": "dual_ema_momentum",
+          "strategy_2": "triple_macd_scalping",
+          "correlation": 0.68,
+          "recommendation": "Monitor for position overlap"
+        }
+      ]
+    }
+  },
+  "optimization_pipeline": [],
+  "data_sync_status": {
+    "last_sync": "2026-04-23T23:05:06.040052Z",
+    "market_data_pairs": [
+      "XAUUSD",
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "XAGUSD",
+      "BTCUSD",
+      "ETHUSD"
+    ],
+    "backtesting_status": "Current"
+  }
+}

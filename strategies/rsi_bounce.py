@@ -4,51 +4,44 @@ from strategies.base_strategy import BaseStrategy
 
 class RSIBounceStrategy(BaseStrategy):
     """
-    RSI Mean Reversion Strategy.
-    Generates signals when RSI crosses back into the neutral zone from extremes.
+    RSI Mean Reversion Strategy with EMA200 trend filter.
+    Mean reversion strategy: use_partial_tp=False, tight TP at 2:1.
+    Partial TP + BE hurts mean reversion because price reaches 1:1 naturally
+    then snaps back — exit at BE rather than completing the reversal.
     """
+
     def __init__(self, params: dict = None):
         if params is None:
             params = {
-                "rsi_period": 14, 
-                "oversold": 30, 
-                "overbought": 70
+                "rsi_period": 14,
+                "oversold": 20,  # tighter from 25 — only trade true extremes
+                "overbought": 80,  # tighter from 75 — only trade true extremes
+                "ema_trend": 200,
+                "tp_atr_mult": 2.0,     # tighter TP for mean reversion (was 3.0)
+                "sl_atr_mult": 1.0,
+                "atr_period": 14,
+                "use_partial_tp": False  # mean reversion — run to full TP
             }
         super().__init__("RSI_Bounce", "Mean Reversion", params)
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Buy (1): RSI was <= 30 and is now > 30 (Bounce out of oversold)
-        Sell (-1): RSI was >= 70 and is now < 70 (Bounce out of overbought)
-        """
         df = data.copy()
-        
-        rsi_period = self.params.get("rsi_period", 14)
-        overbought = self.params.get("overbought", 70)
-        oversold = self.params.get("oversold", 30)
-        
-        # Calculate RSI
-        # Ensure we have at least rsi_period * 2 bars for stable RSI
-        df['rsi'] = ta.rsi(df['close'], length=rsi_period)
-        
+        rsi_period      = self.params.get("rsi_period", 14)
+        overbought      = self.params.get("overbought", 75)
+        oversold        = self.params.get("oversold", 25)
+        ema_trend_period = self.params.get("ema_trend", 200)
+
+        df['rsi']       = ta.rsi(df['close'], length=rsi_period)
+        df['ema_trend'] = ta.ema(df['close'], length=ema_trend_period)
+        in_uptrend      = df['close'] > df['ema_trend']
+        in_downtrend    = df['close'] < df['ema_trend']
+
         df['signal'] = 0
-        
-        # Determine signals
-        # Buy: RSI crosses above oversold
-        df.loc[(df['rsi'] > oversold) & (df['rsi'].shift(1) <= oversold), 'signal'] = 1
-        
-        # Sell: RSI crosses below overbought
-        df.loc[(df['rsi'] < overbought) & (df['rsi'].shift(1) >= overbought), 'signal'] = -1
-        
+        df.loc[in_uptrend   & (df['rsi'] > oversold)   & (df['rsi'].shift(1) <= oversold),   'signal'] =  1
+        df.loc[in_downtrend & (df['rsi'] < overbought) & (df['rsi'].shift(1) >= overbought), 'signal'] = -1
         return df
 
     def validate_params(self) -> bool:
-        rsi = self.params.get("rsi_period", 0)
-        ob = self.params.get("overbought", 0)
-        os = self.params.get("oversold", 0)
-        
-        if rsi <= 0: return False
-        if os < 0 or os > 50: return False
-        if ob < 50 or ob > 100: return False
-        
-        return True
+        return (self.params.get("rsi_period", 0) > 0 and
+                0 < self.params.get("oversold", 20) < 50 and
+                50 < self.params.get("overbought", 75) < 100)

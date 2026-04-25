@@ -14,7 +14,7 @@ TRADE_CLOSE = """
 🏁 <b>Trade Closed</b>
 🏷 <b>Symbol:</b> {symbol}
 📊 <b>Direction:</b> {direction}
-💰 <b>Profit/Loss:</b> {pnl} {currency}
+💰 <b>P&L (USD):</b> {pnl_usd:+.2f} | <b>ZAR:</b> R {pnl_zar:+,.2f}
 📉 <b>Exit Price:</b> {exit_price}
 📝 <b>Reason:</b> {reason}
 ⏱ <b>Duration:</b> {duration}
@@ -36,7 +36,7 @@ The bot has stopped sending heartbeats!
 
 DAILY_SUMMARY = """
 📅 <b>Daily Summary - {date}</b>
-💰 <b>Total P&L:</b> {total_pnl} {currency}
+💰 <b>Total P&L:</b> {total_pnl}
 📈 <b>Win Rate:</b> {win_rate}%
 🔄 <b>Total Trades:</b> {total_trades}
 📉 <b>Max Drawdown:</b> {max_dd}%
@@ -44,7 +44,7 @@ DAILY_SUMMARY = """
 
 WEEKLY_REPORT = """
 📊 <b>Weekly Report — {week}</b>
-💰 <b>Net P&L:</b> {total_pnl:.2f} {currency}
+💰 <b>Net P&L:</b> R {total_pnl:,.2f}
 📈 <b>Win Rate:</b> {win_rate:.1f}%  ({winning_trades}W / {losing_trades}L)
 🔄 <b>Total Trades:</b> {total_trades}
 📉 <b>Max Drawdown:</b> {max_dd:.2f}%

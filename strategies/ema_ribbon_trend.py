@@ -49,7 +49,7 @@ class EMARibbonTrendStrategy(BaseStrategy):
                 "rsi_period": 14,      # RSI for momentum filter
                 "atr_period": 14,
                 "tp_atr_mult": 3.0,    # Larger TP for crypto's bigger moves
-                "sl_atr_mult": 1.5,
+                "sl_atr_mult": 1.0,    # was 1.5 — tighter SL lifts RR from 2:1 to 3:1
             }
         super().__init__(
             name="EMA_Ribbon_Trend",

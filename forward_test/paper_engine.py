@@ -40,6 +40,13 @@ from strategies.turtle_soup import TurtleSoup
 from strategies.volatility_contraction import VolatilityContraction
 from strategies.volatility_squeeze_breakout import VolatilitySqueezeBreakoutStrategy
 from strategies.vwap_momentum import VWAPMomentum
+# NEW: 1m/5m Scalping Strategies (April 24, 2026)
+from strategies.fast_ma_scalper import FastMAScalper
+from strategies.bb_squeeze_scalp import BBSqueezeScalp
+from strategies.rsi_extremes_scalp import RSIExtremesScalp
+from strategies.macd_zero_scalp import MACDZeroScalp
+from strategies.volatility_breakout_scalp import VolatilityBreakoutScalp
+from strategies.ema_ribbon_scalp import EMARibbonScalp
 
 STRATEGY_REGISTRY = {
     "bb_mean_reversion": BBMeanReversionStrategy,
@@ -71,6 +78,13 @@ STRATEGY_REGISTRY = {
     "volatility_contraction": VolatilityContraction,
     "volatility_squeeze_breakout": VolatilitySqueezeBreakoutStrategy,
     "vwap_momentum": VWAPMomentum,
+    # NEW: 1m/5m Scalping Strategies
+    "fast_ma_scalper": FastMAScalper,
+    "bb_squeeze_scalp": BBSqueezeScalp,
+    "rsi_extremes_scalp": RSIExtremesScalp,
+    "macd_zero_scalp": MACDZeroScalp,
+    "volatility_breakout_scalp": VolatilityBreakoutScalp,
+    "ema_ribbon_scalp": EMARibbonScalp,
 }
 from datetime import datetime
 from notifications.telegram_bot import TelegramBot

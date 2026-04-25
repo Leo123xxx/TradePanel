@@ -1,4 +1,6 @@
 import os
+import time
+import logging
 import MetaTrader5 as mt5
 from dotenv import load_dotenv
 from typing import List, Dict
@@ -50,6 +52,61 @@ class MT5Connector:
             self.connected = False
 
         return self.connected
+
+    def connect_with_retry(self, max_attempts: int = 3,
+                           delays: list = None,
+                           notify_fn=None) -> bool:
+        """
+        Attempts MT5 connection with exponential backoff.
+
+        Args:
+            max_attempts: Number of connection attempts before giving up (default 3).
+            delays:       Seconds to wait between attempts (default [5, 15, 30]).
+            notify_fn:    Optional callable(str) — called with error message on final failure
+                          (pass TelegramBot.send_sync_message to alert via Telegram).
+
+        Returns:
+            True if connected, False if all attempts failed.
+        """
+        if delays is None:
+            delays = [5, 15, 30]
+
+        for attempt in range(1, max_attempts + 1):
+            print(f"[MT5] Connection attempt {attempt}/{max_attempts}...")
+            try:
+                if self.connect(force=(attempt > 1)):
+                    if attempt > 1:
+                        msg = f"✅ MT5 reconnected after {attempt} attempts."
+                        print(f"[MT5] {msg}")
+                        if notify_fn:
+                            try:
+                                notify_fn(msg)
+                            except Exception:
+                                pass
+                    return True
+            except Exception as e:
+                print(f"[MT5] Attempt {attempt} raised exception: {e}")
+
+            if attempt < max_attempts:
+                wait = delays[min(attempt - 1, len(delays) - 1)]
+                print(f"[MT5] Waiting {wait}s before retry...")
+                time.sleep(wait)
+
+        # All attempts failed
+        error_code = mt5.last_error()
+        msg = (
+            f"🔴 <b>MT5 CONNECTION FAILED</b>\n"
+            f"All {max_attempts} attempts exhausted.\n"
+            f"Error: {error_code}\n"
+            f"Action: Check MT5 terminal is running and logged in."
+        )
+        print(f"[MT5] CRITICAL: {msg}")
+        if notify_fn:
+            try:
+                notify_fn(msg)
+            except Exception:
+                pass
+        return False
 
     def _select_required_symbols(self, required_symbols):
         """
