@@ -52,13 +52,19 @@ from strategies.orb import ORBStrategy
 from strategies.rvgi_cci_confluence import RVGICCIConfluence
 from strategies.stat_arb_gold_silver import StatArbGoldSilver
 from strategies.cot_sentiment import COTSentimentStrategy
+from strategies.bb_squeeze_scalp import BBSqueezeScalp
+from strategies.rsi_extremes_scalp import RSIExtremesScalp
+from strategies.crypto_rsi_extremes import CryptoRSIExtremesStrategy
+from strategies.multi_ema_crypto_scalper import MultiEmaCryptoScalper
+from strategies.silver_bullet_crypto import SilverBulletCrypto
+from strategies.power_of_3_amd import PowerOf3AMD
 
 STRATEGY_MAP = {
     # ── TIER 1 ──────────────────────────────────────────────────────────────
     "dual_ema_fractal":         (DualEMAFractal,           1),
     "rsi_bounce":               (RSIBounceStrategy,        1),
     "stat_arb_gold_silver":     (StatArbGoldSilver,        1),
-    "moving_average_crossover": (MACrossoverStrategy,      1),
+    "ma_crossover": (MACrossoverStrategy,      1),
     "bb_mean_reversion":        (BBMeanReversionStrategy,  1),
     "stoch_divergence":         (StochDivergenceStrategy,  1),
     "macd_trend":               (MACDTrendStrategy,        1),
@@ -75,30 +81,66 @@ STRATEGY_MAP = {
     "hikkake_trap":             (HikkakeTrap,              2),
     "orb":                      (ORBStrategy,              2),
     "rvgi_cci_confluence":      (RVGICCIConfluence,        2),
+    "bb_squeeze_scalp":         (BBSqueezeScalp,           2),
+    "rsi_extremes_scalp":       (RSIExtremesScalp,         2),
+    "crypto_rsi_extremes":      (CryptoRSIExtremesStrategy, 2),
+    "multi_ema_crypto_scalper": (MultiEmaCryptoScalper,    2),  # Disabled
+    "silver_bullet_crypto":     (SilverBulletCrypto,       2),  # Disabled
+    "power_of_3_amd":           (PowerOf3AMD,              2),  # Disabled
 }
 
 # Canonical pair–timeframe combos per strategy (derived from strategies.yaml)
 STRATEGY_COMBOS = {
-    "dual_ema_fractal":         [("EURUSD", "H1"), ("GBPUSD", "H1"), ("XAUUSD", "H1")],
-    "rsi_bounce":               [("EURUSD", "H1"), ("XAUUSD", "H1"), ("GBPUSD", "H1")],
-    "stat_arb_gold_silver":     [("XAUUSD", "H4")],
-    "moving_average_crossover": [("EURUSD", "H1"), ("GBPUSD", "H1"), ("USDJPY", "H1")],
-    "bb_mean_reversion":        [("XAUUSD", "H1"), ("EURUSD", "H1")],
-    "stoch_divergence":         [("EURUSD", "H4"), ("USDJPY", "H4")],
-    "macd_trend":               [("EURUSD", "H1"), ("USDJPY", "H1")],
-    "gold_momentum_breakout":   [("XAUUSD", "H1")],           # GBPUSD removed — wrong pair for a gold squeeze strategy
-    "range_breakout":           [("XAUUSD", "H4")],
-    "ema_ribbon_trend":         [("BTCUSD", "H4"), ("ETHUSD", "H4")],
-    "cot_sentiment":            [("XAUUSD", "D1"), ("EURUSD", "D1"),
-                                  ("GBPUSD", "D1"), ("USDJPY", "D1")],
-    "session_momentum":         [("XAUUSD", "H1"), ("GBPUSD", "H1")],
-    "rsi_pullback":             [("XAUUSD", "H4"), ("USDJPY", "H4")],
-    "turtle_soup":              [("EURUSD", "H4")],            # H1 removed — 900+ trades/Sharpe -4 on H1; H4 only
-    "dual_ema_momentum":        [("XAUUSD", "H1"), ("XAUUSD", "H4")],
-    "vwap_momentum":            [("GBPUSD", "M15"), ("EURUSD", "M15")],
-    "hikkake_trap":             [("XAUUSD", "H4")],
-    "orb":                      [("XAGUSD", "M15"), ("EURUSD", "M15")],
-    "rvgi_cci_confluence":      [("EURUSD", "H1"), ("GBPUSD", "H1")],
+    "dual_ema_fractal":         [("EURUSD","H1"),("EURUSD","H4"),("GBPUSD","H1"),("GBPUSD","H4"),
+                                  ("XAUUSD","H1"),("XAUUSD","H4"),("GBPJPY","H4"),("AUDUSD","H4"),
+                                  ("USDCAD","H4"),("USOIL","H4")],
+    "rsi_pullback":             [("XAUUSD","H4"),("EURUSD","H4"),("GBPUSD","H4"),
+                                  ("USDJPY","H4"),("XAGUSD","H4")],
+    "ma_crossover":             [("EURUSD","H1"),("EURUSD","H4"),("EURUSD","D1"),
+                                  ("GBPUSD","H1"),("GBPUSD","H4"),("USDJPY","H1"),
+                                  ("USDJPY","H4"),("AUDUSD","H4"),("GBPJPY","H4"),("USDCAD","H4")],
+    "rsi_bounce":               [("EURUSD","H4"),("XAUUSD","H4"),("GBPUSD","H4"),
+                                  ("USDJPY","H4"),("GBPJPY","H4"),("AUDUSD","H4"),("USOIL","H4")],
+    "stat_arb_gold_silver":     [("XAUUSD","H4"),("XAUUSD","H1"),("XAUUSD","M15")],
+    "bb_mean_reversion":        [("XAUUSD","H1"),("XAUUSD","H4"),("EURUSD","H1"),("EURUSD","H4"),
+                                  ("GBPUSD","H1"),("USDJPY","H4"),("GBPJPY","H4"),("US500","H4")],
+    "stoch_divergence":         [("EURUSD","H4"),("USDJPY","H4"),("XAUUSD","H4"),
+                                  ("GBPUSD","H4"),("GBPJPY","H4"),("AUDUSD","H4")],
+    "macd_trend":               [("EURUSD","H1"),("EURUSD","H4"),("USDJPY","H1"),("USDJPY","H4"),
+                                  ("GBPJPY","H4"),("AUDUSD","H4"),("US500","H4"),("USTEC","H4")],
+    "gold_momentum_breakout":   [("XAUUSD","H1"),("XAUUSD","H4"),("US500","H4"),("USTEC","H4"),
+                                  ("NVDA","H4"),("AMD","H4"),("MSFT","H4"),("AAPL","H4")],
+    "range_breakout":           [("XAUUSD","H4"),("EURUSD","H4"),("USOIL","H4"),("US500","H4")],
+    "ema_ribbon_trend":         [("BTCUSD","H4"),("ETHUSD","H4"),("XAUUSD","H4"),
+                                  ("US500","H4"),("USTEC","H4"),("NVDA","H4"),("AMD","H4"),
+                                  ("MSFT","H4"),("AAPL","H4")],
+    "cot_sentiment":            [("XAUUSD","D1"),("EURUSD","D1"),("GBPUSD","D1"),("USDJPY","D1")],
+    "session_momentum":         [("XAUUSD","H1"),("GBPUSD","H1"),("EURUSD","H1"),
+                                  ("GBPJPY","H1"),("AUDUSD","H1")],
+    "turtle_soup":              [("EURUSD","H4"),("GBPUSD","H4"),("XAUUSD","H4"),
+                                  ("GBPJPY","H4"),("AUDUSD","H4"),("USDCAD","H4"),
+                                  ("BTCUSD","H4"),("ETHUSD","H4")],
+    "dual_ema_momentum":        [("XAUUSD","H1"),("XAUUSD","H4"),("EURUSD","H4"),
+                                  ("GBPUSD","H4"),("GBPJPY","H4"),("US500","H4"),("USTEC","H4")],
+    "vwap_momentum":            [("GBPUSD","M15"),("GBPUSD","H1"),("EURUSD","M15"),("EURUSD","H1"),
+                                  ("XAUUSD","M15"),("GBPJPY","M15"),("US500","M15"),
+                                  ("BTCUSD","M15"),("BTCUSD","H1"),("ETHUSD","M15")],
+    "hikkake_trap":             [("XAUUSD","H4"),("EURUSD","H4"),("GBPUSD","H4"),
+                                  ("GBPJPY","H4"),("USOIL","H4"),("US500","H4")],
+    "orb":                      [("EURUSD","M15"),("GBPUSD","M15"),("XAUUSD","M15"),
+                                  ("GBPJPY","M15"),("AUDUSD","M15")],
+    "rvgi_cci_confluence":      [("EURUSD","H1"),("EURUSD","H4"),("GBPUSD","H1"),("GBPUSD","H4"),
+                                  ("GBPJPY","H4"),("AUDUSD","H4")],
+    "bb_squeeze_scalp":         [("XAUUSD","M15"),("EURUSD","M15"),("GBPUSD","M15"),
+                                  ("USDJPY","M15"),("GBPJPY","M15"),("AUDUSD","M15"),
+                                  ("US500","M15"),("USTEC","M15")],
+    "rsi_extremes_scalp":       [("XAUUSD","M15"),("EURUSD","M15"),("GBPUSD","M15"),
+                                  ("USDJPY","M15"),("GBPJPY","M15"),("AUDUSD","M15"),("USOIL","M15")],
+    "crypto_rsi_extremes":      [("BTCUSD","H4"),("BTCUSD","D1"),("ETHUSD","H4"),("ETHUSD","D1")],
+    # Disabled — entry logic fails in trending crypto regime
+    "multi_ema_crypto_scalper": [],
+    "silver_bullet_crypto":     [],
+    "power_of_3_amd":           [],
 }
 
 # Thresholds for parameter tweak suggestions
@@ -161,7 +203,7 @@ def run_all_backtests(tier_filter: int | None = None,
     strategies_to_run = {
         k: v for k, v in STRATEGY_MAP.items()
         if (tier_filter is None or v[1] == tier_filter)
-        and (strategy_filter is None or k == strategy_filter)
+        and (strategy_filter is None or k in {s.strip() for s in strategy_filter.split(",")})
     }
 
     total_combos = sum(len(STRATEGY_COMBOS.get(s, [])) for s in strategies_to_run)
@@ -245,17 +287,17 @@ def run_all_backtests(tier_filter: int | None = None,
     return results
 
 
-def save_report(results: list[dict], out_dir: Path) -> tuple[Path, Path]:
+def save_report(results: list[dict], out_dir: Path, suffix: str = "") -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = date.today().strftime("%Y%m%d")
 
     # ── JSON report ──────────────────────────────────────────────────────────
-    json_path = out_dir / f"{stamp}_backtest_report.json"
+    json_path = out_dir / f"{stamp}_backtest_report{suffix}.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump({"generated": str(datetime.now()), "results": results}, f, indent=2, default=str)
 
     # ── Markdown report ──────────────────────────────────────────────────────
-    md_path = out_dir / f"{stamp}_backtest_report.md"
+    md_path  = out_dir / f"{stamp}_backtest_report{suffix}.md"
     passed  = [r for r in results if r.get("status") == "PASS"]
     reviews = [r for r in results if r.get("status") == "REVIEW"]
     errors  = [r for r in results if r.get("status") in ("ERROR", "SKIP", "NO_TRADES")]
@@ -357,19 +399,20 @@ def main():
     parser.add_argument("--balance",  type=float, default=10_000.0, help="Starting balance (default 10000)")
     parser.add_argument("--lot",      type=float, default=0.1,      help="Lot size (default 0.1)")
     parser.add_argument("--no-telegram", action="store_true", help="Skip Telegram notification")
+    parser.add_argument("--suffix",   type=str,   default="",    help="Suffix for report filename (e.g. _retest1)")
     args = parser.parse_args()
 
     print(f"\n[{datetime.now()}] Overnight backtest starting…")
     results = run_all_backtests(
         tier_filter=args.tier,
-        strategy_filter=args.strategy,
+        strategy_filter=args.strategy,  # may be comma-separated; handled in run_all_backtests
         initial_balance=args.balance,
         lot_size=args.lot,
     )
 
     # Save reports
     out_dir = Path(__file__).parent.parent / "results" / "overnight"
-    json_path, md_path = save_report(results, out_dir)
+    json_path, md_path = save_report(results, out_dir, suffix=args.suffix)
     print(f"\n[{datetime.now()}] Reports saved:")
     print(f"  JSON: {json_path}")
     print(f"  MD:   {md_path}")

@@ -4,24 +4,34 @@ from strategies.base_strategy import BaseStrategy
 
 class DualEMAMomentum(BaseStrategy):
     """
-    Dual EMA Momentum Continuity
+    Dual EMA Momentum Continuity v3.
+    Trend: Full EMA ribbon alignment + ADX rising gate.
+    Signal: Engulfing candle in trend direction.
+    RR = 2:1 (tp_atr_mult=2.0, sl_atr_mult=1.0).
 
-    Logic:
-    1. Trend: Fast EMA > Slow EMA (Bullish) or Fast EMA < Slow EMA (Bearish).
-    2. Momentum: ADX > adx_min.
-    3. Signal: Price makes an engulfing candle in the direction of the trend.
-    RR = 3.5:1 (tp_atr_mult=3.5, sl_atr_mult=1.0).
+    v3 upgrades (2026-05-01) — targeting 70%+ WR:
+    - Full ribbon alignment: EMA15 > EMA50 > EMA100 > EMA200 for longs
+      (all four must agree). Partial alignment (EMA15/100 only) allows counter-trend entries.
+    - ADX rising gate: ADX must be higher than previous bar (trend strengthening).
+      Catches engulfings at the start of a trend impulse, not at exhaustion.
     """
 
     def __init__(self, params: dict = None):
         if params is None:
             params = {
-                "fast_ema": 20,
-                "slow_ema": 50,
-                "adx_min": 25,
-                "atr_period": 14,
-                "tp_atr_mult": 3.5,   # RR 3.5:1 (was 1.67:1)
-                "sl_atr_mult": 1.0    # tighter SL
+                "fast_ema":           15,
+                "mid_ema":            50,   # NEW: full ribbon
+                "slow_ema":          100,
+                "ema200_period":     200,
+                "adx_min":            22,   # loosened 25→22
+                "adx_rising":        False, # loosened True→False: rising ADX kills too many setups
+                "atr_period":         14,
+                "tp_atr_mult":         2.0,
+                "sl_atr_mult":         1.0,
+                "rsi_period":         14,
+                "rsi_long_min":       55,
+                "rsi_short_max":      45,
+                "vol_threshold_mult":  1.2,
             }
         super().__init__(
             name="Dual_EMA_Momentum",
@@ -35,43 +45,85 @@ class DualEMAMomentum(BaseStrategy):
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         df = data.copy()
 
-        # 1. EMA Ribbons
-        df['fast_ema'] = ta.ema(df['close'], length=self.params['fast_ema'])
-        df['slow_ema'] = ta.ema(df['close'], length=self.params['slow_ema'])
+        fast_p        = self.params.get('fast_ema',          15)
+        mid_p         = self.params.get('mid_ema',           50)
+        slow_p        = self.params.get('slow_ema',         100)
+        ema200_p      = self.params.get('ema200_period',    200)
+        adx_min       = self.params.get('adx_min',           25)
+        adx_rising    = self.params.get('adx_rising',       True)
+        rsi_p         = self.params.get('rsi_period',        14)
+        rsi_long_min  = self.params.get('rsi_long_min',      55)
+        rsi_short_max = self.params.get('rsi_short_max',     45)
+        vol_mult      = self.params.get('vol_threshold_mult', 1.2)
 
-        # 2. ADX Filter
-        adx_df = ta.adx(df['high'], df['low'], df['close'], length=14)
-        df['adx'] = adx_df["ADX_14"]
+        df['ema_fast'] = ta.ema(df['close'], length=fast_p)
+        df['ema_mid']  = ta.ema(df['close'], length=mid_p)
+        df['ema_slow'] = ta.ema(df['close'], length=slow_p)
+        df['ema200']   = ta.ema(df['close'], length=ema200_p)
 
-        # 3. Engulfing Candle detection
+        adx_df    = ta.adx(df['high'], df['low'], df['close'], length=14)
+        df['adx'] = adx_df.iloc[:, 0]
+
+        df['rsi'] = ta.rsi(df['close'], length=rsi_p)
+
+        # Full ribbon alignment
+        ribbon_up   = (
+            (df['ema_fast'] > df['ema_mid'])
+            & (df['ema_mid'] > df['ema_slow'])
+            & (df['ema_slow'] > df['ema200'])
+        )
+        ribbon_down = (
+            (df['ema_fast'] < df['ema_mid'])
+            & (df['ema_mid'] < df['ema_slow'])
+            & (df['ema_slow'] < df['ema200'])
+        )
+
+        # ADX gate: above minimum AND rising (trend strengthening)
+        adx_above_min = df['adx'] > adx_min
+        if adx_rising:
+            adx_rising_now = df['adx'] > df['adx'].shift(1)
+        else:
+            adx_rising_now = True
+
+        adx_ok = adx_above_min & adx_rising_now
+
+        # Volume gate
+        if vol_mult > 0 and 'tick_volume' in df.columns:
+            df['vol_avg'] = df['tick_volume'].rolling(window=20).mean()
+            vol_ok = df['tick_volume'] >= (df['vol_avg'] * vol_mult)
+        else:
+            vol_ok = True
+
+        # Engulfing detection
         df['is_bull_engulfing'] = (
             (df['close'] > df['open']) &
-            (df['open'] < df['close'].shift(1)) &
+            (df['open'] <= df['close'].shift(1)) &
             (df['close'] > df['open'].shift(1)) &
-            (df['open'].shift(1) > df['close'].shift(1))   # prev was bearish
+            (df['open'].shift(1) > df['close'].shift(1))
         )
         df['is_bear_engulfing'] = (
             (df['close'] < df['open']) &
-            (df['open'] > df['close'].shift(1)) &
+            (df['open'] >= df['close'].shift(1)) &
             (df['close'] < df['open'].shift(1)) &
-            (df['open'].shift(1) < df['close'].shift(1))   # prev was bullish
+            (df['open'].shift(1) < df['close'].shift(1))
         )
 
-        # 4. Signal Generation
         df['signal'] = 0
 
-        # Bullish: Trend Up + ADX Strong + Bull Engulfing
         df.loc[
-            (df['fast_ema'] > df['slow_ema']) &
-            (df['adx'] > self.params['adx_min']) &
+            ribbon_up &
+            adx_ok &
+            (df['rsi'] > rsi_long_min) &
+            vol_ok &
             df['is_bull_engulfing'],
             'signal'
         ] = 1
 
-        # Bearish: Trend Down + ADX Strong + Bear Engulfing
         df.loc[
-            (df['fast_ema'] < df['slow_ema']) &
-            (df['adx'] > self.params['adx_min']) &
+            ribbon_down &
+            adx_ok &
+            (df['rsi'] < rsi_short_max) &
+            vol_ok &
             df['is_bear_engulfing'],
             'signal'
         ] = -1

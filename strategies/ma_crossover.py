@@ -30,7 +30,7 @@ class MACrossoverStrategy(BaseStrategy):
                 "atr_period": 14,
                 "tp_atr_mult": 2.0,
                 "sl_atr_mult": 1.0,
-                "adx_filter": 25         # Raised from 20 — only enter in confirmed trends
+                "adx_filter": 20         # loosened 25→20: catch more trends
             }
         super().__init__(
             name="MA_Crossover",
@@ -84,6 +84,15 @@ class MACrossoverStrategy(BaseStrategy):
             (df['signal_val'] == -1) & (df['signal_val'].shift(1) == 1) & adx_ok,
             'signal'
         ] = -1
+
+        # ── Meta-Labeling (Win Rate Push) ────────────────────────────────────
+        # Use RSI 55/45 and 1.2x Volume as secondary gates
+        df = self.apply_meta_labeling(
+            df, 
+            rsi_long=self.params.get("rsi_long_min", 55),
+            rsi_short=self.params.get("rsi_short_max", 45),
+            vol_mult=self.params.get("vol_threshold_mult", 1.2)
+        )
 
         return df
 

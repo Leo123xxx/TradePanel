@@ -5,24 +5,32 @@ from strategies.base_strategy import BaseStrategy
 
 class DualEMAFractal(BaseStrategy):
     """
-    Dual EMA Fractal Breaker
+    Dual EMA Fractal Breaker v3.
 
-    Logic:
-    1. Filter: Price must be above/below a 200 EMA.
-    2. Fractal: Bill Williams Fractal (2-2 pattern).
-    3. Signal: Price breaks above the most recent UP fractal (Bullish) or below DOWN fractal (Bearish).
-    4. ADX filter: Only signal when ADX >= adx_min (trending market).
+    v3 upgrades (2026-05-01) — targeting 70%+ WR:
+    - Consecutive fractal confirmation: require 2 fractals in the same direction
+      before the breakout is tradeable. A single fractal break is prone to fakeouts;
+      two consecutive up-fractals (or down-fractals) signal a sustained swing structure.
     RR = 3:1 (tp_atr_mult=3.0, sl_atr_mult=1.0).
     """
 
     def __init__(self, params: dict = None):
         if params is None:
             params = {
-                "ema_period": 200,
-                "tp_atr_mult": 3.0,   # RR 3:1 (was 1.33:1)
-                "sl_atr_mult": 1.0,   # tighter SL
-                "atr_period": 14,
-                "adx_min": 20         # only signal when trend has momentum
+                "ema_fast":              50,
+                "ema_slow":             200,
+                "ema_period":           200,
+                "tp_atr_mult":            3.0,
+                "sl_atr_mult":            1.0,
+                "atr_period":            14,
+                "adx_min":               20,   # loosened 25→20
+                "rsi_period":            14,
+                "rsi_long_min":          55,
+                "rsi_short_max":         45,
+                "vol_threshold_mult":     1.0, # loosened 1.2→1.0: allow average-vol setups
+                "consecutive_fractals":   2,   # NEW: require N fractals in same direction
+                "use_multi_tf_confirmation": False,
+                "confirm_timeframe":    "H4"
             }
         super().__init__(
             name="Dual_EMA_Fractal",
@@ -36,55 +44,93 @@ class DualEMAFractal(BaseStrategy):
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         df = data.copy()
 
-        # 1. EMA 200 filter
-        df['ema_filter'] = ta.ema(df['close'], length=self.params['ema_period'])
+        ema_fast_len    = self.params.get('ema_fast')
+        ema_slow_len    = self.params.get('ema_slow', self.params.get('ema_period', 200))
+        adx_min         = self.params.get("adx_min", 25)
+        rsi_long_min    = self.params.get("rsi_long_min",  55)
+        rsi_short_max   = self.params.get("rsi_short_max", 45)
+        vol_mult        = self.params.get("vol_threshold_mult", 1.2)
+        n_fractals      = self.params.get("consecutive_fractals", 2)
 
-        # 2. Fractal Detection (Bill Williams 5-bar pattern)
-        df['up_fractal'] = (df['high'] > df['high'].shift(1)) & \
-                           (df['high'] > df['high'].shift(2)) & \
-                           (df['high'] > df['high'].shift(-1)) & \
-                           (df['high'] > df['high'].shift(-2))
+        # 1. EMA trend filter
+        if ema_fast_len:
+            df['ema_fast'] = ta.ema(df['close'], length=ema_fast_len)
+            df['ema_slow'] = ta.ema(df['close'], length=ema_slow_len)
+            df['trend_filter_up']   = df['ema_fast'] > df['ema_slow']
+            df['trend_filter_down'] = df['ema_fast'] < df['ema_slow']
+        else:
+            df['ema_filter'] = ta.ema(df['close'], length=ema_slow_len)
+            df['trend_filter_up']   = df['close'] > df['ema_filter']
+            df['trend_filter_down'] = df['close'] < df['ema_filter']
 
-        df['down_fractal'] = (df['low'] < df['low'].shift(1)) & \
-                             (df['low'] < df['low'].shift(2)) & \
-                             (df['low'] < df['low'].shift(-1)) & \
-                             (df['low'] < df['low'].shift(-2))
+        # 2. Fractal Detection (Bill Williams 5-bar, confirmed after 2 bars)
+        df['up_fractal'] = (
+            (df['high'] > df['high'].shift(1)) &
+            (df['high'] > df['high'].shift(2)) &
+            (df['high'] > df['high'].shift(-1)) &
+            (df['high'] > df['high'].shift(-2))
+        )
+        df['down_fractal'] = (
+            (df['low'] < df['low'].shift(1)) &
+            (df['low'] < df['low'].shift(2)) &
+            (df['low'] < df['low'].shift(-1)) &
+            (df['low'] < df['low'].shift(-2))
+        )
 
-        # Store most recent fractal levels (shift by 2 — need 2 bars AFTER to confirm)
-        df['last_up_f'] = df['high'].where(df['up_fractal']).ffill().shift(2)
+        # 3. Track last N confirmed fractal levels
+        # Shift by 2 to confirm (need 2 right-hand bars)
+        df['up_f_confirmed']   = df['up_fractal'].shift(2)
+        df['down_f_confirmed'] = df['down_fractal'].shift(2)
+
+        # Count consecutive confirmed fractals in same direction
+        # For consecutive up fractals: rolling sum of up_f_confirmed over a window
+        # A fractal occurs roughly every 5-10 bars, so look back 30 bars
+        fractal_window = max(30, n_fractals * 15)
+        df['consec_up']   = df['up_f_confirmed'].rolling(window=fractal_window).sum()
+        df['consec_down'] = df['down_f_confirmed'].rolling(window=fractal_window).sum()
+
+        # Most recent confirmed fractal level
+        df['last_up_f']   = df['high'].where(df['up_fractal']).ffill().shift(2)
         df['last_down_f'] = df['low'].where(df['down_fractal']).ffill().shift(2)
 
-        # 3. ADX filter — only trade trending markets
-        adx_min = self.params.get("adx_min", 20)
+        # 4. ADX filter
         try:
             adx_df = ta.adx(df['high'], df['low'], df['close'], length=14)
             df['adx'] = adx_df["ADX_14"]
         except Exception:
-            df['adx'] = 25.0  # fallback: always pass if ADX unavailable
+            df['adx'] = 25.0
         trending = df['adx'] >= adx_min
 
-        # 4. Signals
+        # 5. Signals
         df['signal'] = 0
 
-        # Bullish: Price > EMA + ADX trending + fractal breakout
         df.loc[
             trending &
-            (df['close'] > df['ema_filter']) &
+            df['trend_filter_up'] &
+            (df['consec_up'] >= n_fractals) &     # NEW: require N consecutive up fractals
             (df['close'] > df['last_up_f']) &
             (df['close'].shift(1) <= df['last_up_f']),
             'signal'
         ] = 1
 
-        # Bearish: Price < EMA + ADX trending + fractal breakdown
         df.loc[
             trending &
-            (df['close'] < df['ema_filter']) &
+            df['trend_filter_down'] &
+            (df['consec_down'] >= n_fractals) &   # NEW: require N consecutive down fractals
             (df['close'] < df['last_down_f']) &
             (df['close'].shift(1) >= df['last_down_f']),
             'signal'
         ] = -1
 
+        # 6. Meta-labeling (RSI + volume conviction)
+        df = self.apply_meta_labeling(
+            df,
+            rsi_long=rsi_long_min,
+            rsi_short=rsi_short_max,
+            vol_mult=vol_mult
+        )
+
         return df
 
     def validate_params(self) -> bool:
-        return self.params['ema_period'] > 0
+        return (self.params.get('ema_fast', 0) > 0 or self.params.get('ema_period', 0) > 0)

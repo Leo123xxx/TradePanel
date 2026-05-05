@@ -15,7 +15,7 @@ platform:
   version: 1.0
 
 # ============================================================
-# TRADING PAIRS — 5 approved pairs with per-pair cost model
+# TRADING PAIRS — 18 confirmed pairs with per-pair cost model (expanded 2026-04-30)
 # The backtesting engine must load spread/slippage from here,
 # NOT use a single global default.
 # ============================================================
@@ -28,6 +28,8 @@ account:
   backtesting_usdzar_rate: 18.50   # Fixed rate used in backtests (update quarterly)
   backtesting_jpyzar_rate: 0.1233  # JPY→ZAR rate (USDJPY ~150 × USDZAR ~18.50 / 150)
   backtesting_balance_zar: 180000  # Default starting balance for backtests (~$10k USD)
+  backtesting_cadzar_rate: 13.50   # CAD→ZAR: USDZAR(18.50) / USDCAD(1.37) ≈ 13.50 (update quarterly)
+  backtesting_audzar_rate: 12.03   # AUD→ZAR: USDZAR(18.50) × AUDUSD(0.65) ≈ 12.03 (update quarterly)
 
 pairs:
 
@@ -171,6 +173,266 @@ pairs:
       Commission corrected to 1.0 round-turn (was 0.5 — caused 2× undercharge in backtests).
       Swap corrected to -44.2 (was -43.6). Strong correlation with BTCUSD — one strategy max.
 
+  # ── NEW PAIRS — added 2026-04-30, all specs CONFIRMED from Exness MT5 ────────
+
+  GBPJPY:
+    display_name: "Great Britain Pound / Japanese Yen"
+    enabled: true
+    profit_currency: JPY          # Profit in JPY — needs JPY→ZAR conversion
+    contract_size: 100000         # 100,000 GBP per lot
+    digits: 3
+    spread_pips: 2.0              # Typical Exness floating spread
+    slippage_pips: 1.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 entry + 3.5 exit (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 200.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 6.7        # ~$6.7/pip/lot (100,000 GBP × 0.01 JPY ÷ USDJPY ~150)
+    typical_daily_range_pips: 150
+    session_bias: london_tokyo
+    swap_long_pts: 0.0            # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: -43.0         # CONFIRMED: Exness swap short (2026-04-30)
+    data_start: "2022-01-01"
+    notes: >
+      'The Dragon' — high-volatility cross. Profit in JPY; engine converts via JPYZAR rate.
+      Pip value is dynamic (100,000 GBP × 0.01 ÷ USDJPY). Use backtesting_jpyzar_rate.
+      Only short side has swap cost. Good for session_momentum and range_breakout.
+
+  AUDUSD:
+    display_name: "Australian Dollar / US Dollar"
+    enabled: true
+    profit_currency: USD
+    contract_size: 100000         # 100,000 AUD per lot
+    digits: 5
+    spread_pips: 1.3              # Typical Exness floating spread
+    slippage_pips: 0.5
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 entry + 3.5 exit (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 200.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 10.0       # $10/pip/lot (100,000 × 0.0001 — quote currency is USD)
+    typical_daily_range_pips: 60
+    session_bias: tokyo_london
+    swap_long_pts: 0.0            # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: -1.8          # CONFIRMED: Exness swap short (2026-04-30)
+    data_start: "2022-01-01"
+    notes: "Commodity/China proxy. Direct USD profit — convert via USDZAR. Stat-arb candidate vs XAUUSD."
+
+  USDCAD:
+    display_name: "US Dollar / Canadian Dollar"
+    enabled: true
+    profit_currency: CAD          # Profit in CAD — needs CAD→ZAR conversion
+    contract_size: 100000         # 100,000 USD per lot
+    digits: 5
+    spread_pips: 1.5              # Typical Exness floating spread
+    slippage_pips: 0.5
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 entry + 3.5 exit (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 200.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 7.5        # ~$7.5/pip/lot (100,000 × 0.0001 CAD ÷ USDCAD ~1.37)
+    typical_daily_range_pips: 60
+    session_bias: london_ny
+    swap_long_pts: 0.0            # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: -7.2          # CONFIRMED: Exness swap short (2026-04-30)
+    data_start: "2022-01-01"
+    notes: >
+      'Loonie' — oil-correlated pair. Profit in CAD; use backtesting_cadzar_rate for P&L.
+      Dynamic pip value (~$7.3 USD). Strong correlation-break signal with WTI price action.
+
+  USDZAR:
+    display_name: "US Dollar / South African Rand"
+    enabled: true
+    profit_currency: ZAR          # Direct ZAR profit — NO conversion needed
+    contract_size: 100000         # 100,000 USD per lot
+    digits: 5
+    spread_pips: 35.0             # Exotic — wide floating spread (30–50 pips typical)
+    slippage_pips: 10.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 entry + 3.5 exit (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 200.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 10.0       # 10 ZAR/pip/lot (100,000 × 0.0001) — direct account currency
+    typical_daily_range_pips: 300
+    session_bias: london_ny
+    swap_long_pts: -156.3         # CONFIRMED: Exness swap long (2026-04-30) — very negative!
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short (2026-04-30)
+    data_start: "2022-01-01"
+    notes: >
+      Exotic pair. Profit IS ZAR — no currency conversion needed in backtester.
+      Swap long -156.3 is very heavy — never hold USDZAR longs overnight.
+      Exness category: Forex No Leverage (higher margin). Use breakout strategies only.
+      Gold/Platinum commodity correlation makes this useful for stat-arb vs XAUUSD.
+
+  USOIL:
+    display_name: "Crude Oil WTI (Spot)"
+    enabled: true
+    profit_currency: USD
+    contract_size: 1000           # 1,000 barrels per lot
+    digits: 3
+    spread_pips: 3.0              # ~$0.03/barrel = 3 pips at 0.01 resolution
+    slippage_pips: 2.0
+    commission_per_lot: 7.0       # CONFIRMED round-turn: 3.5 entry + 3.5 exit (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 50.0                 # CONFIRMED: Exness max volume — much lower than FX!
+    pip_value_per_lot: 10.0       # $10/pip/lot (1,000 barrels × $0.01 per pip)
+    typical_daily_range_pips: 100
+    session_bias: london_ny
+    swap_long_pts: 0.0            # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: -399.0        # CONFIRMED: Exness swap short (2026-04-30) — very heavy!
+    data_start: "2022-01-01"
+    notes: >
+      WTI Crude Oil CFD. Symbol on Exness: USOIL. Category: Energies.
+      Max lot is 50 (not 200) — CRITICAL for position sizing engine.
+      Daily maintenance break 21:00-22:00 UTC — no signals during this window.
+      Swap short -399 makes short overnight holds prohibitively expensive.
+      pip = $0.01 price move; pip_value = 1000 barrels × $0.01 = $10/lot.
+
+  US500:
+    display_name: "US SPX 500 Index"
+    enabled: true
+    profit_currency: USD
+    contract_size: 1              # 1 index unit per lot
+    digits: 2
+    spread_pips: 0.5              # ~0.5 index points typical
+    slippage_pips: 0.3
+    commission_per_lot: 0.50      # CONFIRMED round-turn: 0.25 entry + 0.25 exit (Exness 2026-04-30)
+    min_lot: 0.03                 # CONFIRMED: Exness minimum is 0.03, NOT 0.01
+    max_lot: 1000.0               # CONFIRMED: Exness max volume
+    pip_value_per_lot: 1.0        # $1/index-point/lot (contract_size=1)
+    typical_daily_range_pips: 50
+    session_bias: us_equities
+    swap_long_pts: -121.9         # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short (2026-04-30)
+    data_start: "2022-01-01"
+    notes: >
+      S&P 500 Index CFD. Symbol: US500 on Exness. Category: Indices.
+      Commission is $0.25/lot one-way — far cheaper than FX ($3.50/lot).
+      Minimum lot 0.03 (position sizer must enforce this, not 0.01).
+      Daily maintenance break 21:00-22:00 UTC.
+      pip_value = $1 per 1-point index move per lot.
+      Trading focus: US equity session 13:30-21:00 UTC (09:30-17:00 EST).
+
+  USTEC:
+    display_name: "US Tech 100 Index (Nasdaq 100)"
+    enabled: true
+    profit_currency: USD
+    contract_size: 1              # 1 index unit per lot
+    digits: 2
+    spread_pips: 1.0              # ~1.0 index points typical
+    slippage_pips: 0.5
+    commission_per_lot: 1.25      # CONFIRMED round-turn: 0.625 entry + 0.625 exit (Exness 2026-04-30)
+    min_lot: 0.01                 # CONFIRMED: Exness minimum
+    max_lot: 500.0                # CONFIRMED: Exness max volume
+    pip_value_per_lot: 1.0        # $1/index-point/lot
+    typical_daily_range_pips: 200
+    session_bias: us_equities
+    swap_long_pts: -491.6         # CONFIRMED: Exness swap long (2026-04-30) — very negative!
+    swap_short_pts: 0.0           # CONFIRMED: Exness swap short (2026-04-30)
+    data_start: "2022-01-01"
+    notes: >
+      Nasdaq 100 Index CFD. Symbol: USTEC on Exness. Category: Indices.
+      Commission $0.625/lot one-way ($1.25 round-turn).
+      Daily maintenance break 21:00-22:00 UTC.
+      Swap long -491.6 is very heavy — avoid overnight long holds.
+      Higher beta than US500; larger ATR-based SL/TP required.
+
+  NVDA:
+    display_name: "NVIDIA Corporation (Stock CFD)"
+    enabled: true
+    profit_currency: USD
+    contract_size: 100            # 100 shares per lot
+    digits: 2
+    spread_pips: 10.0             # ~$0.10 spread = 10 pips at $0.01 resolution
+    slippage_pips: 3.0
+    commission_per_lot: 0.0       # CONFIRMED: Zero commission — spread-only model (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 10.0                 # CONFIRMED: Exness max volume — very low cap!
+    pip_value_per_lot: 1.0        # $1/pip/lot (100 shares × $0.01 per pip)
+    typical_daily_range_pips: 500 # ~$5 typical daily range
+    session_bias: us_equities
+    swap_long_pts: -3.1           # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: -3.1          # CONFIRMED: Exness swap short — both sides negative (stock CFD)
+    data_start: "2022-01-01"
+    notes: >
+      NVIDIA stock CFD. Symbol: NVDA on Exness. Category: Stocks (XNGS/Nasdaq).
+      Zero commission — all cost embedded in spread.
+      Max lot is 10 — position sizer MUST cap at 10 lots maximum.
+      Both swap sides negative: -3.1 pts each — typical for stock CFDs.
+      Contract size = 100 shares. pip_value = 100 × $0.01 = $1/lot.
+      Trading hours: Nasdaq session only. No overnight/weekend data.
+
+  AMD:
+    display_name: "Advanced Micro Devices (Stock CFD)"
+    enabled: true
+    profit_currency: USD
+    contract_size: 100            # 100 shares per lot
+    digits: 2
+    spread_pips: 10.0             # ~$0.10 spread typical
+    slippage_pips: 3.0
+    commission_per_lot: 0.0       # CONFIRMED: Zero commission — spread-only model (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 10.0                 # CONFIRMED: Exness max volume
+    pip_value_per_lot: 1.0        # $1/pip/lot (100 shares × $0.01)
+    typical_daily_range_pips: 300 # ~$3 typical daily range
+    session_bias: us_equities
+    swap_long_pts: -5.0           # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: -3.9          # CONFIRMED: Exness swap short (2026-04-30) — both sides negative
+    data_start: "2022-01-01"
+    notes: >
+      AMD stock CFD. Symbol: AMD on Exness. Category: Stocks (XNGS/Nasdaq).
+      Zero commission — spread-only model. Both swap sides negative.
+      Max lot is 10. Contract size = 100 shares. pip_value = $1/lot.
+      Higher beta than NVDA — wider spreads expected in volatile sessions.
+
+  MSFT:
+    display_name: "Microsoft Corporation (Stock CFD)"
+    enabled: true
+    profit_currency: USD
+    contract_size: 100            # 100 shares per lot
+    digits: 2
+    spread_pips: 15.0             # ~$0.15 spread typical (floating; MSFT ~$380 stock)
+    slippage_pips: 3.0
+    commission_per_lot: 0.0       # CONFIRMED: Zero commission — spread-only model (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 10.0                 # CONFIRMED: Exness max volume
+    pip_value_per_lot: 1.0        # $1/pip/lot (100 shares × $0.01 per pip)
+    typical_daily_range_pips: 600 # ~$6 typical daily range
+    session_bias: us_equities
+    swap_long_pts: -6.3           # CONFIRMED: Exness swap long (2026-04-30) — both sides negative
+    swap_short_pts: -6.8          # CONFIRMED: Exness swap short (2026-04-30)
+    data_start: "2022-01-01"
+    notes: >
+      Microsoft stock CFD. Symbol: MSFT on Exness. Category: Stocks (XNGS/Nasdaq).
+      Zero commission — spread-only model. Both swap sides negative (stock CFD standard).
+      Max lot is 10. Contract size = 100 shares. pip_value = 100 × $0.01 = $1/lot.
+      Trading hours: Nasdaq session only (Mon-Fri, no weekend data).
+      Maintenance break 21:00-22:00 UTC — avoids with session window (13,21) SAST.
+
+  AAPL:
+    display_name: "Apple Inc. (Stock CFD)"
+    enabled: true
+    profit_currency: USD
+    contract_size: 100            # 100 shares per lot
+    digits: 2
+    spread_pips: 10.0             # ~$0.10 spread typical (floating; AAPL ~$200 stock)
+    slippage_pips: 3.0
+    commission_per_lot: 0.0       # CONFIRMED: Zero commission — spread-only model (Exness 2026-04-30)
+    min_lot: 0.01
+    max_lot: 10.0                 # CONFIRMED: Exness max volume
+    pip_value_per_lot: 1.0        # $1/pip/lot (100 shares × $0.01 per pip)
+    typical_daily_range_pips: 400 # ~$4 typical daily range
+    session_bias: us_equities
+    swap_long_pts: -4.1           # CONFIRMED: Exness swap long (2026-04-30)
+    swap_short_pts: -3.2          # CONFIRMED: Exness swap short (2026-04-30) — both sides negative
+    data_start: "2022-01-01"
+    notes: >
+      Apple stock CFD. Symbol: AAPL on Exness. Category: Stocks (XNGS/Nasdaq).
+      Zero commission — spread-only model. Both swap sides negative (stock CFD standard).
+      Max lot is 10. Contract size = 100 shares. pip_value = 100 × $0.01 = $1/lot.
+      Trading hours: Nasdaq session only (Mon-Fri, no weekend data).
+      Margin notional: ~ZAR 22,800/lot (5% of ~$200 × 100 shares × 18.50 ZAR/USD).
+
+# ── PENDING CONFIRMATION — not yet added ─────────────────────────────────────
+# USDTRY: Tier 3 — defer until Tier 1/2 backtest results reviewed
+# Copper (XCUUSD): Tier 3 — defer
+
 # ============================================================
 # BACKTESTING — cost model applied to all backtest runs
 # ============================================================
@@ -188,15 +450,16 @@ backtesting:
 # RISK MANAGEMENT
 # ============================================================
 risk_management:
-  risk_per_trade_pct: 10.0 # % of account balance risked per trade
+  risk_per_trade_pct: 1.0 # % of account balance risked per trade
   max_lot_size: 1.0 # Hard ceiling on any single trade
+  blocked_pairs: ["USDZAR", "USDTRY"] # Pairs to ignore regardless of strategy
   max_concurrent_positions: 5 # Across ALL strategies combined
   max_spread_pips: 10.0 # Skip trade if live spread exceeds this
   max_drawdown_warning_pct: 12.0 # Telegram warning fires at this level
   max_drawdown_hard_pct: 20.0 # Strategy auto-pauses; open positions closed
   strategy_correlation_threshold: 0.7 # Monthly correlation check — alert above this
-  use_macro_regime_filter: false # PATH B: DISABLED FOR TESTING — Enable macro-based bias filter
-  use_multi_tf_confirmation: false # PATH B: DISABLED FOR TESTING — Enable higher-TF trend confirmation
+  use_macro_regime_filter: true  # ENABLED 2026-04-30 — Enable macro-based bias filter
+  use_multi_tf_confirmation: true # ENABLED 2026-04-26 — Enable higher-TF trend confirmation
   signal_validity_bars: 2 # Minimum period a signal is considered "active"
   trading_hours:
     start: "00:30"
@@ -246,15 +509,11 @@ scheduler:
 strategies:
 
   # ── TIER 1: High-conviction strategies (>50% WR, Sharpe > 1.2) ────────────
+  # dual_ema_fractal DEMOTED TO TIER 2 (2026-04-26): 0/3 WFO Pass Rate on EURUSD H1.
 
-  - name: dual_ema_fractal          # #1 — 55.62% WR, Trend Following
+  - name: rsi_bounce                # DEMOTED TO TIER 2 (2026-04-26): 33% WFO Pass Rate
     enabled: true
-    pairs: [ "EURUSD", "GBPUSD", "XAUUSD" ]
-    timeframes: [ "H1" ]
-
-  - name: rsi_bounce                # #3 — 52.16% WR, Mean Reversion
-    enabled: true
-    pairs: [ "EURUSD", "XAUUSD", "GBPUSD" ]
+    pairs: [ "EURUSD", "XAUUSD", "GBPUSD", "GBPJPY", "AUDUSD", "USDCAD", "USOIL" ]
     timeframes: [ "H1" ]
 
   - name: stat_arb_gold_silver      # Advanced arb — Gold vs Silver spread
@@ -264,82 +523,87 @@ strategies:
 
   - name: moving_average_crossover  # 50.38% WR, Trend Following
     enabled: true
-    pairs: [ "EURUSD", "GBPUSD", "USDJPY" ]
+    pairs: [ "EURUSD", "GBPUSD", "USDJPY", "GBPJPY", "AUDUSD", "USDCAD" ]
     timeframes: [ "H1" ]
 
   - name: bb_mean_reversion         # Mean Reversion on XAUUSD
     enabled: true
-    pairs: [ "XAUUSD", "EURUSD" ]
+    pairs: [ "XAUUSD", "EURUSD", "GBPJPY", "USOIL", "US500" ]
     timeframes: [ "H1" ]
 
   - name: stoch_divergence          # Divergence — EURUSD H4
     enabled: true
-    pairs: [ "EURUSD", "USDJPY" ]
+    pairs: [ "EURUSD", "USDJPY", "GBPJPY", "AUDUSD", "USDCAD" ]
     timeframes: [ "H4" ]
 
-  - name: macd_trend                # Trend Following — EURUSD/USDJPY
+  - name: macd_trend                # DEMOTED TO TIER 2 (2026-04-26): 0/3 WFO Pass Rate
     enabled: true
-    pairs: [ "EURUSD", "USDJPY" ]
+    pairs: [ "EURUSD", "USDJPY", "GBPJPY", "AUDUSD", "USOIL", "US500", "USTEC" ]
     timeframes: [ "H1" ]
 
   - name: gold_momentum_breakout    # Breakout — XAUUSD/GBPUSD H1
     enabled: true
-    pairs: [ "XAUUSD", "GBPUSD" ]
+    pairs: [ "XAUUSD", "GBPUSD", "USOIL", "US500", "USTEC", "NVDA", "AMD", "MSFT", "AAPL" ]
     timeframes: [ "H1" ]
 
   - name: range_breakout            # Breakout — XAUUSD H4
     enabled: true
-    pairs: [ "XAUUSD" ]
+    pairs: [ "XAUUSD", "USOIL", "US500", "USTEC" ]
     timeframes: [ "H4" ]
 
-  - name: ema_ribbon_trend          # Trend — BTCUSD H4
+  - name: ema_ribbon_trend          # DEMOTED TO TIER 2 (2026-04-26): 0/3 WFO Pass Rate
     enabled: true
-    pairs: [ "BTCUSD", "ETHUSD" ]
+    pairs: [ "BTCUSD", "ETHUSD", "US500", "USTEC", "NVDA", "AMD", "MSFT", "AAPL" ]
     timeframes: [ "H4" ]
 
-  - name: cot_sentiment             # #2 — 52.55% WR — CFTC COT pipeline active
-    enabled: true                   # ENABLED: data/cot_feed.py populates cot_data table
+  - name: cot_sentiment             # DEMOTED TO TIER 2 (2026-04-26): 0/3 WFO Pass Rate
+    enabled: true
     pairs: [ "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD" ]
     timeframes: [ "D1" ]
 
   # ── TIER 2: Solid strategies (~49–51% WR, proven through WFO) ─────────────
 
+  - name: dual_ema_fractal          # DEMOTED from Tier 1 (2026-04-26)
+    enabled: true
+    pairs: [ "EURUSD", "GBPUSD", "XAUUSD", "GBPJPY", "AUDUSD", "USDCAD", "USOIL" ]
+    timeframes: [ "H1" ]
+
   - name: session_momentum          # 50.70% WR — London/NY momentum
     enabled: true
-    pairs: [ "XAUUSD", "GBPUSD" ]
+    pairs: [ "XAUUSD", "GBPUSD", "GBPJPY", "AUDUSD", "USOIL", "US500", "USTEC" ]
     timeframes: [ "H1" ]
 
   - name: rsi_pullback              # Trend + Reversion hybrid — XAUUSD H4
     enabled: true
-    pairs: [ "XAUUSD", "USDJPY" ]
+    pairs: [ "XAUUSD", "USDJPY", "GBPJPY", "AUDUSD", "USOIL" ]
     timeframes: [ "H4" ]
 
   - name: turtle_soup               # SMC reversal — EURUSD H1/H4
     enabled: true
-    pairs: [ "EURUSD", "GBPUSD" ]
+    pairs: [ "EURUSD", "GBPUSD", "GBPJPY", "AUDUSD", "USDCAD", "XAUUSD" ]
     timeframes: [ "H1", "H4" ]
 
   - name: dual_ema_momentum         # Trend continuation — XAUUSD H1/H4
     enabled: true
-    pairs: [ "XAUUSD" ]
+    pairs: [ "XAUUSD", "GBPJPY", "AUDUSD", "USOIL", "US500", "USTEC" ]
     timeframes: [ "H1", "H4" ]
 
   - name: vwap_momentum             # 51.05% WR — GBPUSD M15/M30
     enabled: true
-    pairs: [ "GBPUSD", "EURUSD" ]
+    pairs: [ "GBPUSD", "EURUSD", "GBPJPY", "US500", "USTEC" ]
     timeframes: [ "M15", "M30" ]
 
   - name: hikkake_trap              # Inside Bar trap — XAUUSD H4
     enabled: true
-    pairs: [ "XAUUSD" ]
+    pairs: [ "XAUUSD", "GBPJPY", "USOIL", "US500" ]
     timeframes: [ "H4" ]
 
   - name: orb                       # 49.22% WR — Opening Range Breakout
     enabled: true
-    pairs: [ "XAGUSD", "EURUSD" ]
+    pairs: [ "XAGUSD", "EURUSD", "GBPJPY", "AUDUSD" ]
     timeframes: [ "M15", "H1" ]
 
   - name: rvgi_cci_confluence       # Breakout confluence — EURUSD H1
     enabled: true
-    pairs: [ "EURUSD", "GBPUSD" ]
+    pairs: [ "EURUSD", "GBPUSD", "GBPJPY", "AUDUSD", "USDCAD" ]
     timeframes: [ "H1" ]

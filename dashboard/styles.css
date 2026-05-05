@@ -246,6 +246,162 @@ tr:hover td {
     margin-top: 2rem;
 }
 
+/* ─── Live Account Panel ────────────────────────────────────────────────────── */
+.live-account-panel {
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.live-account-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.live-account-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.pulse-small {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent-green);
+    animation: pulse-animation 2s infinite;
+    display: inline-block;
+}
+
+.cb-badge {
+    background: rgba(255, 77, 77, 0.15);
+    color: var(--accent-red);
+    border: 1px solid rgba(255, 77, 77, 0.4);
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    animation: pulse-animation 1s infinite;
+}
+
+.cb-badge.hidden { display: none; }
+
+.live-account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
+}
+
+.live-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.live-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.live-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.live-sublabel {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* ─── Shared Panel Section ──────────────────────────────────────────────────── */
+.panel-section {
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-row.three-col {
+    grid-template-columns: 1fr 1fr 1fr;
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 0;
+}
+
+.chart-row.three-col .chart-container {
+    min-height: 340px;
+}
+
+/* ─── Trade Journal ─────────────────────────────────────────────────────────── */
+.journal-summary-bar {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-weight: 600;
+}
+
+.journal-summary-bar .highlight {
+    color: var(--accent-cyan);
+}
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.filter-input {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 0.45rem 0.8rem;
+    font-size: 0.85rem;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 120px;
+}
+
+.filter-input:focus {
+    border-color: rgba(0, 242, 255, 0.4);
+}
+
+.filter-input option {
+    background: #1a1a2e;
+    color: var(--text-primary);
+}
+
+.filter-btn {
+    background: var(--gradient-primary);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.filter-btn:hover { opacity: 0.85; }
+
+.filter-btn.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+
 /* ApexCharts Overrides for Dark Mode */
 .apexcharts-canvas {
     color: #fff !important;

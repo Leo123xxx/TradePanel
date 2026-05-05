@@ -1,18 +1,146 @@
-version: '3.8'
+# TradePanel Docker Stack
 
 services:
   db:
-    image: postgres:16
-    container_name: trading_platform_db
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=trading_platform
+    # Pin to minor version — update intentionally after testing (see OPTIMIZATION_SCHEDULE.md quarterly tech review)
+    image: postgres:16.6
+    container_name: tradepanel-db
+    restart: unless-stopped
+    env_file: .env
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+    container_name: tradepanel-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - MT5_BRIDGE_URL=http://host.docker.internal:8001
+      - WAHA_URL=http://waha:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config:/app/config
+      - ./results:/app/results
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./notifications:/app/notifications
+      - ./utils:/app/utils
+      - ./strategies:/app/strategies
+      - ./scheduler:/app/scheduler
+      - ./.env:/app/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn webapp.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: tradepanel-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+    container_name: tradepanel-telegram
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - MT5_BRIDGE_URL=http://host.docker.internal:8001
+      - WAHA_URL=http://waha:3000
+    volumes:
+      - ./config:/app/config
+      - ./results:/app/results
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./notifications:/app/notifications
+      - ./utils:/app/utils
+      - ./strategies:/app/strategies
+      - ./scheduler:/app/scheduler
+      - ./.env:/app/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python -m notifications.telegram_bot
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+    container_name: tradepanel-scheduler
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - MT5_BRIDGE_URL=http://host.docker.internal:8001
+      - WAHA_URL=http://waha:3000
+    volumes:
+      - ./config:/app/config
+      - ./results:/app/results
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./notifications:/app/notifications
+      - ./utils:/app/utils
+      - ./strategies:/app/strategies
+      - ./scheduler:/app/scheduler
+      - ./.env:/app/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python -m scheduler.docker_jobs
+
+  waha:
+    # waha: latest stable for 2026 compatibility
+    image: devlikeapro/waha:latest
+    container_name: tradepanel-waha
+    restart: unless-stopped
+    ports:
+      - "8025:3000"
+    environment:
+      - WAHA_API_KEY=tradepanel_secret
+      - WAHA_DASHBOARD_USERNAME=admin
+      - WAHA_DASHBOARD_PASSWORD=TradePanelWAHA2024!
+      - WHATSAPP_SWAGGER_USERNAME=admin
+      - WHATSAPP_SWAGGER_PASSWORD=TradePanelWAHA2024!
+    volumes:
+      - waha_sessions:/app/.sessions
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: tradepanel-adminer
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  waha_sessions:

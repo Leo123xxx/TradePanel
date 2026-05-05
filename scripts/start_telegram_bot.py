@@ -21,13 +21,15 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from logging.handlers import RotatingFileHandler
+
 # Configure logging with UTF-8 encoding for console compatibility
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(PROJECT_ROOT / "logs" / "telegram_bot.log", encoding="utf-8")
+        RotatingFileHandler(PROJECT_ROOT / "logs" / "telegram_bot.log", maxBytes=10*1024*1024, backupCount=5, encoding="utf-8")
     ]
 )
 logger = logging.getLogger(__name__)

@@ -15,9 +15,13 @@ TIMEFRAME_DELTAS = {
     'M1':  timedelta(minutes=1),
     'M5':  timedelta(minutes=5),
     'M15': timedelta(minutes=15),
+    'M30': timedelta(minutes=30),
     'H1':  timedelta(hours=1),
+    'H2':  timedelta(hours=2),
     'H4':  timedelta(hours=4),
+    'H12': timedelta(hours=12),
     'D1':  timedelta(days=1),
+    'W1':  timedelta(weeks=1),
 }
 
 # Maximum allowed gap multiplier before flagging (gap > expected_delta × this)

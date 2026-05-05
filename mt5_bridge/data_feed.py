@@ -2,13 +2,24 @@ import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
 from data.db_client import DBClient
-from typing import Optional
+from typing import Optional, Union
+
+def _parse_mt5_time(t: Union[int, float, str]) -> datetime:
+    """Helper to handle both Unix timestamps and ISO strings from the bridge."""
+    if isinstance(t, str):
+        try:
+            return datetime.fromisoformat(t)
+        except ValueError:
+            # Handle possible ' ' instead of 'T'
+            return datetime.fromisoformat(t.replace(' ', 'T'))
+    return datetime.fromtimestamp(float(t))
 
 # Timeframe integer → string mapping (MT5 constants → DB labels)
 TF_MAP = {
     mt5.TIMEFRAME_M1:   'M1',
     mt5.TIMEFRAME_M5:   'M5',
     mt5.TIMEFRAME_M15:  'M15',
+    mt5.TIMEFRAME_M30:  'M30',
     mt5.TIMEFRAME_H1:   'H1',
     mt5.TIMEFRAME_H2:   'H2',
     mt5.TIMEFRAME_H4:   'H4',
@@ -71,7 +82,7 @@ class MT5DataFeed:
                 break
                 
             # Filter rates that are before our target start_date
-            valid_rates = [r for r in rates if datetime.fromtimestamp(r['time']) >= start_date and datetime.fromtimestamp(r['time']) < current_end]
+            valid_rates = [r for r in rates if _parse_mt5_time(r['time']) >= start_date and _parse_mt5_time(r['time']) < current_end]
             
             if not valid_rates:
                 break
@@ -80,7 +91,7 @@ class MT5DataFeed:
                 (
                     symbol,
                     tf_str,
-                    datetime.fromtimestamp(rate['time']),
+                    _parse_mt5_time(rate['time']),
                     float(rate['open']),
                     float(rate['high']),
                     float(rate['low']),
@@ -95,7 +106,7 @@ class MT5DataFeed:
             total_inserted += len(data_to_insert)
             
             # Move our end marker to the earliest bar we just got
-            new_end = datetime.fromtimestamp(rates[0]['time'])
+            new_end = _parse_mt5_time(rates[0]['time'])
             if new_end >= current_end: # Prevent infinite loop
                 break
             current_end = new_end
@@ -133,7 +144,7 @@ class MT5DataFeed:
             (
                 symbol,
                 tf_str,
-                datetime.fromtimestamp(rate['time']),
+                _parse_mt5_time(rate['time']),
                 float(rate['open']),
                 float(rate['high']),
                 float(rate['low']),

@@ -1,4 +1,13 @@
 import asyncio
+import sys
+import os
+
+try:
+    import MetaTrader5 as mt5
+except ImportError:
+    from mt5_bridge.docker_mock import setup_mock
+    setup_mock()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,6 +15,10 @@ from fastapi.responses import FileResponse
 from webapp.api.router_logs import router as logs_router
 from webapp.api.router_data import router as data_router
 from webapp.api.router_analytics import router as analytics_router
+from webapp.api.router_backtests import router as backtests_router
+from webapp.api.router_accounts import router as accounts_router
+from webapp.api.router_telegram import router as telegram_router
+from webapp.api.router_whatsapp import router as whatsapp_router
 from webapp.bus import bus
 import os
 
@@ -24,6 +37,10 @@ app.add_middleware(
 app.include_router(logs_router, prefix="/api")
 app.include_router(data_router, prefix="/api")
 app.include_router(analytics_router, prefix="/api")
+app.include_router(backtests_router, prefix="/api")
+app.include_router(accounts_router, prefix="/api")
+app.include_router(telegram_router, prefix="/api")
+app.include_router(whatsapp_router, prefix="/api")
 
 # Mount Static Files (Production Build)
 frontend_dist = os.path.join("webapp", "frontend", "dist")

@@ -1,18 +1,35 @@
-# Master WFO Validation Report
+# WFO Master Summary
 
-| Strategy | Pair | TF | Status | Pass Rate |
-|:---|:---|:---|:---|:---|
-| institutional_silver_bullet | XAUUSD     | H1    | FAIL     | 0.0% (0/3) based on Sharpe > 0 |
-| ict_judas_swing           | GBPUSD     | H1    | FAIL     | 66.7% (2/3) based on Sharpe > 0 |
-| turtle_soup               | XAUUSD     | H1    | FAIL     | 66.7% (2/3) based on Sharpe > 0 |
-| dual_ema_momentum         | BTCUSD     | H4    | FAIL     | 33.3% (1/3) based on Sharpe > 0 |
-| triple_macd_scalping      | XAUUSD     | H1    | PASS     | 100.0% (3/3) based on Sharpe > 0 |
-| dual_ema_fractal          | EURUSD     | H1    | FAIL     | 0.0% (0/3) based on Sharpe > 0 |
-| rsi_2                     | EURUSD     | H4    | FAIL     | 0.0% (0/3) based on Sharpe > 0 |
-| vwap_momentum             | ETHUSD     | H1    | FAIL     | 33.3% (1/3) based on Sharpe > 0 |
-| hikkake_trap              | BTCUSD     | H4    | FAIL     | 33.3% (1/3) based on Sharpe > 0 |
-| orb                       | GBPUSD     | H1    | FAIL     | 66.7% (2/3) based on Sharpe > 0 |
-| rvgi_cci_confluence       | USDJPY     | H1    | FAIL     | 0.0% (0/3) based on Sharpe > 0 |
-| volatility_contraction    | USDJPY     | H4    | FAIL     | 33.3% (1/3) based on Sharpe > 0 |
-| stat_arb_gold_silver      | XAUUSD     | H4    | PASS     | 100.0% (3/3) based on Sharpe > 0 |
-| naked_price_action        | XAUUSD     | H4    | FAIL     | 33.3% (1/3) based on Sharpe > 0 |
+**Generated:** 2026-05-01 08:31:49  
+**Config:** 1 windows | IS=70% | OOS=20%  
+**Criterion:** Sharpe >= 1.0, WR >= 60%, Trades >= 10 per window; strategy passes if >= 70% of windows pass
+
+---
+
+## Results Overview
+
+| Strategy | Pair | TF | Pass Rate | Windows | Verdict |
+|----------|------|----|----------:|---------|---------|
+| ma_crossover | EURUSD | H1 | 0% | ERR | ERROR |
+| ma_crossover | GBPUSD | H4 | 0% | ERR | ERROR |
+
+---
+
+## Summary
+
+- **PASS:** 0 combo(s)
+- **FAIL:** 0 combo(s)
+- **ERRORS:** 2 combo(s)
+- **Skipped:** none
+
+---
+
+## Per-Window Detail
+
+### ma_crossover — EURUSD H1
+
+> **ERROR:** 'charmap' codec can't encode character '\u2192' in position 32: character maps to <undefined>
+
+### ma_crossover — GBPUSD H4
+
+> **ERROR:** 'charmap' codec can't encode character '\u2192' in position 32: character maps to <undefined>

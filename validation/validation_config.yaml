@@ -144,7 +144,7 @@ optimization_constraints:
 failure_criteria:
   
   backtesting_failure:
-    condition: "sharpe_ratio < 0.6"
+    condition: "sharpe_ratio < 1.0"
     action: "ARCHIVE"
     description: "Archive strategy; revisit later or abandon"
     

@@ -1,0 +1,35 @@
+# TradePanel Docker requirements — synchronized with root requirements
+# Last resolved: 2026-04-30
+
+# Web framework
+fastapi==0.115.5
+uvicorn==0.32.1
+httpx==0.28.1
+starlette==0.41.3
+httpcore==1.0.9
+
+# Database
+psycopg2-binary==2.9.11
+
+# Config / env
+python-dotenv==1.0.1
+pyyaml==6.0.3
+pydantic==2.12.0
+pydantic-settings==2.8.0
+
+# Scheduler
+apscheduler==3.11.0
+nest_asyncio==1.6.0
+
+# Notifications
+python-telegram-bot==22.0
+
+# Data / analysis
+pandas==2.3.3
+numpy==2.4.4
+scipy==1.16.1
+
+# Market data feeds
+requests==2.32.3
+yfinance==0.2.54
+tradingview_screener==3.1.0

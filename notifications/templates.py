@@ -2,11 +2,11 @@
 
 TRADE_OPEN = """
 🚀 <b>Trade Opened</b>
-🏷 <b>Symbol:</b> {symbol}
-📊 <b>Direction:</b> {direction}
-💰 <b>Lot Size:</b> {lot_size}
-💵 <b>Entry Price:</b> {entry_price}
-🎯 <b>TP:</b> {tp} | 🛡 <b>SL:</b> {sl}
+🏷 <b>Symbol:</b> {symbol}  {direction}
+🎯 <b>Strategy:</b> {strategy}
+💰 <b>Lots:</b> {lot_size}  💵 <b>Entry:</b> {entry_price}
+🛡 <b>SL:</b> {sl}  🎯 <b>TP:</b> {tp}
+📐 <b>Risk:</b> SL ×{sl_mult} ATR  |  TP ×{tp_mult} ATR
 ⏰ <b>Time:</b> {timestamp}
 """
 
@@ -50,6 +50,19 @@ WEEKLY_REPORT = """
 📉 <b>Max Drawdown:</b> {max_dd:.2f}%
 ⭐ <b>Best Strategy:</b> {best_strategy}
 🔻 <b>Worst Strategy:</b> {worst_strategy}
+"""
+
+SIGNAL_ALERT = """
+📡 <b>Signal Detected</b>
+🏷 <b>{symbol}  {direction}</b>
+🎯 <b>Strategy:</b> {strategy}  [{timeframe}]
+⏰ <b>Bar time:</b> {bar_time} SAST
+💵 <b>Entry ~:</b> {entry_price}
+────────────────────
+🛡 <b>SL:</b> {sl}  <i>(×{sl_mult} ATR)</i>
+🎯 <b>TP:</b> {tp}  <i>(×{tp_mult} ATR)</i>
+────────────────────
+⚡ <i>Signal is live — trade window open now</i>
 """
 
 MARKET_ANALYSIS_HEADER = "📊 <b>Market Analysis Summary</b>\n\n"

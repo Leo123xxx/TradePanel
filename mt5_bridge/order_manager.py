@@ -335,4 +335,39 @@ class OrderManager:
         if not positions:
             return True, "No positions to close"
             
-        success
+        all_success = True
+        for p in positions:
+            res, msg = self.close_position(p.ticket, "CLOSE_ALL_SYMBOL")
+            if not res or res.retcode != mt5.TRADE_RETCODE_DONE:
+                all_success = False
+        return all_success, "SUCCESS" if all_success else "Partial failure"
+
+    def modify_position(self, ticket: int, sl: float, tp: float):
+        """Modifies SL and TP for an existing position."""
+        positions = mt5.positions_get(ticket=ticket)
+        if not positions:
+            return None, f"Position {ticket} not found."
+            
+        pos = positions[0]
+        symbol_info = mt5.symbol_info(pos.symbol)
+        digits = symbol_info.digits
+
+        request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "position": ticket,
+            "symbol": pos.symbol,
+            "sl": round(float(sl), digits),
+            "tp": round(float(tp), digits),
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+
+        result = mt5.order_send(request)
+        if result is None:
+            err = mt5.last_error()
+            return None, f"mt5.order_send (modify) returned None. MT5 Error: {err}"
+            
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            return result, f"Modify failed: {result.comment} (code: {result.retcode})"
+            
+        return result, "SUCCESS"

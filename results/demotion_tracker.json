@@ -1,0 +1,4690 @@
+{
+  "dual_ema_fractal|EURUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 45.37,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.36,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|EURUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.05,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.67,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|EURUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 45.51,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.85,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|EURUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 51.82,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.17,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.17,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.17,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.17,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.17,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.17,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_fractal|EURUSD|D1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 52.78,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|GBPUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 42.66,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.77,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|GBPUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 51.19,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 52.71,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_fractal|GBPUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 52.94,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.74,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.74,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.74,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.74,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.74,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.74,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_fractal|XAUUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 50.52,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 56.07,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_fractal|XAUUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 54.86,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 65.62,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 65.62,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 65.62,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 65.62,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 65.62,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 65.62,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_fractal|XAUUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 58.51,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.71,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.71,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.71,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.71,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.71,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.71,
+        "fail": false
+      }
+    ]
+  },
+  "rsi_bounce|EURUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 27.78,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.0,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_bounce|EURUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 30.66,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_bounce|EURUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 37.17,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      }
+    ]
+  },
+  "rsi_bounce|EURUSD|H4": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 42.86,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_bounce|XAUUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 39.24,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_bounce|XAUUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 39.42,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "rsi_bounce|XAUUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 27.59,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "rsi_bounce|GBPUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 28.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_bounce|GBPUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 30.77,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "stat_arb_gold_silver|XAUUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 70.85,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 70.85,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 70.85,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 70.85,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 70.85,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 70.85,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 70.85,
+        "fail": false
+      }
+    ]
+  },
+  "stat_arb_gold_silver|XAUUSD|D1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 38.52,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.52,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.52,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.52,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.52,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.52,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.52,
+        "fail": true
+      }
+    ]
+  },
+  "moving_average_crossover|EURUSD|M15": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.61,
+        "fail": true
+      }
+    ]
+  },
+  "moving_average_crossover|EURUSD|M30": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.88,
+        "fail": true
+      }
+    ]
+  },
+  "moving_average_crossover|EURUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 51.56,
+        "fail": false
+      }
+    ]
+  },
+  "moving_average_crossover|EURUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 71.43,
+        "fail": false
+      }
+    ]
+  },
+  "moving_average_crossover|EURUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 58.33,
+        "fail": false
+      }
+    ]
+  },
+  "moving_average_crossover|GBPUSD|M30": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.23,
+        "fail": true
+      }
+    ]
+  },
+  "moving_average_crossover|GBPUSD|H1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 40.0,
+        "fail": true
+      }
+    ]
+  },
+  "moving_average_crossover|GBPUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 66.67,
+        "fail": false
+      }
+    ]
+  },
+  "moving_average_crossover|USDJPY|H1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 44.78,
+        "fail": true
+      }
+    ]
+  },
+  "moving_average_crossover|USDJPY|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 60.0,
+        "fail": false
+      }
+    ]
+  },
+  "moving_average_crossover|USDJPY|D1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 48.0,
+        "fail": true
+      }
+    ]
+  },
+  "bb_mean_reversion|XAUUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 48.43,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.45,
+        "fail": true
+      }
+    ]
+  },
+  "bb_mean_reversion|XAUUSD|M30": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 48.04,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 62.5,
+        "fail": false
+      }
+    ]
+  },
+  "bb_mean_reversion|XAUUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.69,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "bb_mean_reversion|XAUUSD|H4": {
+    "consecutive_fails": 7,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.55,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "bb_mean_reversion|EURUSD|M30": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 50.44,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 61.9,
+        "fail": false
+      }
+    ]
+  },
+  "bb_mean_reversion|EURUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.41,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      }
+    ]
+  },
+  "bb_mean_reversion|EURUSD|H4": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.41,
+        "fail": true
+      }
+    ]
+  },
+  "stoch_divergence|EURUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 37.71,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.43,
+        "fail": true
+      }
+    ]
+  },
+  "stoch_divergence|EURUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 33.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.86,
+        "fail": true
+      }
+    ]
+  },
+  "stoch_divergence|EURUSD|H4": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 34.48,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 14.29,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 14.29,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 14.29,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 14.29,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 14.29,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 14.29,
+        "fail": true
+      }
+    ]
+  },
+  "stoch_divergence|USDJPY|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 33.07,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 34.78,
+        "fail": true
+      }
+    ]
+  },
+  "stoch_divergence|USDJPY|H4": {
+    "consecutive_fails": 7,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 37.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      }
+    ]
+  },
+  "macd_trend|EURUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 48.48,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.45,
+        "fail": true
+      }
+    ]
+  },
+  "macd_trend|EURUSD|M30": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 50.92,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.29,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|EURUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.26,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.3,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.3,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.3,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.3,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.3,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.3,
+        "fail": true
+      }
+    ]
+  },
+  "macd_trend|EURUSD|H4": {
+    "consecutive_fails": 6,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.37,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.37,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.37,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.37,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.37,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.37,
+        "fail": true
+      }
+    ]
+  },
+  "macd_trend|EURUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 58.97,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 73.68,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|USDJPY|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 52.82,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.93,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.93,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.93,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.93,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.93,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.93,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|USDJPY|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 68.33,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|USDJPY|D1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.62,
+        "fail": true
+      }
+    ]
+  },
+  "gold_momentum_breakout|XAUUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 48.67,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.5,
+        "fail": true
+      }
+    ]
+  },
+  "gold_momentum_breakout|XAUUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.6,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 43.78,
+        "fail": true
+      }
+    ]
+  },
+  "gold_momentum_breakout|XAUUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 48.23,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.17,
+        "fail": false
+      }
+    ]
+  },
+  "gold_momentum_breakout|XAUUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 53.88,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.89,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.89,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.89,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.89,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.89,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.89,
+        "fail": false
+      }
+    ]
+  },
+  "gold_momentum_breakout|XAUUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 60.87,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "gold_momentum_breakout|GBPUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.93,
+        "fail": true
+      }
+    ]
+  },
+  "gold_momentum_breakout|GBPUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.19,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.13,
+        "fail": true
+      }
+    ]
+  },
+  "range_breakout|XAUUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.82,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.05,
+        "fail": true
+      }
+    ]
+  },
+  "range_breakout|XAUUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.14,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.27,
+        "fail": true
+      }
+    ]
+  },
+  "range_breakout|XAUUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 56.46,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 71.11,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 71.11,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 71.11,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 71.11,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 71.11,
+        "fail": false
+      }
+    ]
+  },
+  "range_breakout|XAUUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 56.05,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 58.33,
+        "fail": false
+      }
+    ]
+  },
+  "range_breakout|EURUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.41,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.71,
+        "fail": true
+      }
+    ]
+  },
+  "range_breakout|EURUSD|H4": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.03,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.22,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.22,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.22,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.22,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.22,
+        "fail": true
+      }
+    ]
+  },
+  "ema_ribbon_trend|BTCUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 37.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.62,
+        "fail": true
+      }
+    ]
+  },
+  "ema_ribbon_trend|BTCUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 44.44,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.0,
+        "fail": true
+      }
+    ]
+  },
+  "ema_ribbon_trend|BTCUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 58.2,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "ema_ribbon_trend|BTCUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 59.26,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "ema_ribbon_trend|ETHUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 42.56,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.67,
+        "fail": true
+      }
+    ]
+  },
+  "ema_ribbon_trend|ETHUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 57.38,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 80.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 80.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 80.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 80.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 80.0,
+        "fail": false
+      }
+    ]
+  },
+  "cot_sentiment|XAUUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.71,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "cot_sentiment|EURUSD|D1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 40.65,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.57,
+        "fail": true
+      }
+    ]
+  },
+  "cot_sentiment|GBPUSD|D1": {
+    "consecutive_fails": 6,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 38.93,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.68,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.68,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.68,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.68,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.68,
+        "fail": true
+      }
+    ]
+  },
+  "cot_sentiment|USDJPY|D1": {
+    "consecutive_fails": 6,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 34.53,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.71,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.71,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.71,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.71,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.71,
+        "fail": true
+      }
+    ]
+  },
+  "cot_sentiment|XAGUSD|D1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-28",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 26.23,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|XAUUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 36.31,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.76,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|XAUUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 41.59,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.44,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|XAUUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 40.34,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.66,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.66,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.66,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|GBPUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 39.34,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.65,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|GBPUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 37.71,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.73,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|GBPUSD|H1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 39.42,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.54,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.54,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.54,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.54,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.54,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|EURUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 44.65,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.58,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|EURUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.07,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.62,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|EURUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 45.48,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.01,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.01,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.01,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|EURUSD|H4": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.56,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.95,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.95,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.95,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.95,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.95,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|EURUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 52.8,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 61.11,
+        "fail": false
+      }
+    ]
+  },
+  "turtle_soup|GBPUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.58,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.18,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|GBPUSD|H1": {
+    "consecutive_fails": 3,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 50.06,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.93,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.93,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.93,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|GBPUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 51.45,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 52.78,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 52.78,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 51.39,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 52.78,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 52.78,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|XAUUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.23,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.25,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_momentum|XAUUSD|M30": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.82,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 51.78,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|XAUUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 50.62,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|XAUUSD|H4": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 53.05,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_momentum|XAUUSD|D1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 41.18,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 53.85,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|EURUSD|H1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 49.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.02,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.02,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.02,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.02,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.02,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_momentum|GBPUSD|H1": {
+    "consecutive_fails": 6,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 48.83,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.94,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|GBPUSD|M5": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.63,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.83,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|GBPUSD|M15": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 32.84,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 32.39,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 32.39,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 32.39,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 32.39,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 32.39,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|GBPUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.47,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 41.98,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|GBPUSD|H1": {
+    "consecutive_fails": 6,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 36.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.67,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.67,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.67,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.67,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.67,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|EURUSD|M5": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 31.51,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|EURUSD|M15": {
+    "consecutive_fails": 6,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.14,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 41.14,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 41.14,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 41.14,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 41.14,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 41.14,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|EURUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.65,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.66,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|XAUUSD|M15": {
+    "consecutive_fails": 6,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 38.43,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.78,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.78,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.78,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.78,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 38.78,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|XAUUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 37.59,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 39.78,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|XAUUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 33.99,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|XAUUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.07,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.42,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.42,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.42,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|XAUUSD|H4": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.96,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.13,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.13,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.13,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.13,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.13,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|XAUUSD|D1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 25.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 29.41,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|EURUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 35.83,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.06,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.06,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 36.06,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|GBPUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 33.89,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 34.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 34.94,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 34.94,
+        "fail": true
+      }
+    ]
+  },
+  "orb|XAGUSD|M5": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 56.1,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.17,
+        "fail": false
+      }
+    ]
+  },
+  "orb|XAGUSD|M15": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 54.46,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 59.26,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 59.26,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 59.26,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 59.26,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 59.26,
+        "fail": false
+      }
+    ]
+  },
+  "orb|EURUSD|M5": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 42.86,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 47.22,
+        "fail": true
+      }
+    ]
+  },
+  "orb|EURUSD|M15": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 42.75,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.62,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.62,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.62,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.62,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.62,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|EURUSD|M15": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 44.99,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.17,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|EURUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.93,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 49.9,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|EURUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 44.27,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 43.75,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 43.75,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 43.75,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|EURUSD|H4": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 42.28,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.89,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.89,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.89,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.89,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.89,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|GBPUSD|M30": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 46.74,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.78,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|GBPUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 47.31,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.75,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.75,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.75,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|GBPUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-28",
+        "win_rate": 52.46,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "bb_squeeze_scalp|XAUUSD|M1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.15,
+        "fail": true
+      }
+    ]
+  },
+  "bb_squeeze_scalp|XAUUSD|M5": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      }
+    ]
+  },
+  "bb_squeeze_scalp|EURUSD|M1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.36,
+        "fail": true
+      }
+    ]
+  },
+  "bb_squeeze_scalp|EURUSD|M5": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      }
+    ]
+  },
+  "bb_squeeze_scalp|GBPUSD|M5": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 21.05,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_extremes_scalp|XAUUSD|M1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 42.42,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_extremes_scalp|XAUUSD|M5": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 46.67,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_extremes_scalp|EURUSD|M1": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 26.92,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_extremes_scalp|EURUSD|M5": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "rsi_extremes_scalp|GBPUSD|M5": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 25.0,
+        "fail": true
+      }
+    ]
+  },
+  "rsi_extremes_scalp|USDJPY|M5": {
+    "consecutive_fails": 1,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|GBPJPY|H4": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|AUDUSD|H4": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|USDCAD|H4": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_fractal|USOIL|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "bb_mean_reversion|US500|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "stoch_divergence|EURUSD|D1": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 12.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 12.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 12.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 12.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 12.5,
+        "fail": true
+      }
+    ]
+  },
+  "macd_trend|GBPJPY|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|AUDUSD|H1": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      }
+    ]
+  },
+  "macd_trend|USOIL|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|USOIL|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|US500|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|US500|H4": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "macd_trend|USTEC|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 54.55,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 54.55,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 54.55,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 54.55,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 54.55,
+        "fail": false
+      }
+    ]
+  },
+  "macd_trend|USTEC|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "gold_momentum_breakout|GBPUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.22,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.22,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.22,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.22,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 55.22,
+        "fail": false
+      }
+    ]
+  },
+  "gold_momentum_breakout|US500|H4": {
+    "consecutive_fails": 5,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "gold_momentum_breakout|MSFT|H4": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "gold_momentum_breakout|AAPL|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "range_breakout|USOIL|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      }
+    ]
+  },
+  "range_breakout|US500|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "range_breakout|USTEC|H4": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "ema_ribbon_trend|XAUUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "ema_ribbon_trend|MSFT|H4": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|GBPJPY|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.45,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.45,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.45,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 45.45,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|AUDUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.0,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|USOIL|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 31.25,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 31.25,
+        "fail": true
+      }
+    ]
+  },
+  "session_momentum|US500|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      }
+    ]
+  },
+  "session_momentum|USTEC|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|GBPJPY|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 80.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 80.0,
+        "fail": false
+      }
+    ]
+  },
+  "turtle_soup|GBPJPY|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "turtle_soup|AUDUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 66.67,
+        "fail": false
+      }
+    ]
+  },
+  "turtle_soup|AUDUSD|H4": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|USDCAD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 30.0,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|USDCAD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 75.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 75.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 75.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 75.0,
+        "fail": false
+      }
+    ]
+  },
+  "turtle_soup|XAUUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.08,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 48.08,
+        "fail": true
+      }
+    ]
+  },
+  "turtle_soup|XAUUSD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.38,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.38,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.38,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.38,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|GBPJPY|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 60.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 54.55,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|GBPJPY|H4": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_momentum|AUDUSD|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 40.0,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_momentum|USOIL|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      }
+    ]
+  },
+  "dual_ema_momentum|USOIL|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|US500|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|USTEC|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "dual_ema_momentum|USTEC|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 100.0,
+        "fail": false
+      }
+    ]
+  },
+  "vwap_momentum|EURUSD|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.16,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.16,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.16,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 63.16,
+        "fail": false
+      }
+    ]
+  },
+  "vwap_momentum|GBPJPY|M15": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|GBPJPY|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|US500|M15": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|US500|H1": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 0.0,
+        "fail": true
+      }
+    ]
+  },
+  "vwap_momentum|USTEC|M15": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 28.57,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|GBPJPY|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 23.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 23.33,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|GBPJPY|H4": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 33.33,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 22.22,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 22.22,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|USOIL|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 29.03,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 29.03,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|USOIL|H4": {
+    "consecutive_fails": 4,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.5,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 37.5,
+        "fail": true
+      }
+    ]
+  },
+  "hikkake_trap|US500|H1": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "hikkake_trap|US500|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "orb|GBPJPY|M15": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 69.23,
+        "fail": false
+      }
+    ]
+  },
+  "orb|AUDUSD|M15": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "rvgi_cci_confluence|GBPJPY|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 44.44,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|GBPJPY|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 50.0,
+        "fail": false
+      }
+    ]
+  },
+  "rvgi_cci_confluence|AUDUSD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.29,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.29,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|USDCAD|H1": {
+    "consecutive_fails": 2,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.29,
+        "fail": true
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 35.29,
+        "fail": true
+      }
+    ]
+  },
+  "rvgi_cci_confluence|USDCAD|H4": {
+    "consecutive_fails": 0,
+    "last_updated": "2026-04-30",
+    "history": [
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      },
+      {
+        "date": "2026-04-30",
+        "win_rate": 57.14,
+        "fail": false
+      }
+    ]
+  }
+}

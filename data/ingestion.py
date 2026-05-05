@@ -1,7 +1,7 @@
 """
 data/ingestion.py
 =================
-Full historical data pipeline for all 5 approved trading pairs.
+Full historical data pipeline for all 18 confirmed trading pairs (expanded 2026-04-30).
 
 What this script does:
   1. Connects to the MT5 terminal
@@ -39,18 +39,40 @@ from data.db_client import DBClient
 # ---------------------------------------------------------------
 
 # All approved pairs — must match config.yaml pairs section
-# Crypto pairs (BTCUSD, ETHUSD) are included: Exness provides crypto CFD history from MT5.
+# Expanded 2026-04-30: 16 pairs confirmed on Exness MT5.
+# Symbol names are Exness-specific: NAS100 = "USTEC", WTI Oil = "USOIL".
 # If your broker uses different symbol names (e.g. 'BTC/USD'), update these strings to match.
-PAIRS = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD"]
+PAIRS = [
+    # Original 7 pairs
+    "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD",
+    # Added 2026-04-30 — all confirmed on Exness MT5
+    "GBPJPY",   # FX cross — Tokyo + London/NY sessions
+    "AUDUSD",   # FX major — London/NY focus
+    "USDCAD",   # FX major — NY session focus
+    "USDZAR",   # FX exotic — London/NY (wide spread, use breakout strategies only)
+    "USOIL",    # WTI Crude Oil CFD — energy session; max_lot=50
+    "US500",    # S&P 500 Index CFD — US equity session; min_lot=0.03
+    "USTEC",    # Nasdaq 100 CFD (Exness symbol for NAS100) — US equity session
+    "NVDA",     # NVIDIA stock CFD — Nasdaq hours; max_lot=10; zero commission
+    "AMD",      # AMD stock CFD — Nasdaq hours; max_lot=10; zero commission
+    "MSFT",     # Microsoft stock CFD — Nasdaq hours; max_lot=10; zero commission
+    "AAPL",     # Apple stock CFD — Nasdaq hours; max_lot=10; zero commission
+]
 
 # Pairs that trade 24/7 — weekend data will be present, no gaps expected Sat/Sun
 CRYPTO_PAIRS = ["BTCUSD", "ETHUSD"]
+
+# Equity/Index CFDs with maintenance break 21:00-22:00 UTC — gap expected nightly
+EQUITY_PAIRS = ["US500", "USTEC", "NVDA", "AMD", "MSFT", "AAPL"]
+
+# Energy CFDs with maintenance break 21:00-22:00 UTC
+ENERGY_PAIRS = ["USOIL"]
 
 # Source timeframe — all higher TFs are derived from this
 SOURCE_TIMEFRAME = mt5.TIMEFRAME_M1
 
 # Derived timeframes to resample into after M1 pull
-RESAMPLE_TIMEFRAMES = ["M5", "M15", "H1", "H4", "D1"]
+RESAMPLE_TIMEFRAMES = ["M5", "M15", "M30", "H1", "H2", "H4", "H12", "D1", "W1"]  # H2/H12/W1 added 2026-04-27
 
 # Pull from this date to now
 START_DATE = DEFAULT_START_DATE  # 2020-01-01 by default
@@ -132,16 +154,12 @@ def run_gap_checks(cleaner: DataCleaner) -> None:
     print("STEP 3 - Running gap checks on all pairs/timeframes")
     print("=" * 60)
 
-    check_timeframes = ["M1", "H1", "D1"]  # Representative sample
+    check_timeframes = ["M1", "M30", "H1", "H4", "D1"]  # Representative sample across all granularities
 
     for pair in PAIRS:
         for tf in check_timeframes:
             try:
-                gaps = cleaner.find_gaps(pair, tf)
-                if gaps:
-                    print(f"  WARN: {pair} {tf} — {len(gaps)} gap(s) found")
-                else:
-                    print(f"  OK:   {pair} {tf} — clean")
+                cleaner.find_gaps(pair, tf)  # find_gaps() prints its own WARN/OK line
             except Exception as e:
                 print(f"  ERROR checking {pair} {tf}: {e}")
 
@@ -156,7 +174,7 @@ def print_coverage_summary(feed: MT5DataFeed) -> None:
     print(f"{'Pair':<10} {'TF':<6} {'Bars':>10}  {'From':<12} {'To':<12}")
     print("-" * 56)
 
-    check_timeframes = ["M1", "H1", "D1"]
+    check_timeframes = ["M1", "M5", "M15", "M30", "H1", "H2", "H4", "H12", "D1", "W1"]
     for pair in PAIRS:
         for tf in check_timeframes:
             info = feed.get_data_range(pair, tf)

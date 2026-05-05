@@ -4,21 +4,26 @@
 
 ---
 
-## 🚀 Quick Start
+## 🎯 Pick Your Path
 
-```bash
-cd TradePanel
-pip install -r requirements.txt
-# Edit config/config.yaml with your account details
-python main.py paper-trade
-# Open http://localhost:5000
-```
+### 🚀 "I want to get trading NOW"
+1. [README.md](README.md) (2 min read)
+2. [GETTING_STARTED.md](docs/GETTING_STARTED.md) → Installation section
+3. Run: `.\trade.bat start`
+
+### 📖 "I want to understand the system"
+1. [README.md](README.md)
+2. [STRATEGIES.md](docs/STRATEGIES.md) (all strategies explained)
+3. [ARCHITECTURE.md](docs/ARCHITECTURE.md) (system design)
+
+### 🐛 "Something isn't working"
+1. [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) (7 blockers + 10+ fixes)
+2. Check logs: `.\trade.bat logs`
 
 ---
 
-## ✨ Status & Features
-
-✅ **Bot is executing trades** (Fixed 3 critical blockers - see DEBUG_SUMMARY.md)
+## ✨ Status: ✅ Stabilized & Operational
+**Latest Update**: May 5, 2026 — Documentation & Script Consolidation
 
 - **23+ Strategies** — Trend, mean reversion, breakouts, scalping
 - **Risk Management** — Position sizing, drawdown limits, margin checks
@@ -30,25 +35,32 @@ python main.py paper-trade
 
 ---
 
-## 📚 Documentation (5 files)
+## 📚 Documentation
 
 | Document | Purpose |
 |----------|---------|
-| **README.md** | Overview & quick start (this file) |
-| **GETTING_STARTED.md** | Install, configure, run |
-| **STRATEGIES.md** | All 23+ strategies |
-| **TROUBLESHOOTING.md** | Debug guides & fixes |
-| **ARCHITECTURE.md** | System design & config |
+| **[README.md](README.md)** | Overview & quick start (this file) |
+| **[GETTING_STARTED](docs/GETTING_STARTED.md)** | Install, configure, run |
+| **[STRATEGIES](docs/STRATEGIES.md)** | All 23+ strategies explained |
+| **[TROUBLESHOOTING](docs/TROUBLESHOOTING.md)** | Debug guides & common fixes |
+| **[ARCHITECTURE](docs/ARCHITECTURE.md)** | System design & API reference |
 
-**Quick links:** [Setup](GETTING_STARTED.md) • [Strategies](STRATEGIES.md) • [Help](TROUBLESHOOTING.md)
-
----
-
-## 🎯 Next Tasks
-
-- Task #2: Create 1m/5m scalping strategies
-- Task #3: Build analytics dashboard
+**Archive:** Older documentation can be found in `archive/docs/`.
 
 ---
 
-**Status**: ✅ Production Ready | **Updated**: April 24, 2026
+## 🔧 Management CLI
+
+Use the unified `trade.bat` script for all operations:
+
+```powershell
+.\trade.bat start    # Start all services (Docker + MT5 Bridge)
+.\trade.bat stop     # Stop all services
+.\trade.bat status   # Show container status
+.\trade.bat logs     # Tail all service logs
+.\trade.bat rebuild  # Force rebuild and restart
+```
+
+---
+
+**Status**: ✅ Production Ready | **Updated**: May 5, 2026

@@ -15,24 +15,15 @@ import pandas as pd
 import numpy as np
 from logging_.event_logger import EventLogger
 
-PIP_SIZES = {
-    "EURUSD": 0.0001,
-    "GBPUSD": 0.0001,
-    "USDJPY": 0.01,
-    "XAUUSD": 0.10,
-    "XAGUSD": 0.001,
-    "BTCUSD": 1.0,
-    "ETHUSD": 1.0,
-}
-DEFAULT_PIP_SIZE = 0.0001
+from utils.pip_sizes import get_pip_size
+
+
 
 
 class BacktestEngine:
 
-    def __init__(self, config_path=None, lot_size=0.1, initial_balance=10000.0):
+    def __init__(self, config_path=None, lot_size=0.1, initial_balance=None):
         self.lot_size = lot_size
-        self.initial_balance = initial_balance
-        self.balance = initial_balance
         self.trades = []
         self.logger = EventLogger()
 
@@ -49,12 +40,19 @@ class BacktestEngine:
         self._jpyzar = acct.get("backtesting_jpyzar_rate", 0.1233)
         self._account_currency = acct.get("currency", "ZAR")
 
+        # Balance is always tracked in ZAR — the account currency.
+        # Use config value as default so all reports are consistent.
+        # Callers may pass a ZAR initial_balance override.
+        default_zar = acct.get("backtesting_balance_zar", 180000.0)
+        self.initial_balance = initial_balance if initial_balance is not None else default_zar
+        self.balance = self.initial_balance  # ZAR throughout
+
     def run(self, strategy, symbol, timeframe, data_df, silent=False):
         # Minimum data guard — prevents running on noise
-        if len(data_df) < 200:
+        if len(data_df) < 100:
             raise ValueError(
                 f"Insufficient data for {symbol} {timeframe}: "
-                f"{len(data_df)} bars (need >= 200). Run data ingest first."
+                f"{len(data_df)} bars (need >= 100). Run data ingest first."
             )
 
         if not silent:
@@ -69,7 +67,7 @@ class BacktestEngine:
             )
 
         pair_cfg = self._load_pair_cfg(symbol)
-        pip_size = PIP_SIZES.get(symbol, DEFAULT_PIP_SIZE)
+        pip_size = get_pip_size(symbol)
 
         # Pass pair to strategy if it supports pair-specific data loading (e.g. COT)
         if hasattr(strategy, "set_pair"):
@@ -138,8 +136,9 @@ class BacktestEngine:
                     "symbol": symbol,
                     "timeframe": timeframe,
                     "trade_count": len(self.trades),
-                    "initial_balance": self.initial_balance,
-                    "final_balance": self.balance
+                    "initial_balance_zar": self.initial_balance,
+                    "final_balance_zar": self.balance,
+                    "pnl_zar": round(self.balance - self.initial_balance, 2)
                 }
             )
         return pd.DataFrame(self.trades) if self.trades else pd.DataFrame(), df
@@ -283,7 +282,7 @@ class BacktestEngine:
             price_diff = (exit_price - entry_price) if direction == "BUY" \
                 else (entry_price - exit_price)
 
-        gross_pips = price_diff / pip_size
+        gross_pips = price_diff / get_pip_size(trade.get("pair", ""))
         gross_usd = gross_pips * pip_val * lot
 
         # Commission only — spread is already embedded in entry_price via total_cost_pips
@@ -302,14 +301,13 @@ class BacktestEngine:
         profit_ccy = self._cfg.get("pairs", {}).get(
             trade.get("pair", ""), {}
         ).get("profit_currency", "USD")
-        if profit_ccy == "USD":
-            net_pnl_zar = net_pnl * self._usdzar
-        elif profit_ccy == "JPY":
-            net_pnl_zar = net_pnl * self._usdzar
-        else:
-            net_pnl_zar = net_pnl * self._usdzar
+        # All pip_value_per_lot figures in config.yaml are already USD-denominated
+        # (USDJPY uses ~$9/pip not raw JPY), so net_pnl is always USD here.
+        # Convert to ZAR — the account currency — for every pair.
+        net_pnl_zar = net_pnl * self._usdzar
 
-        self.balance += net_pnl
+        # Balance is tracked in ZAR throughout (account currency).
+        self.balance += net_pnl_zar
 
         trade.update({
             "exit_price": exit_price,

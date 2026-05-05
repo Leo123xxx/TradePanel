@@ -115,8 +115,8 @@ def run_wf(strategy_name, symbol, timeframe, is_pct, oos_pct, n_windows, limit=0
     
     for res in results:
         pnl = res.get('oos_profit_factor', 0) # Just checking if it made money basically, Sharpe is better. Wait, we display PF.
-        status = "PASS" if res.get('oos_sharpe', 0) > 0 else "FAIL"
-        if res.get('oos_sharpe', 0) > 0: profitable_windows += 1
+        status = "PASS" if res.get('oos_sharpe', 0) >= 1.0 else "FAIL"
+        if res.get('oos_sharpe', 0) >= 1.0: profitable_windows += 1
         
         print(f"Window {res['window_index']}: {status}", flush=True)
         print(f"  Sharpe: {res.get('oos_sharpe', 0):6.2f} | PF: {res.get('oos_profit_factor', 0):6.2f}", flush=True)
@@ -124,7 +124,7 @@ def run_wf(strategy_name, symbol, timeframe, is_pct, oos_pct, n_windows, limit=0
         print("-" * 30, flush=True)
     
     pass_rate = (profitable_windows / len(results)) * 100 if results else 0
-    print(f"Pass Rate: {pass_rate:.1f}% ({profitable_windows}/{len(results)}) based on Sharpe > 0", flush=True)
+    print(f"Pass Rate: {pass_rate:.1f}% ({profitable_windows}/{len(results)}) based on Sharpe >= 1.0", flush=True)
     
     if pass_rate >= 70:
         print("\nRESULT: STRATEGY PASSES WALK-FORWARD VALIDATION")

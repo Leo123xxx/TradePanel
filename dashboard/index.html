@@ -34,6 +34,42 @@
             </div>
         </header>
 
+        <!-- Live Account Panel -->
+        <section id="live-account-panel" class="live-account-panel glass">
+            <div class="live-account-header">
+                <h2><span class="pulse-small"></span> Live Account</h2>
+                <span id="cb-badge" class="cb-badge hidden">⚠️ CIRCUIT BREAKER ACTIVE</span>
+            </div>
+            <div class="live-account-grid">
+                <div class="live-stat">
+                    <span class="live-label">Daily P&amp;L (ZAR)</span>
+                    <span id="live-daily-pnl" class="live-value">R --</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-label">Bot Positions</span>
+                    <span id="live-bot-positions" class="live-value">--</span>
+                    <span id="live-bot-lots" class="live-sublabel">-- lots</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-label">Manual Positions</span>
+                    <span id="live-manual-positions" class="live-value">--</span>
+                    <span id="live-manual-lots" class="live-sublabel">-- lots</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-label">Max DD (30d)</span>
+                    <span id="live-max-dd" class="live-value">--%</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-label">Risk Mode</span>
+                    <span class="live-value" style="color: var(--accent-green)">1% / Trade</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-label">Account</span>
+                    <span class="live-value" style="color: var(--accent-cyan)">DEMO — R50,000</span>
+                </div>
+            </div>
+        </section>
+
         <!-- Main Metrics Overview -->
         <section class="metrics-grid">
             <div class="metric-card glass">
@@ -93,6 +129,126 @@
                 </div>
             </div>
         </div>
+
+        <!-- Signal Performance Panel -->
+        <section class="panel-section glass">
+            <div class="section-header">
+                <h2>Signal Performance (7-Day Window)</h2>
+                <span class="badge">Live</span>
+            </div>
+            <div class="chart-row three-col">
+                <div class="chart-container glass">
+                    <div class="chart-header">
+                        <h2>Hit Rate by Strategy</h2>
+                        <span class="info">signals → trades</span>
+                    </div>
+                    <div id="signal-hitrate-chart"></div>
+                </div>
+                <div class="chart-container glass">
+                    <div class="chart-header">
+                        <h2>Signals per Day</h2>
+                        <span class="info">BUY / SELL</span>
+                    </div>
+                    <div id="signals-per-day-chart"></div>
+                </div>
+                <div class="chart-container glass">
+                    <div class="chart-header">
+                        <h2>Signal → Trade Conversion</h2>
+                    </div>
+                    <div id="signal-conversion-chart"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Risk Metrics Panel -->
+        <section class="panel-section glass">
+            <div class="section-header">
+                <h2>Risk Metrics</h2>
+                <span class="badge">1% Risk / Trade</span>
+            </div>
+            <div class="chart-row">
+                <div class="chart-container glass">
+                    <div class="chart-header">
+                        <h2>Daily Drawdown (14d)</h2>
+                    </div>
+                    <div id="daily-drawdown-chart"></div>
+                </div>
+                <div class="chart-container glass large">
+                    <div class="chart-header">
+                        <h2>Kelly Fraction per Strategy</h2>
+                        <span class="info">25% fractional — from closed trades</span>
+                    </div>
+                    <div id="kelly-chart"></div>
+                </div>
+            </div>
+            <div id="cb-events-wrapper" style="margin-top:1.5rem;">
+                <h3 style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:1px;">Circuit Breaker / Pause Events</h3>
+                <div class="table-wrapper">
+                    <table id="cb-events-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Event</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cb-events-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trade Journal Panel -->
+        <section class="panel-section glass">
+            <div class="section-header">
+                <h2>Trade Journal</h2>
+                <div id="journal-summary" class="journal-summary-bar">
+                    <span id="j-total">-- trades</span>
+                    <span id="j-wr" class="highlight">--% WR</span>
+                    <span id="j-pnl">R --</span>
+                </div>
+            </div>
+            <div class="filter-bar">
+                <input id="f-date-from" type="date" class="filter-input" placeholder="From">
+                <input id="f-date-to" type="date" class="filter-input" placeholder="To">
+                <input id="f-strategy" type="text" class="filter-input" placeholder="Strategy...">
+                <input id="f-pair" type="text" class="filter-input" placeholder="Pair...">
+                <select id="f-status" class="filter-input">
+                    <option value="">All Status</option>
+                    <option value="OPENED">Open</option>
+                    <option value="CLOSED">Closed</option>
+                </select>
+                <select id="f-mode" class="filter-input">
+                    <option value="">All Modes</option>
+                    <option value="PAPER">Paper</option>
+                    <option value="LIVE">Live</option>
+                    <option value="MANUAL">Manual</option>
+                </select>
+                <button id="filter-btn" class="filter-btn" onclick="applyJournalFilter()">Apply</button>
+                <button class="filter-btn secondary" onclick="clearJournalFilter()">Clear</button>
+            </div>
+            <div class="table-wrapper">
+                <table id="journal-table">
+                    <thead>
+                        <tr>
+                            <th>Open Time</th>
+                            <th>Strategy</th>
+                            <th>Pair</th>
+                            <th>Dir</th>
+                            <th>Lots</th>
+                            <th>Entry</th>
+                            <th>Exit</th>
+                            <th>Net P&amp;L</th>
+                            <th>Status</th>
+                            <th>Mode</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="journal-body"></tbody>
+                </table>
+            </div>
+        </section>
 
         <!-- Optimization Queue -->
         <section class="optimization-section glass">

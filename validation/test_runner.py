@@ -16,12 +16,14 @@ from typing import Dict, List, Tuple, Any
 from dataclasses import dataclass, asdict
 from enum import Enum
 
+from logging.handlers import RotatingFileHandler
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('strategy_validation.log'),
+        RotatingFileHandler('strategy_validation.log', maxBytes=10*1024*1024, backupCount=5),
         logging.StreamHandler()
     ]
 )

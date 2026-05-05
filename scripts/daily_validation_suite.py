@@ -12,7 +12,7 @@ import json
 import logging
 import argparse
 import yaml
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -42,7 +42,7 @@ class DailyValidationSuite:
         self.config_path = PROJECT_ROOT / "config" / "config.yaml"
         self.results_dir = PROJECT_ROOT / "results" / "daily_validation"
         self.results_dir.mkdir(parents=True, exist_ok=True)
-        self.timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        self.timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
         try:
             with open(self.config_path) as f:
@@ -61,7 +61,7 @@ class DailyValidationSuite:
         logger.info(f"Mode: {'QUICK' if self.quick_mode else 'FULL'}")
         logger.info("=" * 60)
 
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         # Step 1: Validate all strategies
         self.validate_all_strategies()
@@ -85,7 +85,7 @@ class DailyValidationSuite:
         self.generate_summary_csv()
 
         # Step 8: Log final status
-        elapsed = (datetime.utcnow() - start_time).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
         passed = sum(1 for r in self.validation_results if r["status"] == "PASS")
         failed = sum(1 for r in self.validation_results if r["status"] == "FAIL")
         warned = sum(1 for r in self.validation_results if r["status"] == "WARN")
@@ -284,7 +284,7 @@ class DailyValidationSuite:
         avg_pf = np.mean([r.get("profit_factor", 0) for r in self.validation_results if r.get("trades", 0) > 0])
 
         trend_point = {
-            "date": datetime.utcnow().isoformat() + "Z",
+            "date": datetime.now(timezone.utc).isoformat() + "Z",
             "avg_win_rate": round(avg_wr, 2),
             "avg_profit_factor": round(avg_pf, 2),
             "passing_strategies": daily_pass_count,
@@ -336,7 +336,7 @@ class DailyValidationSuite:
         }
 
         return {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "performance_matrix": performance_matrix,
             "tier_distribution": tier_counts,
             "correlation_matrix": correlation_data,
@@ -351,7 +351,7 @@ class DailyValidationSuite:
         total = len(self.validation_results)
 
         dashboard = {
-            "last_update": datetime.utcnow().isoformat() + "Z",
+            "last_update": datetime.now(timezone.utc).isoformat() + "Z",
             "validation_summary": {
                 "total_strategies": len(set(r["strategy"] for r in self.validation_results)),
                 "total_tests": total,
@@ -366,7 +366,7 @@ class DailyValidationSuite:
             },
             "optimization_pipeline": self.optimization_queue[:10] if self.optimization_queue else [],
             "data_sync_status": {
-                "last_sync": datetime.utcnow().isoformat() + "Z",
+                "last_sync": datetime.now(timezone.utc).isoformat() + "Z",
                 "market_data_pairs": ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD"],
                 "backtesting_status": "Current",
             },
@@ -450,5 +450,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-
+   

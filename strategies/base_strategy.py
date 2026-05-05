@@ -5,6 +5,7 @@ import pandas as pd
 # Session hours (UTC) for peak liquidity per pair.
 # Signals generated OUTSIDE these windows are suppressed on intraday bars.
 SESSION_WINDOWS = {
+    # ── Original pairs ──────────────────────────────────────────────────────
     "EURUSD": [(7, 17)],
     "GBPUSD": [(7, 17)],
     "USDJPY": [(0, 3), (12, 17)],
@@ -12,6 +13,20 @@ SESSION_WINDOWS = {
     "XAGUSD": [(7, 20)],
     "BTCUSD": [(0, 24)],
     "ETHUSD": [(0, 24)],
+    # ── New pairs added 2026-04-30 ───────────────────────────────────────────
+    # NOTE: All hours are applied against SAST timestamps (UTC+2) stored in DB.
+    # "UTC 7" here means SAST hour >= 7, which is UTC 05:00 — London open.
+    "GBPJPY":  [(0, 3), (7, 17)],   # Tokyo (SAST 0-3) + London/NY (SAST 7-17)
+    "AUDUSD":  [(7, 17)],            # London/NY focus — AUD also active in Asia but lower vol
+    "USDCAD":  [(12, 20)],           # London PM + full NY (SAST 12 = UTC 10 = NY 06:00)
+    "USDZAR":  [(7, 17)],            # London/NY — exotic, avoid thin early/late hours
+    "USOIL":   [(7, 20)],            # Full energy session; avoids 21:00 maintenance break
+    "US500":   [(13, 21)],           # US equity session: SAST 13 = UTC 11 ~ NY 07:00 pre-market
+    "USTEC":   [(13, 21)],           # Nasdaq hours same as US500
+    "NVDA":    [(13, 21)],           # Nasdaq-listed stock CFD
+    "AMD":     [(13, 21)],           # Nasdaq-listed stock CFD
+    "MSFT":    [(13, 21)],           # Nasdaq-listed stock CFD — confirmed Exness 2026-04-30
+    "AAPL":    [(13, 21)],           # Nasdaq-listed stock CFD — confirmed Exness 2026-04-30
 }
 DEFAULT_SESSION = [(0, 24)]
 
@@ -108,3 +123,37 @@ class BaseStrategy(ABC):
     @abstractmethod
     def validate_params(self) -> bool:
         pass
+
+    def apply_meta_labeling(self, df: pd.DataFrame, rsi_long=None, rsi_short=None, vol_mult=None) -> pd.DataFrame:
+        """
+        Prunes signals that lack momentum or conviction.
+        Priority:
+        1. Passed arguments
+        2. self.params (rsi_long_min, rsi_short_max, vol_threshold_mult)
+        3. Hardcoded defaults (55, 45, 1.2)
+        """
+        import ta_compat as ta
+        df = df.copy()
+
+        # Resolve thresholds
+        r_long = rsi_long or self.params.get("rsi_long_min", 55)
+        r_short = rsi_short or self.params.get("rsi_short_max", 45)
+        v_mult = vol_mult or self.params.get("vol_threshold_mult", 1.2)
+        
+        # RSI Momentum Gate
+        rsi = ta.rsi(df['close'], length=14)
+        
+        # Volume Conviction Gate
+        if 'tick_volume' in df.columns:
+            vol_avg = df['tick_volume'].rolling(window=20).mean()
+            vol_ok = df['tick_volume'] >= (vol_avg * v_mult)
+        else:
+            vol_ok = True
+
+        # Prune Longs
+        df.loc[(df['signal'] == 1) & ((rsi <= r_long) | (~vol_ok)), 'signal'] = 0
+        
+        # Prune Shorts
+        df.loc[(df['signal'] == -1) & ((rsi >= r_short) | (~vol_ok)), 'signal'] = 0
+        
+        return df

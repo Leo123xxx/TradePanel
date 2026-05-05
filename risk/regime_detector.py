@@ -14,7 +14,8 @@ class RegimeDetector:
     def classify(self, df: pd.DataFrame):
         """
         Classifies the market regime for the last bar in the provided dataframe.
-        - ADX > 25: TRENDING
+        - ADX > 30 + EMA Alignment: TRENDING (Strong Conviction)
+        - ADX > 30: TRENDING_WEAK
         - ADX < 20: RANGING
         - ATR > 1.5x of its average: HIGH_VOL
         - ATR < 0.5x of its average: LOW_VOL
@@ -33,11 +34,23 @@ class RegimeDetector:
         # Calculate ATR baseline (20-period moving average of ATR)
         atr_sma = atr_series.rolling(window=20).mean().iloc[-1]
         
-        # 3. Logic
+        # 3. Calculate EMA Alignment (20, 50, 200)
+        ema20 = ta.ema(df['close'], length=20).iloc[-1]
+        ema50 = ta.ema(df['close'], length=50).iloc[-1]
+        ema200 = ta.ema(df['close'], length=200).iloc[-1] if len(df) >= 200 else 0.0
+        
+        aligned_bull = (ema20 > ema50 > ema200) if ema200 > 0 else (ema20 > ema50)
+        aligned_bear = (ema20 < ema50 < ema200) if ema200 > 0 else (ema20 < ema50)
+        is_aligned = aligned_bull or aligned_bear
+
+        # 4. Logic
         regime_base = "RANGING"
-        if adx > 25:
-            regime_base = "TRENDING"
-        elif adx >= 20 and adx <= 25:
+        if adx > 30:
+            if is_aligned:
+                regime_base = "TRENDING"
+            else:
+                regime_base = "TRENDING_WEAK"
+        elif adx >= 20 and adx <= 30:
             regime_base = "NEUTRAL"
 
         volatility = "NORMAL_VOL"

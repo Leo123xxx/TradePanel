@@ -1,0 +1,40 @@
+# TradePanel native requirements — used by venv on Windows (batch scripts + Task Scheduler)
+# Keep in sync with docker/requirements.docker.txt (Docker uses that file; this is for native mode).
+# To update: activate venv, pip install -r requirements.txt, then pip freeze > requirements.freeze.txt
+# Last synced: 2026-04-30
+
+# Web framework (used by webapp/ and dashboard.py)
+fastapi==0.115.5
+uvicorn==0.32.1
+httpx==0.28.1
+
+# Database
+psycopg2-binary==2.9.11
+
+# Config / env
+python-dotenv==1.0.1
+pyyaml==6.0.3
+pydantic==2.12.0
+pydantic-settings==2.8.0
+
+# Scheduler
+apscheduler==3.11.0
+nest_asyncio==1.6.0
+
+# Notifications
+python-telegram-bot==22.0
+
+# Data / analysis
+# pandas 2.3.3+ supports Python 3.14
+pandas==2.3.3
+numpy==2.4.4
+scipy==1.16.1
+
+# Market data feeds
+requests==2.32.3
+yfinance==0.2.54
+tradingview_screener==3.1.0
+
+# MetaTrader5 — Windows only; not installed inside Docker (Linux)
+# Version 5.0.5735+ supports Python 3.14 wheels
+MetaTrader5==5.0.5735

@@ -4,7 +4,10 @@ from datetime import datetime
 from mt5_bridge.account import MT5Account
 from data.db_client import DBClient
 import MetaTrader5 as mt5
+import pandas as pd
+import ta_compat as ta
 from risk.correlation_engine import CorrelationEngine
+from risk.regime_classifier import RegimeClassifier
 
 class RiskManager:
     def __init__(self, config_path="config/config.yaml"):
@@ -25,12 +28,26 @@ class RiskManager:
         self.account = MT5Account()
         self.db = DBClient() # Added for regime lookups
         self.correlation_engine = CorrelationEngine(self.db)
+        self.regime_classifier = RegimeClassifier()
 
     def check_all(self, strategy_name, pair, lot_size, direction):
         """
-        Runs the 7 pre-trade checks defined in Section 10 of the Master Plan.
+        Runs the pre-trade checks.
         Returns (bool, str): (Passed, Reason)
         """
+        # 0. Circuit Breaker / Manual Pause Check
+        is_paused, pause_msg = self._is_bot_paused()
+        if is_paused:
+            return False, pause_msg
+
+        # 0.1 Blocked Pairs Check
+        if not self._check_blocked_pairs(pair):
+            return False, f"RiskCheck Failed: {pair} is in the blocked_pairs list."
+
+        # 0.2 News Blackout Check
+        if self._is_news_blackout_active():
+            return False, "RiskCheck Failed: News blackout active."
+
         # 1. Strategy is active and not paused
         if not self._check_strategy_active(strategy_name):
             return False, f"RiskCheck Failed: Strategy {strategy_name} is disabled/paused."
@@ -60,13 +77,107 @@ class RiskManager:
         if not self._check_trading_hours(pair):
             return False, "RiskCheck Failed: Outside of configured trading hours/days."
 
-        # 8. Correlation Check (Phase 5 - WARNING ONLY)
+        # 8. High-Timeframe (D1) Trend Alignment
+        if not self._check_htf_trend(strategy_name, pair, direction):
+            return False, f"RiskCheck Failed: Counter-trend signal (D1 EMA 200 gate)."
+
+        # 9. Macro Bias Alignment
+        if not self._check_macro_bias(pair, direction):
+            return False, f"RiskCheck Failed: Signal conflicts with Global Macro Bias."
+
+        # 10. Correlation Check (Phase 5 - WARNING ONLY)
         is_redundant, corr_val = self.correlation_engine.check_signal_redundancy(strategy_name, pair, mt5.positions_get())
         if is_redundant:
             # We don't return False here because user wanted only WARNINGS
             print(f"⚠️ [CORRELATION WARNING] Signal for {strategy_name} on {pair} detected high redundancy ({corr_val:.2f}) with existing positions.")
 
         return True, "All risk checks passed."
+
+    def calculate_lot_size(self, symbol, sl_points):
+        """
+        Calculates lot size for the configured risk percentage (default 1%) 
+        based on SL distance in points.
+        Formula: LotSize = RiskAmount / (SL_Ticks * TickValue)
+        """
+        try:
+            if sl_points <= 0:
+                return self.config['risk_management'].get('default_lot_size', 0.1)
+
+            # 1. Get Risk Amount in ZAR
+            balance = self.account.get_balance()
+            risk_pct = self.config['risk_management'].get('risk_per_trade_pct', 1.0)
+            risk_amount_zar = balance * (risk_pct / 100.0)
+
+            # 2. Get MT5 Symbol Info
+            symbol_info = mt5.symbol_info(symbol)
+            if not symbol_info:
+                return 0.1
+
+            # Tick values in MT5 are expressed in account currency (ZAR)
+            tick_value = symbol_info.trade_tick_value
+            tick_size = symbol_info.trade_tick_size
+            point = symbol_info.point
+
+            if tick_value <= 0 or tick_size <= 0:
+                return 0.1
+
+            # 3. Calculate Lot Size
+            sl_ticks = (sl_points * point) / tick_size
+            if sl_ticks <= 0:
+                return 0.1
+
+            lot_size = risk_amount_zar / (sl_ticks * tick_value)
+            
+            # 4. Apply Constraints
+            min_lot = symbol_info.volume_min
+            max_lot_hard = self.config['risk_management'].get('max_lot_size', 1.0)
+            max_lot = min(symbol_info.volume_max, max_lot_hard)
+
+            # Round to lot_step (usually 0.01)
+            lot_step = symbol_info.volume_step
+            lot_size = round(lot_size / lot_step) * lot_step
+            
+            final_lots = max(min_lot, min(max_lot, lot_size))
+            
+            print(f"[RiskManager] Risk: R{risk_amount_zar:.2f} | SL: {sl_points:.1f} pts | Lots: {final_lots:.2f} (Calc: {lot_size:.4f})")
+            return round(final_lots, 2)
+
+        except Exception as e:
+            print(f"[RiskManager] Error calculating lot size: {e}")
+            return 0.1
+
+    def _check_blocked_pairs(self, pair):
+        """Returns False if the pair is in the blocked_pairs list."""
+        blocked = self.config['risk_management'].get('blocked_pairs', [])
+        return pair.upper() not in [p.upper() for p in blocked]
+
+    def _is_news_blackout_active(self):
+        """Checks if a news blackout is currently active in bot_health table."""
+        try:
+            # Query for the most recent NEWS_BLACKOUT event
+            query = "SELECT status, message FROM bot_health WHERE event_type = 'NEWS_BLACKOUT' LIMIT 1"
+            res = self.db.execute_query(query)
+            if not res:
+                return False
+                
+            status, end_time_str = res[0]
+            if status != 'PAUSED':
+                return False
+                
+            # end_time_str is expected to be ISO format timestamp
+            from datetime import datetime
+            try:
+                end_time = datetime.fromisoformat(end_time_str)
+                if datetime.now() < end_time:
+                    return True
+            except (ValueError, TypeError):
+                # Fallback: if message isn't a timestamp, assume it's active if status is PAUSED
+                return True
+                
+            return False
+        except Exception as e:
+            print(f"[RiskManager] Error checking news blackout: {e}")
+            return False
 
     def calculate_kelly_size(self, strategy_name, symbol, base_lots=0.1):
         """
@@ -129,6 +240,51 @@ class RiskManager:
             print(f"[KELLY] Error calculating size: {e}")
             return base_lots
 
+    def _is_bot_paused(self):
+        """
+        Queries bot_health table for a CIRCUIT_BREAKER or MANUAL_PAUSE row
+        newer than today's start or currently active.
+        """
+        try:
+            # Check for CIRCUIT_BREAKER today
+            query = """
+                SELECT status, message FROM bot_health 
+                WHERE event_type = 'CIRCUIT_BREAKER' 
+                AND status = 'PAUSED'
+                AND timestamp >= CURRENT_DATE 
+                ORDER BY timestamp DESC LIMIT 1
+            """
+            rows = self.db.execute_query(query)
+            if rows:
+                return True, f"RiskCheck Failed: Circuit breaker active — {rows[0][1]}"
+
+            # Check for MANUAL_PAUSE
+            query = """
+                SELECT status, message, meta_data FROM bot_health 
+                WHERE event_type = 'MANUAL_PAUSE' 
+                AND status = 'PAUSED'
+                ORDER BY timestamp DESC LIMIT 1
+            """
+            rows = self.db.execute_query(query)
+            if rows:
+                meta = rows[0][2]
+                if meta and 'resume_at' in meta:
+                    resume_at = datetime.fromisoformat(meta['resume_at'])
+                    if datetime.now() < resume_at:
+                        return True, f"RiskCheck Failed: Manual pause active until {resume_at.strftime('%H:%M')}."
+                    else:
+                        # Auto-resume logic: update status to ACTIVE
+                        self.db.execute_query(
+                            "UPDATE bot_health SET status = 'ACTIVE' WHERE event_type = 'MANUAL_PAUSE'"
+                        )
+                        return False, ""
+                return True, "RiskCheck Failed: Manual pause active."
+
+            return False, ""
+        except Exception as e:
+            print(f"[RiskManager] Error checking pause state: {e}")
+            return False, ""
+
     def _get_strategy_id(self, strategy_name):
         res = self.db.execute_query("SELECT strategy_id FROM strategies WHERE name = %s", (strategy_name,))
         if res:
@@ -136,11 +292,14 @@ class RiskManager:
         return None
 
     def _check_strategy_active(self, strategy_name):
-        strategies = self.config.get('strategies', [])
-        for s in strategies:
-            if s['name'].lower() == strategy_name.lower():
-                return s.get('enabled', False)
-        return False
+        # BUGFIX: config.yaml has no 'strategies' list — strategies are defined in
+        # strategies.yaml, which is already loaded into self.strategies_meta.
+        # The old code always returned False (blocking all trades) because
+        # self.config.get('strategies', []) was always an empty list.
+        strat_meta = self.strategies_meta.get(strategy_name.lower())
+        if strat_meta is None:
+            return False  # Unknown strategy
+        return strat_meta.get('enabled', False)
 
     def _check_regime(self, strategy_name, pair):
         """
@@ -174,11 +333,10 @@ class RiskManager:
 
     def _check_concurrent_positions(self):
         max_pos = self.config['risk_management']['max_concurrent_positions']
-        # mt5.positions_total() returns total open positions
-        current_pos = mt5.positions_total()
-        if current_pos is None:
-             return True # Assume okay if we can't fetch, maybe account is empty
-        return current_pos < max_pos
+        # Only count positions opened by the bot (magic != 0)
+        all_positions = mt5.positions_get() or []
+        bot_positions = [p for p in all_positions if p.magic != 0]
+        return len(bot_positions) < max_pos
 
     def _check_margin(self, pair, lot_size, direction):
         # Calculate margin required for the proposed trade
@@ -237,4 +395,48 @@ class RiskManager:
             return False
             
         return start_time <= current_time <= end_time
+
+    def _check_htf_trend(self, strategy_name, pair, direction):
+        """
+        Ensures trend-following strategies align with the Daily (D1) 200 EMA.
+        """
+        strat_meta = self.strategies_meta.get(strategy_name.lower())
+        if not strat_meta:
+            return True
+            
+        category = strat_meta.get('category', '').upper()
+        if "TREND" not in category:
+            return True # Only enforce on trend strategies
+
+        # Fetch last 250 bars of D1 data for EMA 200
+        query = """
+            SELECT close FROM market_data 
+            WHERE pair = %s AND timeframe = 'D1' 
+            ORDER BY timestamp DESC LIMIT 250
+        """
+        rows = self.db.execute_query(query, (pair,))
+        if len(rows) < 200:
+            return True # Not enough data to judge
+
+        closes = [float(r[0]) for r in rows][::-1] # Reverse to chronological
+        ema200 = ta.ema(pd.Series(closes), length=200).iloc[-1]
+        last_close = closes[-1]
+
+        if direction.upper() == "BUY":
+            return last_close > ema200
+        else:
+            return last_close < ema200
+
+    def _check_macro_bias(self, pair, direction):
+        """
+        Ensures signal aligns with Macro Regime (Risk-On/Off).
+        """
+        bias = self.regime_classifier.get_pair_bias(pair)
+        if bias == 0:
+            return True # Neutral bias, allow both
+            
+        if direction.upper() == "BUY":
+            return bias == 1
+        else:
+            return bias == -1
 

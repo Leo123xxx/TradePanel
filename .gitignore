@@ -193,10 +193,12 @@ test_old_*/
 logs/*.log
 *.log
 
-# Results (Optional - uncomment to exclude)
-# results/daily_validation/*.json
-# results/daily_validation/*.csv
-# results/backtests/
+# Results — generated output, not for version control
+results/overnight/
+results/daily_validation/*.json
+results/daily_validation/*.csv
+results/daily_validation/opt_results.json
+results/backtests/
 
 # Temporary Files
 *.tmp

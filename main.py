@@ -39,12 +39,19 @@ load_dotenv()
 LOGS_DIR = PROJECT_ROOT / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
+from logging.handlers import RotatingFileHandler
+
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(name)s — %(levelname)s — %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(LOGS_DIR / "main.log")
+        RotatingFileHandler(
+            LOGS_DIR / "main.log",
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
     ]
 )
 logger = logging.getLogger(__name__)

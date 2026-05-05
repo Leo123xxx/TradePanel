@@ -2,6 +2,7 @@ import os
 import time
 import logging
 import MetaTrader5 as mt5
+import yaml
 from dotenv import load_dotenv
 from typing import List, Dict
 
@@ -12,8 +13,23 @@ class MT5Connector:
         self.password = os.getenv("MT5_PASSWORD")
         self.server = os.getenv("MT5_SERVER")
         self.connected = False
-        self.required_symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD"]
-        self.timeframes = ["M5", "H1", "H4", "D1"]
+        
+        # Load required symbols from config/config.yaml
+        try:
+            config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "config.yaml")
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                self.required_symbols = [p for p, d in config.get('pairs', {}).items() if d.get('enabled', True)]
+                print(f"INFO: Loaded {len(self.required_symbols)} symbols from config.yaml")
+            else:
+                print("WARNING: config/config.yaml not found, using default symbols.")
+                self.required_symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD"]
+        except Exception as e:
+            print(f"WARNING: Failed to load symbols from config: {e}. Using defaults.")
+            self.required_symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD"]
+            
+        self.timeframes = ["M15", "M30", "H1", "H4", "D1"]
 
     def connect(self, required_symbols=None, force=False):
         """
