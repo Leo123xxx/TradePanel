@@ -14,7 +14,7 @@ REM   SETUP_VENV.bat /upgrade   — re-install / upgrade all packages
 REM   SETUP_VENV.bat /delete    — remove venv (run setup again to rebuild)
 REM ============================================================================
 setlocal
-cd /d "%~dp0"
+cd /d "%~dp0.."
 
 REM ── Handle /delete ────────────────────────────────────────────────────────
 if /i "%1"=="/delete" goto DELETE_VENV
@@ -92,7 +92,7 @@ if %ERRORLEVEL% NEQ 0 (
 REM ── Quick smoke test ──────────────────────────────────────────────────────
 echo.
 echo Running dependency smoke test...
-python -c "import yaml, psycopg2, telegram, pandas, apscheduler, dotenv; print('[OK] All core packages imported successfully')"
+python -c "import yaml, psycopg2, telegram, pandas, apscheduler, dotenv, yfinance; print('[OK] All core packages imported successfully')"
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo WARN: Smoke test failed — some packages may not have installed correctly.

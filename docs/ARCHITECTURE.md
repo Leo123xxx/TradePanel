@@ -590,5 +590,112 @@ Trades are executed as **Limit or Market Orders** with ATR-based Stop Losses. Th
 
 ---
 
+
+
+---
+
+## New Components (2026-05-06)
+
+### router_health.py
+**File**: `webapp/api/router_health.py`  
+**Route**: `GET /api/health`  
+**Purpose**: Real connectivity checks replacing the old hardcoded ONLINE/READY/ACTIVE sidebar strings.
+
+Response shape:
+```json
+{
+  "postgresql":  { "status": "ONLINE",   "detail": "SELECT 1 OK" },
+  "mt5_bridge":  { "status": "ONLINE",   "detail": "Last heartbeat 2m ago" },
+  "event_bus":   { "status": "ACTIVE",   "detail": "Listener running" }
+}
+```
+
+Status values:
+- `ONLINE` / `ACTIVE` / `HEALTHY` — component is reachable and fresh
+- `STALE` — heartbeat older than 5 minutes (MT5 Bridge only)
+- `OFFLINE` / `ERROR` — connection failed or exception thrown
+
+Registered in `webapp/main.py` as `app.include_router(health_router, prefix="/api")`.
+
+---
+
+### signal_taken Signal Flow
+
+The `triggered_trade_id` column on the `signals` table links a signal row to the trade it spawned.
+
+Write path (paper_engine.py):
+1. `_log_signal()` — inserts signal row, `triggered_trade_id = NULL`
+2. `_log_trade_open()` — inserts trade row, then UPDATEs signals SET triggered_trade_id = trade_id WHERE strategy_id = ? AND pair = ? AND triggered_trade_id IS NULL ORDER BY timestamp DESC LIMIT 1
+
+Read path:
+- `/api/papertrades/signals` — `(sig.triggered_trade_id IS NOT NULL) AS signal_taken`
+- Dashboard App.jsx — checkmark icon if signal_taken, dash if not
+- Telegram `/signals` command — "TAKEN" or "Not taken" badge
+
+---
+
+### net_pnl Write Path
+
+Actual account-currency P&L is fetched from MT5 deal history and written to `trades.net_pnl` at close time.
+
+Write path (`paper_engine._log_trade_close`):
+1. `mt5.history_deals_get(position=ticket)` — fetches deal records
+2. `real_pnl = sum(d.profit for d in deals)` — sum all deal profits (can include partial closes)
+3. `UPDATE trades SET net_pnl = %s WHERE mt5_ticket = %s`
+
+Fallback: if deal history is empty (race condition), calculates `lot_size * |exit - entry| / pip_size * tick_value`.
+
+Dashboard queries use `COALESCE(net_pnl, exit_price - entry_price)` for backward compatibility with pre-fix rows.
+
+---
+
+### Updated DB Schema (2026-05-06 additions)
+
+```sql
+-- signals: new column for trade linkage
+ALTER TABLE signals ADD COLUMN triggered_trade_id UUID REFERENCES trades(trade_id);
+
+-- trades: real account-currency P&L
+ALTER TABLE trades ADD COLUMN net_pnl NUMERIC;
+
+-- bot_health: pause/resume/circuit-breaker events
+CREATE TABLE IF NOT EXISTS bot_health (
+  id SERIAL PRIMARY KEY,
+  event_type VARCHAR(50),   -- HEARTBEAT, CIRCUIT_BREAKER, MANUAL_PAUSE
+  status VARCHAR(20),       -- ONLINE, PAUSED
+  message TEXT,
+  timestamp TIMESTAMP DEFAULT NOW(),
+  resume_at TIMESTAMP       -- for news blackout expiry
+);
+
+-- account_profiles: currency per account mode
+ALTER TABLE account_profiles ADD COLUMN currency VARCHAR(10) DEFAULT 'USD';
+```
+
+---
+
+### useConnectivity Hook (Frontend)
+
+`App.jsx` — polls `/api/health` every 15 seconds:
+
+```javascript
+function useConnectivity() {
+  const [health, setHealth] = React.useState(null)
+  React.useEffect(() => {
+    const check = () =>
+      fetch(`${API}/api/health`).then(r => r.json()).then(setHealth).catch(() => setHealth(null))
+    check()
+    const id = setInterval(check, 15000)
+    return () => clearInterval(id)
+  }, [])
+  return health
+}
+```
+
+`ConnStatus` component colours the sidebar dot by the real status value returned from the API.
+
+
+---
+
 **For more help, see TROUBLESHOOTING.md or STRATEGIES.md**
 

@@ -2,8 +2,8 @@
 REM stop_services.bat — Stop all TradePanel services
 
 setlocal enabledelayedexpansion
-set TRADEPANEL_DIR=%~dp0
-cd /d %TRADEPANEL_DIR%..
+set TRADEPANEL_DIR=%~dp0..
+cd /d %TRADEPANEL_DIR%
 
 echo.
 echo ========================================

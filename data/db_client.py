@@ -26,10 +26,23 @@ class DBClient:
             "connect_timeout": 5
         }
         if DBClient._pool is None:
-            # Threaded pool handles multiple threads (dashboard + scheduler + trades)
+            # Task 1.4: Dynamic pool sizing based on execution mode
+            # LIVE needs more concurrent connections for dashboard/bots.
+            # BACKTEST needs fewer per instance to avoid overloading DB.
+            mode = os.getenv("RUNNING_MODE", "DEFAULT")
+            if mode == "LIVE":
+                maxconn = 50
+                minconn = 5
+            elif mode == "BACKTEST":
+                maxconn = 10
+                minconn = 2
+            else:
+                maxconn = 20
+                minconn = 5
+            
             DBClient._pool = pool.ThreadedConnectionPool(
-                minconn=2,
-                maxconn=20,
+                minconn=minconn,
+                maxconn=maxconn,
                 **self.conn_params
             )
 
@@ -101,6 +114,15 @@ class DBClient:
             raise
         finally:
             self.release_connection(conn)
+
+    def refresh_materialized_view(self, view_name: str = "mv_daily_metrics"):
+        """Task 3.1: Refreshes a materialized view concurrently."""
+        try:
+            # CONCURRENTLY requires a unique index on the view (which we added)
+            self.execute_query(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {view_name}")
+        except Exception as e:
+            # Fallback to standard refresh if concurrent fails
+            self.execute_query(f"REFRESH MATERIALIZED VIEW {view_name}")
 
 if __name__ == "__main__":
     db = DBClient()

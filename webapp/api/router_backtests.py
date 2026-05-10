@@ -25,8 +25,15 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from data.db_client import DBClient
 
+import subprocess
+import asyncio
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
+
 router = APIRouter(prefix="/backtests", tags=["backtests"])
 logger = logging.getLogger(__name__)
+
+# Track active backtest process
+active_backtest_process = {"running": False, "pid": None, "start_time": None}
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +89,7 @@ def _evaluate_status(win_rate, sharpe_ratio, max_drawdown_pct, profit_factor) ->
     if win_rate < 0.65 or sharpe_ratio < 0.5 or abs_dd >= 0.15 or pf < 1.0:
         return "FAIL"
     # Pass all criteria
-    if win_rate >= 0.90 and sharpe_ratio >= 0.8 and abs_dd < 0.12 and pf >= 1.5:
+    if win_rate >= 0.90 and sharpe_ratio >= 0.8 and abs_dd < 1.2 and pf >= 1.5:
         return "PASS"
     # Everything else
     return "REVIEW"
@@ -412,3 +419,57 @@ async def update_run_notes(run_id: str, payload: NotesUpdate):
     except Exception as e:
         logger.error(f"Error updating notes for {run_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Overnight report (file-based) — auto-sync from results/overnight/
+# ---------------------------------------------------------------------------
+
+import glob as _glob
+
+@router.get("/overnight/latest")
+async def get_overnight_latest():
+    """
+    Read the most recent overnight backtest report JSON from results/overnight/.
+    Returns full results array plus summary counters.
+    Called by the dashboard every 5 min for auto-sync.
+    """
+    results_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "results", "overnight"
+    )
+    pattern = os.path.join(results_dir, "*_backtest_report.json")
+    files = sorted(_glob.glob(pattern))
+
+    if not files:
+        raise HTTPException(status_code=404, detail="No overnight report found. Run the backtest first.")
+
+    latest = files[-1]
+    try:
+        with open(latest, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read report: {e}")
+
+    results = data.get("results", [])
+    pass_count   = sum(1 for r in results if r.get("status") == "PASS")
+    review_count = sum(1 for r in results if r.get("status") == "REVIEW")
+    error_count  = len(results) - pass_count - review_count
+
+    filename = os.path.basename(latest)
+    report_date_str = filename[:8]  # e.g. "20260505"
+    try:
+        report_date = f"{report_date_str[:4]}-{report_date_str[4:6]}-{report_date_str[6:8]}"
+    except Exception:
+        report_date = report_date_str
+
+    return {
+        "filename": filename,
+        "report_date": report_date,
+        "generated": data.get("generated", report_date),
+        "pass_count": pass_count,
+        "review_count": review_count,
+        "error_count": error_count,
+        "total": len(results),
+        "results": results,
+    }

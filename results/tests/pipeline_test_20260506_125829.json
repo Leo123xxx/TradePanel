@@ -1,0 +1,9 @@
+{
+  "mt5_connection": true,
+  "db_connection": true,
+  "data_freshness": true,
+  "lot_sizing": true,
+  "risk_checks": true,
+  "signal_logging": true,
+  "trade_logging": true
+}

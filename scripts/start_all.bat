@@ -3,7 +3,7 @@ REM start_all.bat — Start all TradePanel services
 REM This script starts the dashboard, telegram bot, and optionally runs the daily cycle
 
 setlocal enabledelayedexpansion
-set TRADEPANEL_DIR=%~dp0
+set TRADEPANEL_DIR=%~dp0..
 cd /d %TRADEPANEL_DIR%
 
 echo.

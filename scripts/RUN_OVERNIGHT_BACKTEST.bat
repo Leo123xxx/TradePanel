@@ -7,16 +7,18 @@ REM Sends Telegram summary on completion.
 REM Runtime: ~15-20 minutes.
 REM ============================================================================
 setlocal
-cd /d "%~dp0"
+cd /d "%~dp0.."
 
 REM ── Guard: require venv ───────────────────────────────────────────────────
-if not exist "venv\Scripts\activate.bat" (
+if exist "venv\Scripts\activate.bat" (
+    call venv\Scripts\activate.bat
+) else if exist ".venv\Scripts\activate.bat" (
+    call .venv\Scripts\activate.bat
+) else (
     echo.
     echo [ERROR] venv not found. Run SETUP_VENV.bat first to create the environment.
-    echo         This is why you are seeing "No module named yaml/psycopg2" errors.
     exit /b 1
 )
-call venv\Scripts\activate.bat
 
 echo.
 echo [%DATE% %TIME%] TradePanel - Overnight Backtest

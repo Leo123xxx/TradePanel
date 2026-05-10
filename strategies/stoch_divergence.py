@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+
+pd.set_option('future.no_silent_downcasting', True)
 import ta_compat as ta
 from strategies.base_strategy import BaseStrategy
 from data.db_client import DBClient
@@ -93,22 +95,22 @@ class StochDivergenceStrategy(BaseStrategy):
             pairs=APPROVED_PAIRS,
         )
 
-    def _fetch_h4_data(self, symbol: str, start, end) -> pd.DataFrame:
-        """Fetch H4 OHLCV from DB for the given symbol and date range."""
+    def _fetch_tf_data(self, symbol: str, timeframe: str, start, end) -> pd.DataFrame:
+        """Fetch OHLCV from DB for any given timeframe and symbol."""
         db = DBClient()
         rows = db.execute_query(
             "SELECT timestamp, open, high, low, close, tick_volume "
-            "FROM market_data WHERE pair = %s AND timeframe = 'H4' "
+            "FROM market_data WHERE pair = %s AND timeframe = %s "
             "AND timestamp >= %s AND timestamp <= %s ORDER BY timestamp",
-            (symbol, start, end)
+            (symbol, timeframe, start, end)
         )
         if not rows:
             return pd.DataFrame()
-        df_h4 = pd.DataFrame(rows, columns=["timestamp", "open", "high", "low", "close", "tick_volume"])
-        df_h4.set_index("timestamp", inplace=True)
+        df_tf = pd.DataFrame(rows, columns=["timestamp", "open", "high", "low", "close", "tick_volume"])
+        df_tf.set_index("timestamp", inplace=True)
         for col in ["open", "high", "low", "close", "tick_volume"]:
-            df_h4[col] = df_h4[col].astype(float)
-        return df_h4
+            df_tf[col] = df_tf[col].astype(float)
+        return df_tf
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         df = data.copy()
@@ -122,60 +124,62 @@ class StochDivergenceStrategy(BaseStrategy):
         adx_max       = self.params.get("adx_max",              30)
         ema200_p      = self.params.get("ema200_period",       200)
         rsi_p         = self.params.get("rsi_period",           14)
-        rsi_bull_min  = self.params.get("rsi_bull_min",         25)
-        rsi_bull_max  = self.params.get("rsi_bull_max",         55)
-        rsi_bear_min  = self.params.get("rsi_bear_min",         45)
-        rsi_bear_max  = self.params.get("rsi_bear_max",         75)
-
+        
         # Detect current timeframe
         diff = df.index[1] - df.index[0]
         entry_tf_is_h4 = diff.seconds >= 14400 if not diff.days else False
+        entry_tf_is_h1 = diff.seconds == 3600
 
-        # ── Entry TF signals ──────────────────────────────────────────────────
+        symbol = self.params.get("_symbol", "XAUUSD")
+        start = df.index.min()
+        end   = df.index.max()
+
+        # ── 1. Entry TF signals (The Trigger) ─────────────────────────────────
         entry = _compute_stoch_divergence(df, k_period, sk, sd, look, lower, upper)
+        df['rsi'] = ta.rsi(df['close'], length=rsi_p)
 
-        # ── H4 confirmation ───────────────────────────────────────────────────
-        # If entry TF is already H4, we skip the second DB fetch (same data)
-        h4_confirm_available = False
-        h4_cross_up   = pd.Series(True, index=df.index)   # default: pass if unavailable
-        h4_cross_down = pd.Series(True, index=df.index)
-        h4_bull_div   = pd.Series(True, index=df.index)
-        h4_bear_div   = pd.Series(True, index=df.index)
+        # ── 2. H4 Context (The Setup) ──────────────────────────────────────────
+        # If on H1, look for H4 context. If on H4, look for D1 context.
+        context_tf = "H4" if entry_tf_is_h1 else "D1"
+        h4_ok_long  = pd.Series(True, index=df.index)
+        h4_ok_short = pd.Series(True, index=df.index)
 
-        if not entry_tf_is_h4:
-            # Infer symbol from data (try attribute, fallback to XAUUSD)
-            symbol = getattr(self, '_current_symbol', None)
-            if symbol is None:
-                # Try to get from context — strategy runner sets this via set_symbol()
-                symbol = self.params.get("_symbol", "XAUUSD")
+        try:
+            df_context = self._fetch_tf_data(symbol, context_tf, start, end)
+            if not df_context.empty:
+                ctx = _compute_stoch_divergence(df_context, k_period, sk, sd, look, lower, upper)
+                ctx_rsi = ta.rsi(df_context['close'], length=rsi_p)
+                
+                # Context is valid if:
+                # - TF showed divergence in the last 5 bars
+                # - OR TF is currently in extreme RSI zone (<30 or >70)
+                ctx_bull = ctx["bull_div"] | (ctx_rsi < 30)
+                ctx_bear = ctx["bear_div"] | (ctx_rsi > 70)
+                
+                # Lookback window on higher TF (setup doesn't have to be exact same bar)
+                ctx_bull_window = ctx_bull.rolling(5).max() > 0
+                ctx_bear_window = ctx_bear.rolling(5).max() > 0
+                
+                h4_ok_long  = ctx_bull_window.reindex(df.index, method="ffill").fillna(False)
+                h4_ok_short = ctx_bear_window.reindex(df.index, method="ffill").fillna(False)
+        except Exception as e:
+            print(f"  [StochDiv] Context fetch failed ({e})")
 
-            start = df.index.min()
-            end   = df.index.max()
-            try:
-                df_h4 = self._fetch_h4_data(symbol, start, end)
-                if not df_h4.empty and len(df_h4) >= k_period + look + 10:
-                    h4 = _compute_stoch_divergence(df_h4, k_period, sk, sd, look, lower, upper)
-                    # Forward-fill H4 signals onto H1 bar timestamps
-                    for s_name, h4_series in [
-                        ("h4_cross_up",   h4["cross_up"]),
-                        ("h4_cross_down", h4["cross_down"]),
-                        ("h4_bull_div",   h4["bull_div"]),
-                        ("h4_bear_div",   h4["bear_div"]),
-                    ]:
-                        combined = h4_series.reindex(df.index, method="ffill")
-                        if s_name == "h4_cross_up":
-                            h4_cross_up = combined.astype(bool).fillna(False)
-                        elif s_name == "h4_cross_down":
-                            h4_cross_down = combined.astype(bool).fillna(False)
-                        elif s_name == "h4_bull_div":
-                            h4_bull_div = combined.astype(bool).fillna(False)
-                        elif s_name == "h4_bear_div":
-                            h4_bear_div = combined.astype(bool).fillna(False)
-                    h4_confirm_available = True
-            except Exception as e:
-                print(f"  [StochDiv] H4 fetch failed ({e}); using entry-TF only")
+        # ── 3. D1 Trend Gate (The Filter) ─────────────────────────────────────
+        d1_trend_long  = pd.Series(True, index=df.index)
+        d1_trend_short = pd.Series(True, index=df.index)
+        try:
+            df_d1 = self._fetch_tf_data(symbol, "D1", start, end)
+            if not df_d1.empty:
+                d1_ema = ta.ema(df_d1['close'], length=50)
+                d1_bull = df_d1['close'] > d1_ema
+                d1_bear = df_d1['close'] < d1_ema
+                d1_trend_long  = d1_bull.reindex(df.index, method="ffill").fillna(False)
+                d1_trend_short = d1_bear.reindex(df.index, method="ffill").fillna(False)
+        except Exception as e:
+            print(f"  [StochDiv] D1 trend fetch failed ({e})")
 
-        # ── ADX gate ──────────────────────────────────────────────────────────
+        # ── 4. Ranging Gate ───────────────────────────────────────────────────
         try:
             adx_df    = ta.adx(df['high'], df['low'], df['close'], length=14)
             df['adx'] = adx_df.iloc[:, 0]
@@ -183,48 +187,35 @@ class StochDivergenceStrategy(BaseStrategy):
             df['adx'] = 15.0
         ranging = df['adx'] < adx_max
 
-        # ── EMA200 macro gate ─────────────────────────────────────────────────
-        df['ema200'] = ta.ema(df['close'], length=ema200_p)
-        macro_up   = df['close'] > df['ema200']
-        macro_down = df['close'] < df['ema200']
-
-        # ── RSI confirmation ──────────────────────────────────────────────────
-        df['rsi']   = ta.rsi(df['close'], length=rsi_p)
-        rsi_bull_ok = df['rsi'].between(rsi_bull_min, rsi_bull_max)
-        rsi_bear_ok = df['rsi'].between(rsi_bear_min, rsi_bear_max)
-
-        # ── Final signals ─────────────────────────────────────────────────────
+        # ── Final Signal Assembly ─────────────────────────────────────────────
         df['signal'] = 0
 
+        # Long: H1 Trigger (Div + Cross) + H4 Context (Recent Div or OS) + D1 Trend (Bullish)
         long_cond = (
-            entry["cross_up"] &
-            (entry["stoch_k"] <= lower + 10) &
-            entry["bull_div"] &
-            h4_bull_div &    # H4 must also show bullish divergence
-            ranging &
-            macro_up &
-            rsi_bull_ok
+            entry["cross_up"] & 
+            entry["bull_div"] & 
+            h4_ok_long & 
+            d1_trend_long & 
+            ranging
         )
+        
+        # Short: H1 Trigger (Div + Cross) + H4 Context (Recent Div or OB) + D1 Trend (Bearish)
         short_cond = (
-            entry["cross_down"] &
-            (entry["stoch_k"] >= upper - 10) &
-            entry["bear_div"] &
-            h4_bear_div &    # H4 must also show bearish divergence
-            ranging &
-            macro_down &
-            rsi_bear_ok
+            entry["cross_down"] & 
+            entry["bear_div"] & 
+            h4_ok_short & 
+            d1_trend_short & 
+            ranging
         )
 
         df.loc[long_cond,  'signal'] =  1
         df.loc[short_cond, 'signal'] = -1
 
-        # Suppress consecutive duplicates
+        # Dedup consecutive signals
         df.loc[(df['signal'] ==  1) & (df['signal'].shift(1) ==  1), 'signal'] = 0
         df.loc[(df['signal'] == -1) & (df['signal'].shift(1) == -1), 'signal'] = 0
 
-        n_confirm = "dual-TF" if h4_confirm_available else "single-TF"
-        print(f"  [StochDiv] mode={n_confirm}  longs={int((df['signal']==1).sum())}  shorts={int((df['signal']==-1).sum())}")
-
+        print(f"  [StochDiv] v4.0 Active | Longs: {(df['signal']==1).sum()} | Shorts: {(df['signal']==-1).sum()}")
         return df
 
     def validate_params(self) -> bool:

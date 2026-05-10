@@ -29,8 +29,8 @@ def test_lot_size_violation(mt5_conn):
 
 def test_strategy_disabled(mt5_conn):
     rm = RiskManager()
-    # rsi_bounce is disabled by default in config.yaml template
-    passed, reason = rm.check_all("rsi_bounce", "XAUUSD", 0.1, "BUY")
+    # fast_ma_scalper is disabled by default in config.yaml template
+    passed, reason = rm.check_all("fast_ma_scalper", "XAUUSD", 0.1, "BUY")
     assert passed is False
     assert "disabled/paused" in reason
 
@@ -49,7 +49,9 @@ from unittest.mock import patch, MagicMock
 
 def test_max_concurrent_positions(mt5_conn):
     rm = RiskManager()
-    with patch("MetaTrader5.positions_total", return_value=10): # 10 exceeds the max config of 5
+    mock_pos = MagicMock()
+    mock_pos.magic = 123
+    with patch("MetaTrader5.positions_get", return_value=[mock_pos]*10): # 10 exceeds the max config of 5
         passed, reason = rm.check_all("range_breakout", "XAUUSD", 0.1, "BUY")
         assert passed is False
         assert "Max concurrent" in reason

@@ -93,15 +93,41 @@ class StatArbGoldSilver(BaseStrategy):
         df = df.join(df_sec, how='left')
         df['close_sec'] = df['close_sec'].ffill().bfill()
 
+        # ── Indicators ──────────────────────────────────────────────────
+        import ta_compat as ta
+        
         # Z-Score on ratio
         df['ratio']      = df['close'] / df['close_sec']
         df['mean_ratio'] = df['ratio'].rolling(window=self.params['window']).mean()
         df['std_ratio']  = df['ratio'].rolling(window=self.params['window']).std()
         df['zscore']     = (df['ratio'] - df['mean_ratio']) / df['std_ratio']
 
+        # ADX for regime filtering (avoid trading against strong trends)
+        adx_df = ta.adx(df['high'], df['low'], df['close'], length=14)
+        df['adx'] = adx_df['ADX_14']
+        
+        adx_max = self.params.get("adx_max", 25)
+        z_entry = self.params.get("z_entry", 2.0)
+        z_exit  = self.params.get("z_exit", 0.0)
+
         df['signal'] = 0
-        df.loc[df['zscore'] >  self.params['z_entry'], 'signal'] = -1   # Gold expensive
-        df.loc[df['zscore'] < -self.params['z_entry'], 'signal'] =  1   # Gold cheap
+        
+        # Entry logic: Only if ADX is below threshold
+        ranging = df['adx'] < adx_max
+        df.loc[ranging & (df['zscore'] >  z_entry), 'signal'] = -1   # Gold expensive -> Sell
+        df.loc[ranging & (df['zscore'] < -z_entry), 'signal'] =  1    # Gold cheap -> Buy
+
+        # Exit logic: Signal 99 if we reach the z_exit (mean)
+        # We check the previous state to decide if we should trigger an exit
+        # This is a mean-reversion strategy; we exit when the stretch is gone.
+        # If zscore crosses the exit threshold from either side, signal 99.
+        
+        # Cross above from below
+        crossed_exit_up = (df['zscore'] >= z_exit) & (df['zscore'].shift(1) < z_exit)
+        # Cross below from above
+        crossed_exit_down = (df['zscore'] <= z_exit) & (df['zscore'].shift(1) > z_exit)
+        
+        df.loc[crossed_exit_up | crossed_exit_down, 'signal'] = 99
 
         return df
 

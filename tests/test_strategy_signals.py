@@ -210,8 +210,8 @@ class TestMacdTrend:
     def test_new_params_present(self):
         """rsi_long_min, rsi_short_max, ema200_period must be wired in."""
         s = self.Cls()
-        assert s.params.get("rsi_long_min") == 55
-        assert s.params.get("rsi_short_max") == 45
+        assert s.params.get("rsi_long_min") == 58
+        assert s.params.get("rsi_short_max") == 42
         assert s.params.get("ema200_period") == 200
 
     def test_adx_raised_to_28(self):
@@ -375,12 +375,12 @@ class TestVwapMomentum:
 
     def test_adx_max_gate_param(self):
         s = self.Cls()
-        assert s.params.get("adx_max") == 30
+        assert s.params.get("adx_max") == 22
 
     def test_rsi_zone_params(self):
         s = self.Cls()
-        assert s.params.get("rsi_buy_max") == 45
-        assert s.params.get("rsi_sell_min") == 55
+        assert s.params.get("rsi_buy_max") == 35
+        assert s.params.get("rsi_sell_min") == 65
 
     def test_adx_max_override_blocks_all(self):
         """Force adx_max=0 → all signals suppressed regardless of market state."""
@@ -415,7 +415,7 @@ class TestBBSqueezeScalp:
 
     def test_params_set(self):
         s = self.Cls()
-        assert s.params.get("adx_min") == 25
+        assert s.params.get("adx_min") == 28
         assert s.params.get("ema50_period") == 50
         assert s.params.get("rsi_confirm_long") == 52
         assert s.params.get("rsi_confirm_short") == 48
@@ -515,7 +515,7 @@ class TestYamlIntegrity:
         mt = data["macd_trend"]
         assert mt["timeframes"] == ["H1", "H4"]
         assert mt["parameters"]["adx_threshold"] == 28
-        assert mt["parameters"]["rsi_long_min"] == 55
+        assert mt["parameters"]["rsi_long_min"] == 58
         assert mt["parameters"]["ema200_period"] == 200
 
     def test_bb_squeeze_scalp_yaml_enabled(self):
@@ -523,7 +523,7 @@ class TestYamlIntegrity:
         bbs = data["bb_squeeze_scalp"]
         assert bbs["enabled"] is True
         assert bbs["timeframes"] == ["M15"]
-        assert bbs["parameters"]["adx_min"] == 25
+        assert bbs["parameters"]["adx_min"] == 28
 
     def test_rsi_extremes_scalp_yaml_enabled(self):
         data = self._load_yaml()

@@ -1,4 +1,10 @@
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+except ImportError:
+    from mt5_bridge.docker_mock import setup_mock
+    setup_mock()
+    import MetaTrader5 as mt5
+
 from data.db_client import DBClient
 from datetime import datetime, timedelta
 from mt5_bridge.account import MT5Account
@@ -47,6 +53,7 @@ class CommandRouter:
             "<b>🛠 System</b>\n"
             "/health — System health and last heartbeat\n"
             "/dashboard — Link to web dashboard\n"
+            "/backups — Status of DB backups\n"
             "/help — Show this list"
         )
 
@@ -272,13 +279,17 @@ class CommandRouter:
             # log entry per strategy+pair+direction combination, so a continuous signal
             # active across multiple 1-minute scan cycles only shows up once.
             query = """
-                SELECT DISTINCT ON (s.strategy_id, s.pair, s.direction)
-                    s.timestamp, s.pair, s.direction, st.name as strategy, s.validity_window, s.indicator_values
-                FROM signals s
-                JOIN strategies st ON s.strategy_id = st.strategy_id
-                WHERE s.timestamp >= NOW() - INTERVAL '24 hours'
-                ORDER BY s.strategy_id, s.pair, s.direction, s.timestamp DESC
-                LIMIT 5
+                SELECT * FROM (
+                    SELECT DISTINCT ON (s.strategy_id, s.pair, s.direction)
+                        s.timestamp, s.pair, s.direction, st.name as strategy, s.validity_window, s.indicator_values,
+                        (s.triggered_trade_id IS NOT NULL) AS signal_taken
+                    FROM signals s
+                    JOIN strategies st ON s.strategy_id = st.strategy_id
+                    WHERE s.timestamp >= NOW() - INTERVAL '24 hours'
+                    ORDER BY s.strategy_id, s.pair, s.direction, s.timestamp DESC
+                ) sub
+                ORDER BY timestamp DESC
+                LIMIT 15
             """
             rows = self.db.execute_query(query)
             if not rows:
@@ -338,6 +349,9 @@ class CommandRouter:
                 ts_sast = row[0].replace(tzinfo=pytz.utc).astimezone(SAST)
                 date_key = ts_sast.strftime("%b %d, %Y").upper()
                 
+                signal_taken = bool(row[6]) if len(row) > 6 else False
+                taken_badge = "✅ <b>TAKEN</b>" if signal_taken else "⏳ Not taken"
+
                 data = {
                     "timestamp": ts_sast.strftime("%H:%M SAST"),
                     "symbol": pair,
@@ -349,12 +363,15 @@ class CommandRouter:
                     "tp1": round(tp1, symbol_info.digits),
                     "tp2": round(tp2, symbol_info.digits),
                     "tp3": round(tp3, symbol_info.digits),
-                    "exit": "RR 3.0 / Reversal"
+                    "exit": "RR 3.0 / Reversal",
+                    "taken_badge": taken_badge,
                 }
                 
                 if date_key not in signals_by_date:
                     signals_by_date[date_key] = []
-                signals_by_date[date_key].append(templates.SIGNAL_ENTRY.format(**data))
+                entry_text = templates.SIGNAL_ENTRY.format(**{k: v for k, v in data.items() if k != 'taken_badge'})
+                entry_text += f"🔔 <b>Status:</b> {taken_badge}\n────────────────────\n"
+                signals_by_date[date_key].append(entry_text)
 
             # Build final response grouped by date
             final_response = "🛰 <b>Recent Strategy Signals</b>\n"
@@ -807,9 +824,7 @@ class CommandRouter:
             
             self.db.execute_query(
                 "INSERT INTO bot_health (event_type, status, message, meta_data, timestamp) "
-                "VALUES ('MANUAL_PAUSE', 'PAUSED', %s, %s, %s) "
-                "ON CONFLICT (event_type) DO UPDATE SET status='PAUSED', message=EXCLUDED.message, "
-                "meta_data=EXCLUDED.meta_data, timestamp=EXCLUDED.timestamp",
+                "VALUES ('MANUAL_PAUSE', 'PAUSED', %s, %s, %s)",
                 (message, json.dumps(meta), datetime.now())
             )
             
@@ -940,3 +955,49 @@ class CommandRouter:
             return True, f"Manual trade closed: {symbol} @ {exit_price:.5f}. (Entry: {entry_price:.5f})"
         except Exception as e:
             return False, f"Error closing manual trade: {e}"
+    def get_backups(self) -> str:
+        """Shows status of recent database backups."""
+        try:
+            msg = "💾 <b>Database Backups Status</b>\n━━━━━━━━━━━━━━━\n"
+            
+            # 1. Check local files
+            backup_dir = Path("/app/backups")
+            if not backup_dir.exists():
+                backup_dir = Path(__file__).parent.parent / "backups"
+            
+            local_files = []
+            if backup_dir.exists():
+                files = sorted(backup_dir.glob("trading_platform_*.sql.gz"), key=os.path.getmtime, reverse=True)
+                for f in files[:3]:
+                    size_mb = os.path.getsize(f) / (1024 * 1024)
+                    mtime = datetime.fromtimestamp(os.path.getmtime(f)).strftime("%m-%d %H:%M")
+                    local_files.append(f"  📁 {f.name}\n    └ {mtime} | {size_mb:.1f} MB")
+            
+            if local_files:
+                msg += "<b>Local Backups (Latest 3):</b>\n" + "\n".join(local_files) + "\n\n"
+            else:
+                msg += "⚠️ No local backup files found.\n\n"
+            
+            # 2. Check DB status for R2/S3
+            rows = self.db.execute_query(
+                "SELECT timestamp, status, meta_data FROM bot_health "
+                "WHERE event_type = 'DB_BACKUP' ORDER BY timestamp DESC LIMIT 3"
+            )
+            if rows:
+                msg += "<b>Cloud Sync Status:</b>\n"
+                for ts, status, meta in rows:
+                    import json
+                    meta_dict = json.loads(meta) if isinstance(meta, str) else meta
+                    ts_sast = ts.replace(tzinfo=pytz.utc).astimezone(SAST)
+                    icon = "🟢" if status == "SUCCESS" else "🔴"
+                    r2 = "✅" if meta_dict.get("r2_success") else "❌"
+                    s3 = "✅" if meta_dict.get("s3_success") else "❌"
+                    msg += (f"{icon} {ts_sast.strftime('%m-%d %H:%M')} SAST\n"
+                            f"   └ R2: {r2} | S3: {s3}\n")
+            else:
+                msg += "ℹ️ No cloud sync history in DB."
+            
+            msg += "\n<i>Next run: 00:05 UTC (Daily)</i>"
+            return msg
+        except Exception as e:
+            return f"❌ Backups check error: {e}"

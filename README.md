@@ -22,16 +22,49 @@
 
 ---
 
-## ✨ Status: ✅ Stabilized & Operational
-**Latest Update**: May 5, 2026 — Documentation & Script Consolidation
+## ✨ Status: 🚀 v1.0 — Bot Live
+**Version**: 1.0.0 "Bot Live"  
+**Release Date**: May 10, 2026  
+**Consolidation**: [Tier 1 & 2 Fleet](results/STRATEGY_TIER_CONSOLIDATION.md)  
+**WFO Mastery**: 5-Window Validation Complete  
 
-- **23+ Strategies** — Trend, mean reversion, breakouts, scalping
-- **Risk Management** — Position sizing, drawdown limits, margin checks
-- **Multi-Timeframe** — M5, M15, M30, H1, H4, D1, W1
-- **Multi-Asset** — Gold, Silver, FX, Crypto
-- **Paper & Live** — Test before going live
-- **Dashboard** — Real-time P&L and metrics
-- **Alerts** — Telegram notifications
+### Production Environment
+- **Platform**: MetaTrader 5 (MT5)
+- **Execution Mode**: `trade` (Tier 1) | `paper` (Tier 2/3)
+- **Risk Profile**: 2% per trade | 20% Account Circuit Breaker
+- **Dashboard**: http://localhost:3000 (Live Activity & Signals)
+- **Notifications**: Telegram (Active)
+
+### Release Milestones (v1.0)
+- ✅ **Fleet Consolidation**: 12 Tier 1 strategies promoted to production.
+- ✅ **Parameter Mastery**: Hikkake Trap and others updated with optimized WFO parameters.
+- ✅ **Dashboard Visibility**: Live activity feed for scheduled runs + signal monitor.
+- ✅ **Infrastructure Hardening**: Stable container architecture with automated daily data sync.
+
+---
+
+## 📊 V1.0 Strategy Performance Baseline
+
+| Tier | Strategies | Selection Criteria |
+|------|------------|--------------------|
+| **TIER 1** | 12 | WR ≥ 65%, Sharpe > 5, Trades ≥ 6 (Mastered) |
+| **TIER 2** | 20+ | WR ≥ 50%, Sharpe > 3, Trades ≥ 5 (High Conviction) |
+| **TIER 3** | 50+ | WR ≥ 50%, Sharpe > 3, Trades ≥ 3 (Under Watch) |
+
+Baseline WFO Validation: [wfo_master_summary.md](results/wfo_master_summary.md)
+
+---
+
+## 🏗 What's Live
+
+- **23+ Strategies** — Trend, mean reversion, breakouts, scalping, ICT
+- **Risk Management** — ATR-based lot sizing, 20% DD circuit breaker, breakeven SL at 1:1 RR
+- **Multi-Timeframe** — M15, H1, H4, D1
+- **18 Pairs** — Gold, Silver, FX, Crypto, Indices, US Stock CFDs
+- **Paper + Live Mode** — Full paper engine with MT5 execution
+- **Dashboard** — Real-time P&L, connectivity, Signals tab (per-account signal monitor), Accounts tab
+- **Telegram Bot** — Trade open/close alerts, signal digests (✅ TAKEN / ⏳ Not taken)
+- **Scheduler** — Overnight backtests, daily data sync, recommendations engine
 
 ---
 
@@ -44,14 +77,14 @@
 | **[STRATEGIES](docs/STRATEGIES.md)** | All 23+ strategies explained |
 | **[TROUBLESHOOTING](docs/TROUBLESHOOTING.md)** | Debug guides & common fixes |
 | **[ARCHITECTURE](docs/ARCHITECTURE.md)** | System design & API reference |
+| **[TRADEPANEL_SKILLS](docs/TRADEPANEL_SKILLS.md)** | Session patterns & gotchas |
+| **[Handover Doc](TradePanel/TradePanel_Handover_2026-05-06.docx)** | Full live-readiness handover |
 
-**Archive:** Older documentation can be found in `archive/docs/`.
+**Archive:** Stale pre-launch docs are in `docs/archive/`.
 
 ---
 
 ## 🔧 Management CLI
-
-Use the unified `trade.bat` script for all operations:
 
 ```powershell
 .\trade.bat start    # Start all services (Docker + MT5 Bridge)
@@ -61,6 +94,16 @@ Use the unified `trade.bat` script for all operations:
 .\trade.bat rebuild  # Force rebuild and restart
 ```
 
+### Docker Status Check
+```powershell
+docker compose ps        # All 7 containers should be healthy
+docker compose logs -f   # Live log stream
+```
+
+### DB (Adminer)
+- URL: http://localhost:8080
+- Server: `host.docker.internal:5433` | DB: `trading_platform` | User: `trader` | Password: `traderpass`
+
 ---
 
-**Status**: ✅ Production Ready | **Updated**: May 5, 2026
+**Status**: 🚀 v1.0 Bot Live | **Release Date**: May 10, 2026

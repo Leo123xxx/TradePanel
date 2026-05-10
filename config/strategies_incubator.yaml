@@ -1,0 +1,65 @@
+# 🐣 TradePanel Strategy Incubator (Experimental Batch)
+# Purpose: For testing non-implemented or highly experimental strategies in isolation.
+# Use: .\venv\Scripts\python scripts/run_backtest.py --config config/strategies_incubator.yaml
+
+active:
+  - volatility_contraction
+  - ensemble_voting
+
+volatility_contraction:
+  name: Volatility Contraction Breakout
+  category: Breakout
+  status: incubator
+  regime:
+    - LOW_VOL
+    - ANY
+  enabled: true
+  tier: TIER_3
+  pairs:
+    - USDJPY
+    - ETHUSD
+    - GBPUSD
+  timeframes:
+    - H4
+    - D1
+  parameters:
+    atr_period: 20
+    atr_lookback: 100
+    range_bars: 10
+    vol_spike: 1.5
+    tp_atr_mult: 3.5
+    sl_atr_mult: 1.2
+    adx_max: 20
+  mode: trade
+  lot_size: 0.1
+
+ensemble_voting:
+  name: Ensemble Voting (RB + RP + SP)
+  category: Advanced
+  status: incubator
+  regime:
+    - ANY
+  enabled: true
+  tier: TIER_3
+  pairs:
+    - XAUUSD
+    - EURUSD
+    - GBPUSD
+  timeframes:
+    - H1
+    - H4
+  parameters:
+    min_agreement: 2
+    sub_strategies:
+      - range_breakout
+      - rsi_pullback
+      - swing_pullback
+    tp_atr_mult: 3.0
+    sl_atr_mult: 1.0
+  mode: trade
+  lot_size: 0.2
+
+# Placeholder for future drafts
+# draft_strategy_name:
+#   status: draft
+#   enabled: false

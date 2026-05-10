@@ -5,11 +5,18 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 import logging
+import math
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.db_client import DBClient
+from functools import lru_cache
+import time
+
+# Module-level cache for performance wins
+_METRICS_CACHE = {}
+_CACHE_TTL = 300  # 5 minutes
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +53,16 @@ class PerformanceCalculator:
         logger.info(f"PerformanceCalculator: {lookback_days} days ({self.start_date} to {self.end_date})")
 
     def calculate_all_metrics(self) -> Dict:
-        """Calculate all metrics across all dimensions."""
+        """Calculate all metrics across all dimensions with in-memory caching."""
         try:
+            # Task 1.2: Check cache first
+            now = time.time()
+            if self.lookback_days in _METRICS_CACHE:
+                cache_time, cached_data = _METRICS_CACHE[self.lookback_days]
+                if now - cache_time < _CACHE_TTL:
+                    logger.info(f"Returning cached metrics for {self.lookback_days} days")
+                    return cached_data
+
             logger.info("Starting metrics calculation...")
             trades_df = self._fetch_trades()
 
@@ -66,23 +81,48 @@ class PerformanceCalculator:
 
             logger.info(f"Fetched {len(trades_df)} trades")
 
+            # Task 1.3: Mix of DF analytics and SQL aggregation for performance
             results = {
                 'account': self._calculate_account_metrics(trades_df),
                 'by_strategy': self._calculate_by_strategy(trades_df),
                 'by_asset': self._calculate_by_asset(trades_df),
-                'daily': self._calculate_daily_pnl(trades_df),
+                'daily': self._calculate_daily_pnl_sql(),  # Vectorized via SQL
                 'weekly': self._calculate_weekly_pnl(trades_df),
                 'monthly': self._calculate_monthly_pnl(trades_df),
                 'heatmap': self._calculate_heatmap(trades_df),
                 'correlation': self._calculate_correlation(trades_df)
             }
 
-            logger.info("Metrics calculation completed")
-            return results
+            logger.info("Metrics calculation completed, sanitizing results...")
+            sanitized_results = self._sanitize(results)
+            
+            # Update cache
+            _METRICS_CACHE[self.lookback_days] = (now, sanitized_results)
+            
+            return sanitized_results
 
         except Exception as e:
             logger.error(f"Error calculating metrics: {e}", exc_info=True)
             raise
+
+    def _sanitize(self, obj):
+        """Recursively replace NaN and Inf with None (JSON null)."""
+        if obj is None:
+            return None
+        if isinstance(obj, dict):
+            return {k: self._sanitize(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple, np.ndarray)):
+            return [self._sanitize(v) for v in obj]
+        elif isinstance(obj, (float, np.floating)):
+            if np.isnan(obj) or np.isinf(obj):
+                return None
+            return float(obj)
+        elif isinstance(obj, (int, np.integer)):
+            return int(obj)
+        elif hasattr(obj, "__dict__"):
+            # Convert objects/dataclasses to dicts
+            return {k: self._sanitize(v) for k, v in obj.__dict__.items()}
+        return obj
 
     def _fetch_trades(self) -> pd.DataFrame:
         """Fetch all trades from database."""
@@ -192,6 +232,29 @@ class PerformanceCalculator:
             pair_trades = trades_df[trades_df['pair'] == pair]
             results[pair] = self._calculate_account_metrics(pair_trades)
         return results
+
+    def _calculate_daily_pnl_sql(self) -> List[Dict]:
+        """Task 1.3: Calculate daily P&L using PostgreSQL aggregation (much faster)."""
+        query = """
+            SELECT 
+                DATE(created_at) as trade_date,
+                SUM(net_pnl) as pnl,
+                COUNT(*) as trades,
+                ROUND(SUM(CASE WHEN net_pnl > 0 THEN 1 ELSE 0 END)::NUMERIC / COUNT(*) * 100, 2) as win_rate
+            FROM trades
+            WHERE created_at >= %s::timestamp AND created_at <= %s::timestamp
+            GROUP BY DATE(created_at)
+            ORDER BY DATE(created_at) ASC
+        """
+        rows = self.db.execute_query(query, (self.start_date, self.end_date))
+        return [
+            {
+                'date': str(r[0]),
+                'pnl': float(r[1]),
+                'trades': int(r[2]),
+                'win_rate': float(r[3])
+            } for r in rows
+        ] if rows else []
 
     def _calculate_daily_pnl(self, trades_df: pd.DataFrame) -> List[Dict]:
         """Calculate daily P&L."""
@@ -308,29 +371,41 @@ class PerformanceCalculator:
         """Calculate annualized Sharpe ratio."""
         if len(returns) < 2:
             return 0.0
-        returns = returns[~np.isnan(returns)]
-        if len(returns) == 0:
+        
+        # Remove NaNs and Infs
+        returns = returns[~np.isnan(returns) & ~np.isinf(returns)]
+        
+        if len(returns) < 2:
             return 0.0
+            
         mean_return = np.mean(returns)
         std_return = np.std(returns)
-        if std_return == 0:
+        
+        if std_return == 0 or np.isnan(std_return):
             return 0.0
+            
         sharpe = (mean_return - (rf_rate / 252)) / std_return * np.sqrt(252)
-        return sharpe
+        return float(sharpe) if not (np.isnan(sharpe) or np.isinf(sharpe)) else 0.0
 
     def _calculate_max_drawdown(self, pnl_series: np.ndarray) -> Tuple[float, float]:
         """Calculate maximum drawdown."""
         if len(pnl_series) == 0:
             return 0.0, 0.0
+            
+        # Clean data
+        pnl_series = np.nan_to_num(pnl_series, nan=0.0, posinf=0.0, neginf=0.0)
+        
         cumulative_pnl = np.cumsum(pnl_series)
         running_max = np.maximum.accumulate(cumulative_pnl)
         drawdown = cumulative_pnl - running_max
-        max_dd_usd = np.min(drawdown)
-        if running_max[-1] == 0:
+        max_dd_usd = np.min(drawdown) if len(drawdown) > 0 else 0.0
+        
+        if len(running_max) == 0 or running_max[-1] == 0 or np.isnan(running_max[-1]):
             max_dd_pct = 0.0
         else:
             max_dd_pct = (max_dd_usd / running_max[-1]) * 100 if running_max[-1] > 0 else 0
-        return abs(max_dd_pct), abs(max_dd_usd)
+            
+        return abs(float(max_dd_pct)), abs(float(max_dd_usd))
 
     def _max_consecutive(self, series: np.ndarray, value: int) -> int:
         """Find maximum consecutive occurrences."""

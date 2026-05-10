@@ -47,7 +47,7 @@ class EMARibbonTrendStrategy(BaseStrategy):
                 "fast_ema":           9,      # Short-term trend (reacts fast)
                 "mid_ema":           21,      # Medium-term trend
                 "slow_ema":          55,      # Long-term trend (ribbon spine)
-                "adx_min":           22,      # loosened 28→22: restore original
+                "adx_min":           28,      # raised to 28 for stronger trend filtering
                 "rsi_period":        14,      # RSI for momentum filter
                 "atr_period":        14,
                 "tp_atr_mult":        3.0,    # Larger TP for crypto's bigger moves

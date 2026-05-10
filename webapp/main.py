@@ -19,6 +19,11 @@ from webapp.api.router_backtests import router as backtests_router
 from webapp.api.router_accounts import router as accounts_router
 from webapp.api.router_telegram import router as telegram_router
 from webapp.api.router_whatsapp import router as whatsapp_router
+from webapp.api.router_papertrades import router as papertrades_router
+from webapp.api.router_health import router as health_router
+from webapp.api.router_wfo import router as wfo_router
+from webapp.api.router_intelligence import router as intelligence_router
+
 from webapp.bus import bus
 import os
 
@@ -41,6 +46,11 @@ app.include_router(backtests_router, prefix="/api")
 app.include_router(accounts_router, prefix="/api")
 app.include_router(telegram_router, prefix="/api")
 app.include_router(whatsapp_router, prefix="/api")
+app.include_router(papertrades_router, prefix="/api")
+app.include_router(health_router, prefix="/api")
+app.include_router(wfo_router, prefix="/api")
+app.include_router(intelligence_router, prefix="/api")
+
 
 # Mount Static Files (Production Build)
 frontend_dist = os.path.join("webapp", "frontend", "dist")

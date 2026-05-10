@@ -182,6 +182,7 @@ dist/
 *.swo
 
 # Backups & Old Files
+backups/
 backup_*/
 old_*/
 test_old_*/

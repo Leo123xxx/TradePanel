@@ -67,8 +67,15 @@ class WhatsAppBot:
         }
 
         try:
+            # Try primary endpoint
             url = f"{self.waha_url}/api/sendText"
             response = requests.post(url, json=payload, headers=self._get_headers(), timeout=10)
+            
+            # Fallback for different WAHA versions if 404
+            if response.status_code == 404:
+                url = f"{self.waha_url}/api/messages/sendText"
+                response = requests.post(url, json=payload, headers=self._get_headers(), timeout=10)
+
             if response.status_code in (200, 201):
                 self.logger.info(f"WhatsApp message sent to {phone}")
                 return True

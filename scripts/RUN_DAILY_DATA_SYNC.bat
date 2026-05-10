@@ -9,13 +9,16 @@ setlocal
 cd /d "%~dp0.."
 
 REM ── Guard: require venv ───────────────────────────────────────────────────
-if not exist "venv\Scripts\activate.bat" (
+if exist "venv\Scripts\activate.bat" (
+    call venv\Scripts\activate.bat
+) else if exist ".venv\Scripts\activate.bat" (
+    call .venv\Scripts\activate.bat
+) else (
     echo.
-    echo [ERROR] venv not found. Run SETUP_VENV.bat first to create the environment.
+    echo [ERROR] Virtual environment not found.
     echo         This is why you are seeing "No module named yaml/psycopg2" errors.
     exit /b 1
 )
-call venv\Scripts\activate.bat
 
 echo.
 echo [%DATE% %TIME%] TradePanel - Daily Data Sync

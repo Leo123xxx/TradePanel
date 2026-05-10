@@ -26,14 +26,14 @@ class RSIExtremesScalp(BaseStrategy):
     def __init__(self, params=None):
         params = params or {
             "rsi_period":         14,   # yaml value
-            "oversold":           22,   # loosened 18→22: 18 too rare
-            "overbought":         78,   # loosened 82→78
+            "oversold":           18,   # restored to 18
+            "overbought":         82,   # restored to 82
             "min_rsi_move":        5,   # raised 3→5: stronger bounce required before entry
             "atr_period":         14,
             "tp_atr_mult":         2.0,
             "sl_atr_mult":         1.0,
             "adx_max":            30,   # NEW: only mean-revert in ranging markets
-            "vol_spike_mult":      1.2, # loosened 1.5→1.2
+            "vol_spike_mult":      1.5, # restored to 1.5
             "session_start_utc":   7,  # NEW: London open
             "session_end_utc":    17,  # NEW: NY close
         }

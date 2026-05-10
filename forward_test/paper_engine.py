@@ -120,6 +120,7 @@ class PaperEngine:
         # State tracking
         self.attempted_signals = {}  # {(strat_name, symbol, tf): last_attempted_timestamp}
         self.failed_attempts = {}    # {(strat_name, symbol): (count, last_failure_time)}
+        self.peak_equity = 0.0       # Track high-water mark for Circuit Breaker
         
         # Load active strategies
         self.strategies_cfg = []
@@ -196,6 +197,24 @@ class PaperEngine:
             if not self.connector.connect(required_symbols=list(all_symbols)):
                 print("Failed to connect to MT5. Skipping iteration.")
                 return
+
+            # Check Circuit Breaker (20% DD)
+            acc_info = mt5.account_info()
+            if acc_info:
+                current_equity = acc_info.equity
+                if current_equity > self.peak_equity:
+                    self.peak_equity = current_equity
+                elif self.peak_equity > 0:
+                    dd = (self.peak_equity - current_equity) / self.peak_equity
+                    if dd > 0.20:
+                        print(f"[CIRCUIT BREAKER] 20% DD EXCEEDED! Current DD: {dd*100:.1f}%. PAUSING NEW TRADES.")
+                        self.db.execute_query(
+                            "INSERT INTO bot_health (event_type, status, message, timestamp) "
+                            "VALUES ('CIRCUIT_BREAKER', 'PAUSED', '20% DD limit exceeded - New trades prevented', %s)",
+                            (datetime.now(),)
+                        )
+                        # The RiskManager _is_bot_paused() will now block all new entries.
+                        # Existing trades are allowed to run to SL/TP.
 
             for strat_name, strategy in self.active_strategies.items():
                 strat_cfg = next((s for s in self.strategies_cfg if s['name'] == strat_name), None)
@@ -415,6 +434,7 @@ class PaperEngine:
                         # mt5 position time is in seconds
                         sig_time = p.time
                         self._track_processed_signal(signal_key, sig_time)
+                        print(f"[PaperEngine] Reconciled existing position {p.ticket}. Flagged signal {signal_key} to prevent duplicate entries.")
                 
                 # Verify trade exists in DB trades table
                 rows = self.db.execute_query(
@@ -497,6 +517,25 @@ class PaperEngine:
             result.price, datetime.now(), 'OPENED', result.order
         ))
 
+        # Link the most recent un-claimed signal for this strategy+pair to this trade.
+        # This is what powers the "signal taken" indicator on the dashboard and Telegram.
+        if strategy_id:
+            self.db.execute_query(
+                """
+                UPDATE signals
+                SET triggered_trade_id = %s
+                WHERE signal_id = (
+                    SELECT signal_id FROM signals
+                    WHERE strategy_id = %s
+                      AND pair        = %s
+                      AND triggered_trade_id IS NULL
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                )
+                """,
+                (trade_id, strategy_id, symbol)
+            )
+
         # Build actual SL/TP price levels from points (sl_points/tp_points are MT5 points)
         symbol_info = mt5.symbol_info(symbol)
         digits = symbol_info.digits if symbol_info else 5
@@ -533,38 +572,68 @@ class PaperEngine:
         self.notif_bot.send_sync_message(msg)
         
     def _log_trade_close(self, ticket, result):
-        # 1. Fetch the trade record from DB before updating it to get symbol/direction
+        # 1. Fetch the trade record from DB before updating it to get symbol/direction/lot
         trade_info = self.db.execute_query(
-            "SELECT pair, direction, entry_price, open_time FROM trades WHERE mt5_ticket = %s",
+            "SELECT pair, direction, entry_price, open_time, lot_size FROM trades WHERE mt5_ticket = %s",
             (ticket,)
         )
-        
+
         symbol = "N/A"
         direction = "N/A"
-        pnl = 0.0
+        net_pnl = 0.0
         duration = "N/A"
-        
-        if trade_info:
-            symbol, direction, entry_price, open_time = trade_info[0]
-            # Simple P&L calculation (points * lot_size * pip_value)
-            # In a real scenario, we'd fetch actual P&L from MT5 history
-            # But for paper trading, this is a good approximation if result.deal is not available
-            exit_price = result.price
-            pnl_points = (exit_price - entry_price) if direction == "BUY" else (entry_price - exit_price)
-            # Fetch lot_size and pip_value from config for better accuracy
-            pnl = pnl_points * 10.0 # Approximation or fetch from MT5 deal if possible
-            
-            delta = datetime.now() - open_time
-            duration = str(delta).split('.')[0] # HH:MM:SS
+        close_time = datetime.now()
 
-        # 2. Update existing trade record
+        if trade_info:
+            symbol, direction, entry_price, open_time, lot_size = trade_info[0]
+            entry_price = float(entry_price or 0)
+            lot_size    = float(lot_size or 0.01)
+
+            # ── Real net_pnl from MT5 deal history ──────────────────────────
+            # history_deals_get returns all deals for this position ticket.
+            # The DEAL_ENTRY_OUT deal carries the actual profit in account currency.
+            real_pnl = None
+            try:
+                from datetime import timedelta
+                deals = mt5.history_deals_get(
+                    datetime.now() - timedelta(days=1),
+                    datetime.now() + timedelta(hours=1),
+                    position=ticket
+                )
+                if deals:
+                    real_pnl = sum(d.profit for d in deals)
+            except Exception as _deal_err:
+                print(f"[PaperEngine] Deal history fetch error: {_deal_err}")
+
+            if real_pnl is not None:
+                net_pnl = real_pnl
+            else:
+                # Fallback: approximate from price diff × lot size × contract size
+                exit_price  = float(result.price or 0)
+                pnl_points  = (exit_price - entry_price) if direction == "BUY" else (entry_price - exit_price)
+                symbol_info = mt5.symbol_info(symbol)
+                if symbol_info and symbol_info.trade_tick_value > 0:
+                    tick_size  = symbol_info.trade_tick_size
+                    tick_value = symbol_info.trade_tick_value  # in account currency per lot
+                    point      = symbol_info.point
+                    sl_ticks   = (abs(pnl_points) * point) / tick_size if tick_size else 0
+                    net_pnl    = (sl_ticks * tick_value * lot_size) * (1 if pnl_points >= 0 else -1)
+                else:
+                    net_pnl = pnl_points * 10.0  # last-resort rough approximation
+
+            delta    = close_time - open_time
+            duration = str(delta).split('.')[0]
+
+        # 2. Update trade record — write real net_pnl alongside close fields
         query = """
-            UPDATE trades 
-            SET exit_price = %s, close_time = %s, status = %s, close_reason = %s
+            UPDATE trades
+            SET exit_price = %s, close_time = %s, status = %s,
+                close_reason = %s, net_pnl = %s
             WHERE mt5_ticket = %s
         """
         self.db.execute_query(query, (
-            result.price, datetime.now(), 'CLOSED', 'SIGNAL_REVERSAL', ticket
+            result.price, close_time, 'CLOSED', 'SIGNAL_REVERSAL',
+            round(net_pnl, 4), ticket
         ))
 
         # 3. Notify

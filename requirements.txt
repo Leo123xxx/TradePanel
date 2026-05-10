@@ -6,6 +6,7 @@
 # Web framework (used by webapp/ and dashboard.py)
 fastapi==0.115.5
 uvicorn==0.32.1
+websockets==14.0
 httpx==0.28.1
 
 # Database
@@ -38,3 +39,5 @@ tradingview_screener==3.1.0
 # MetaTrader5 — Windows only; not installed inside Docker (Linux)
 # Version 5.0.5735+ supports Python 3.14 wheels
 MetaTrader5==5.0.5735
+
+pytest

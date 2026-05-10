@@ -33,6 +33,8 @@ from mt5_bridge.data_feed import MT5DataFeed, DEFAULT_START_DATE
 from data.resampler import DataResampler
 from data.cleaner import DataCleaner
 from data.db_client import DBClient
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+import os
 
 # ---------------------------------------------------------------
 # Configuration
@@ -78,72 +80,85 @@ RESAMPLE_TIMEFRAMES = ["M5", "M15", "M30", "H1", "H2", "H4", "H12", "D1", "W1"] 
 START_DATE = DEFAULT_START_DATE  # 2020-01-01 by default
 
 
+def _pull_pair_task(pair, feed, pull_start_override=None):
+    """Worker for pulling history for a single pair."""
+    print(f"  [{pair}] Pulling...")
+    # Feed and start_date are captured/passed
+    info = feed.get_data_range(pair, "M1")
+    last_in_db = info.get("latest")
+    
+    if last_in_db:
+        from datetime import timedelta
+        pull_start = last_in_db + timedelta(minutes=1)
+    else:
+        pull_start = pull_start_override or START_DATE
+        
+    try:
+        bars = feed.pull_historical_data(
+            symbol=pair,
+            timeframe=SOURCE_TIMEFRAME,
+            start_date=pull_start,
+            end_date=datetime.now()
+        )
+        return pair, bars
+    except Exception as e:
+        print(f"  ERROR pulling {pair}: {e}")
+        return pair, 0
+
 def pull_m1_history(feed: MT5DataFeed) -> dict:
     """
     Step 1: Pull M1 history for all pairs.
-    Now optimized: checks the DB for existing data and only pulls the bridge.
-    Returns a summary dict {pair: bars_inserted}.
+    Now optimized: concurrent pulls using ThreadPoolExecutor.
     """
     print("\n" + "=" * 60)
-    print("STEP 1 - Pulling M1 history (Incremental Update)")
+    print("STEP 1 - Pulling M1 history (Concurrent)")
     print("=" * 60)
 
     results = {}
-    for pair in PAIRS:
-        print(f"\n[{pair}]")
-        
-        # Check DB for existing data
-        info = feed.get_data_range(pair, "M1")
-        last_in_db = info.get("latest")
-        
-        if last_in_db:
-            # We have data, so start from the last bar + 1 min to avoid overlap
-            from datetime import timedelta
-            pull_start = last_in_db + timedelta(minutes=1)
-            print(f"  Existing data found. Syncing from {pull_start}...")
-        else:
-            # Fresh start
-            pull_start = START_DATE
-            print(f"  No existing data in DB. Performing full backfill from {pull_start.date()}...")
-
-        try:
-            bars = feed.pull_historical_data(
-                symbol=pair,
-                timeframe=SOURCE_TIMEFRAME,
-                start_date=pull_start,
-                end_date=datetime.now()
-            )
+    
+    # We use a small worker count (3) to avoid overwhelming the MT5 terminal
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(_pull_pair_task, p, feed) for p in PAIRS]
+        for future in futures:
+            pair, bars = future.result()
             results[pair] = bars
-        except Exception as e:
-            print(f"  ERROR pulling {pair}: {e}")
-            results[pair] = 0
 
-        time.sleep(0.5)  # Brief pause between pairs to avoid rate limits
-
-    # Warn about any crypto pairs that returned 0 bars (symbol name may differ per broker)
+    # Warn about any crypto pairs that returned 0 bars
     for pair in CRYPTO_PAIRS:
         if results.get(pair, 0) == 0:
-            print(f"\n  [WARN] {pair} returned 0 bars.")
-            print(f"     Check symbol name: python -c \"import MetaTrader5 as mt5; mt5.initialize(); print([s.name for s in mt5.symbols_get() if 'BTC' in s.name])\"")
+            print(f"\n  [WARN] {pair} returned 0 bars. Check symbol name.")
 
     return results
 
 
+def _resample_pair_task(pair):
+    """Worker for resampling a single pair across all timeframes."""
+    # Process-safe: needs its own DBClient
+    from data.db_client import DBClient
+    from data.resampler import DataResampler
+    db = DBClient()
+    resampler = DataResampler(db)
+    
+    print(f"  [{pair}] Resampling...")
+    for tf in RESAMPLE_TIMEFRAMES:
+        try:
+            resampler.resample_and_store(pair, tf)
+        except Exception as e:
+            print(f"  ERROR resampling {pair} {tf}: {e}")
+
 def resample_all_pairs(resampler: DataResampler) -> None:
     """
-    Step 2: Derive M5, M15, H1, H4, D1 from M1 for all pairs.
+    Step 2: Derive higher timeframes from M1 for all pairs.
+    Now optimized: parallel processing using ProcessPoolExecutor.
     """
     print("\n" + "=" * 60)
-    print("STEP 2 - Resampling M1 -> M5, M15, H1, H4, D1")
+    print("STEP 2 - Resampling (Parallel)")
     print("=" * 60)
 
-    for pair in PAIRS:
-        print(f"\n[{pair}]")
-        for tf in RESAMPLE_TIMEFRAMES:
-            try:
-                resampler.resample_and_store(pair, tf)
-            except Exception as e:
-                print(f"  ERROR resampling {pair} {tf}: {e}")
+    # Use multiprocessing for CPU-bound resampling
+    num_cores = min(os.cpu_count() or 1, 8)
+    with ProcessPoolExecutor(max_workers=num_cores) as executor:
+        executor.map(_resample_pair_task, PAIRS)
 
 
 def run_gap_checks(cleaner: DataCleaner) -> None:

@@ -23,11 +23,11 @@ cd TradePanel
 
 ### 2. Create Virtual Environment
 ```bash
-python -m venv venv
+python -m venv .venv
 # Windows
-venv\Scripts\activate
+.venv\Scripts\activate
 # macOS/Linux
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 ### 3. Install Dependencies
@@ -57,7 +57,7 @@ system:
 
 risk_management:
   risk_per_trade_pct: 2.0        # 2% of account per trade
-  max_lot_size: 1.0              # Max position size
+  max_lot_size: 0.15              # Max position size (Capped 2026-05-06)
   max_concurrent_positions: 5    # Max open trades
   max_drawdown_hard_pct: 15.0    # Auto-pause at 15% DD
 ```

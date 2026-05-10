@@ -1,0 +1,13 @@
+Category,Service/Component,Endpoint / Host,Port,Username,Password / Key,Description
+Frontend,TradePanel Frontend,http://tradepanel.mraskwhy.local,80,N/A,N/A,Main Glassmorphic Trading Dashboard
+Backend,TradePanel API,http://api.tradepanel.mraskwhy.local,8000,N/A,N/A,Backend API for data and trade execution
+Communication,WhatsApp Gateway,http://waha.mraskwhy.local,3000,admin,TradePanelWAHA2024!,WAHA Dashboard & API (Sessions management)
+Communication,WAHA Swagger UI,http://waha.mraskwhy.local/swagger,3000,admin,TradePanelWAHA2024!,Interactive API documentation for WhatsApp
+Database,Database Admin (Adminer),http://db-admin.mraskwhy.local,8080,postgres,postgres,Adminer UI to manage the Postgres DB
+Infrastructure,Traefik Gateway,http://admin.mraskwhy.local,80,Public,None,Routing & Network Traffic Dashboard
+Infrastructure,System Metrics (Prometheus),http://metrics.mraskwhy.local,9090,N/A,N/A,Prometheus metrics for system monitoring
+Infrastructure,Pi-hole (DNS),192.168.50.22,53/80,User Defined,User Defined,Local DNS management for .local domains
+Database,PostgreSQL Server,192.168.50.171,5433,postgres,postgres,Core database for TradePanel (DB: trading_platform)
+Integration,MT5 Bridge,host.docker.internal,8001,N/A,N/A,Connection between Docker and MT5 Terminal
+Integration,Telegram Bot,@TradePanel_Bot,N/A,N/A,8710948452 (Token),Telegram bot for notifications and control
+Integration,WAHA API Key,N/A,N/A,N/A,tradepanel_secret,API key for authenticating with WAHA

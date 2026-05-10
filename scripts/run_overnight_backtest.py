@@ -22,6 +22,8 @@ import json
 import traceback
 from datetime import datetime, date
 from pathlib import Path
+from multiprocessing import Pool, cpu_count
+import math
 
 # ── project root on path ─────────────────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -59,19 +61,60 @@ from strategies.multi_ema_crypto_scalper import MultiEmaCryptoScalper
 from strategies.silver_bullet_crypto import SilverBulletCrypto
 from strategies.power_of_3_amd import PowerOf3AMD
 
+from strategies.donchian_trend import DonchianTrendStrategy
+from strategies.supertrend import SuperTrendStrategy
+from strategies.ttm_squeeze import TTMSqueezeStrategy
+from strategies.bb_squeeze_scalp import BBSqueezeScalp
+from strategies.rsi_extremes_scalp import RSIExtremesScalp
+from strategies.multi_ema_crypto_scalper import MultiEmaCryptoScalper
+from strategies.silver_bullet_crypto import SilverBulletCrypto
+from strategies.power_of_3_amd import PowerOf3AMD
+from strategies.fast_ma_scalper import FastMAScalper
+from strategies.ema_ribbon_scalp import EMARibbonScalp
+from strategies.macd_zero_scalp import MACDZeroScalp
+from strategies.volatility_breakout_scalp import VolatilityBreakoutScalp
+from strategies.institutional_silver_bullet import InstitutionalSilverBullet
+from strategies.ict_judas_swing import ICTJudasSwing
+from strategies.swing_pullback import SwingPullbackStrategy
+from strategies.volatility_contraction import VolatilityContraction
+from strategies.naked_price_action import NakedPriceAction
+from strategies.ensemble import EnsembleStrategy
+from strategies.rsi_2 import RSITwoStrategy
+from strategies.volatility_squeeze_breakout import VolatilitySqueezeBreakoutStrategy
+
 STRATEGY_MAP = {
+    "donchian_trend":           (DonchianTrendStrategy,    2),
+    "supertrend":               (SuperTrendStrategy,       2),
+    "ttm_squeeze":              (TTMSqueezeStrategy,       2),
+    "bb_squeeze_scalp":         (BBSqueezeScalp,           2),
+    "rsi_extremes_scalp":       (RSIExtremesScalp,         2),
+    "multi_ema_crypto_scalper": (MultiEmaCryptoScalper,    2),
+    "silver_bullet_crypto":     (SilverBulletCrypto,       2),
+    "power_of_3_amd":           (PowerOf3AMD,              2),
+    "fast_ma_scalper":          (FastMAScalper,            2),
+    "ema_ribbon_scalp":         (EMARibbonScalp,           2),
+    "macd_zero_scalp":          (MACDZeroScalp,            2),
+    "volatility_breakout_scalp": (VolatilityBreakoutScalp, 2),
+    "institutional_silver_bullet": (InstitutionalSilverBullet, 2),
+    "ict_judas_swing":          (ICTJudasSwing,            2),
+    "swing_pullback":           (SwingPullbackStrategy,    2),
+    "volatility_contraction":   (VolatilityContraction,    2),
+    "naked_price_action":       (NakedPriceAction,         2),
+    "ensemble":                 (EnsembleStrategy,         2),
+    "rsi_2":                    (RSITwoStrategy,           2),
+    "volatility_squeeze_breakout": (VolatilitySqueezeBreakoutStrategy, 2),
     # ── TIER 1 ──────────────────────────────────────────────────────────────
     "dual_ema_fractal":         (DualEMAFractal,           1),
     "rsi_bounce":               (RSIBounceStrategy,        1),
     "stat_arb_gold_silver":     (StatArbGoldSilver,        1),
-    "ma_crossover": (MACrossoverStrategy,      1),
+    "ma_crossover":             (MACrossoverStrategy,      1),
     "bb_mean_reversion":        (BBMeanReversionStrategy,  1),
     "stoch_divergence":         (StochDivergenceStrategy,  1),
     "macd_trend":               (MACDTrendStrategy,        1),
     "gold_momentum_breakout":   (GoldMomentumBreakoutStrategy, 1),
     "range_breakout":           (RangeBreakoutStrategy,    1),
     "ema_ribbon_trend":         (EMARibbonTrendStrategy,   1),
-    "cot_sentiment":            (COTSentimentStrategy,        1),   # #2: 52.55% WR
+    "cot_sentiment":            (COTSentimentStrategy,     1),
     # ── TIER 2 ──────────────────────────────────────────────────────────────
     "session_momentum":         (SessionMomentumStrategy,  2),
     "rsi_pullback":             (RSIPullbackStrategy,      2),
@@ -81,72 +124,16 @@ STRATEGY_MAP = {
     "hikkake_trap":             (HikkakeTrap,              2),
     "orb":                      (ORBStrategy,              2),
     "rvgi_cci_confluence":      (RVGICCIConfluence,        2),
-    "bb_squeeze_scalp":         (BBSqueezeScalp,           2),
-    "rsi_extremes_scalp":       (RSIExtremesScalp,         2),
     "crypto_rsi_extremes":      (CryptoRSIExtremesStrategy, 2),
-    "multi_ema_crypto_scalper": (MultiEmaCryptoScalper,    2),  # Disabled
-    "silver_bullet_crypto":     (SilverBulletCrypto,       2),  # Disabled
-    "power_of_3_amd":           (PowerOf3AMD,              2),  # Disabled
 }
 
-# Canonical pair–timeframe combos per strategy (derived from strategies.yaml)
-STRATEGY_COMBOS = {
-    "dual_ema_fractal":         [("EURUSD","H1"),("EURUSD","H4"),("GBPUSD","H1"),("GBPUSD","H4"),
-                                  ("XAUUSD","H1"),("XAUUSD","H4"),("GBPJPY","H4"),("AUDUSD","H4"),
-                                  ("USDCAD","H4"),("USOIL","H4")],
-    "rsi_pullback":             [("XAUUSD","H4"),("EURUSD","H4"),("GBPUSD","H4"),
-                                  ("USDJPY","H4"),("XAGUSD","H4")],
-    "ma_crossover":             [("EURUSD","H1"),("EURUSD","H4"),("EURUSD","D1"),
-                                  ("GBPUSD","H1"),("GBPUSD","H4"),("USDJPY","H1"),
-                                  ("USDJPY","H4"),("AUDUSD","H4"),("GBPJPY","H4"),("USDCAD","H4")],
-    "rsi_bounce":               [("EURUSD","H4"),("XAUUSD","H4"),("GBPUSD","H4"),
-                                  ("USDJPY","H4"),("GBPJPY","H4"),("AUDUSD","H4"),("USOIL","H4")],
-    "stat_arb_gold_silver":     [("XAUUSD","H4"),("XAUUSD","H1"),("XAUUSD","M15")],
-    "bb_mean_reversion":        [("XAUUSD","H1"),("XAUUSD","H4"),("EURUSD","H1"),("EURUSD","H4"),
-                                  ("GBPUSD","H1"),("USDJPY","H4"),("GBPJPY","H4"),("US500","H4")],
-    "stoch_divergence":         [("EURUSD","H4"),("USDJPY","H4"),("XAUUSD","H4"),
-                                  ("GBPUSD","H4"),("GBPJPY","H4"),("AUDUSD","H4")],
-    "macd_trend":               [("EURUSD","H1"),("EURUSD","H4"),("USDJPY","H1"),("USDJPY","H4"),
-                                  ("GBPJPY","H4"),("AUDUSD","H4"),("US500","H4"),("USTEC","H4")],
-    "gold_momentum_breakout":   [("XAUUSD","H1"),("XAUUSD","H4"),("US500","H4"),("USTEC","H4"),
-                                  ("NVDA","H4"),("AMD","H4"),("MSFT","H4"),("AAPL","H4")],
-    "range_breakout":           [("XAUUSD","H4"),("EURUSD","H4"),("USOIL","H4"),("US500","H4")],
-    "ema_ribbon_trend":         [("BTCUSD","H4"),("ETHUSD","H4"),("XAUUSD","H4"),
-                                  ("US500","H4"),("USTEC","H4"),("NVDA","H4"),("AMD","H4"),
-                                  ("MSFT","H4"),("AAPL","H4")],
-    "cot_sentiment":            [("XAUUSD","D1"),("EURUSD","D1"),("GBPUSD","D1"),("USDJPY","D1")],
-    "session_momentum":         [("XAUUSD","H1"),("GBPUSD","H1"),("EURUSD","H1"),
-                                  ("GBPJPY","H1"),("AUDUSD","H1")],
-    "turtle_soup":              [("EURUSD","H4"),("GBPUSD","H4"),("XAUUSD","H4"),
-                                  ("GBPJPY","H4"),("AUDUSD","H4"),("USDCAD","H4"),
-                                  ("BTCUSD","H4"),("ETHUSD","H4")],
-    "dual_ema_momentum":        [("XAUUSD","H1"),("XAUUSD","H4"),("EURUSD","H4"),
-                                  ("GBPUSD","H4"),("GBPJPY","H4"),("US500","H4"),("USTEC","H4")],
-    "vwap_momentum":            [("GBPUSD","M15"),("GBPUSD","H1"),("EURUSD","M15"),("EURUSD","H1"),
-                                  ("XAUUSD","M15"),("GBPJPY","M15"),("US500","M15"),
-                                  ("BTCUSD","M15"),("BTCUSD","H1"),("ETHUSD","M15")],
-    "hikkake_trap":             [("XAUUSD","H4"),("EURUSD","H4"),("GBPUSD","H4"),
-                                  ("GBPJPY","H4"),("USOIL","H4"),("US500","H4")],
-    "orb":                      [("EURUSD","M15"),("GBPUSD","M15"),("XAUUSD","M15"),
-                                  ("GBPJPY","M15"),("AUDUSD","M15")],
-    "rvgi_cci_confluence":      [("EURUSD","H1"),("EURUSD","H4"),("GBPUSD","H1"),("GBPUSD","H4"),
-                                  ("GBPJPY","H4"),("AUDUSD","H4")],
-    "bb_squeeze_scalp":         [("XAUUSD","M15"),("EURUSD","M15"),("GBPUSD","M15"),
-                                  ("USDJPY","M15"),("GBPJPY","M15"),("AUDUSD","M15"),
-                                  ("US500","M15"),("USTEC","M15")],
-    "rsi_extremes_scalp":       [("XAUUSD","M15"),("EURUSD","M15"),("GBPUSD","M15"),
-                                  ("USDJPY","M15"),("GBPJPY","M15"),("AUDUSD","M15"),("USOIL","M15")],
-    "crypto_rsi_extremes":      [("BTCUSD","H4"),("BTCUSD","D1"),("ETHUSD","H4"),("ETHUSD","D1")],
-    # Disabled — entry logic fails in trending crypto regime
-    "multi_ema_crypto_scalper": [],
-    "silver_bullet_crypto":     [],
-    "power_of_3_amd":           [],
-}
+# Combinations are now derived dynamically from the config file.
+STRATEGY_COMBOS = {}
 
 # Thresholds for parameter tweak suggestions
-MIN_WIN_RATE   = 48.0   # Below → tighten TP or loosen SL
+MIN_WIN_RATE   = 70.0   # Below → tighten entry filter or disable pair
 MIN_TRADES     = 30     # Below → widen entry conditions
-MIN_SHARPE     = 0.8    # Below → reduce position size or avoid pair
+MIN_SHARPE     = 2.0    # Below → reduce position size or avoid pair
 MAX_DRAWDOWN   = 20.0   # Above → tighten SL mult
 
 
@@ -192,7 +179,62 @@ def suggest_tweaks(strategy_name: str, pair: str, stats: dict) -> list[str]:
     return suggestions
 
 
-def run_all_backtests(tier_filter: int | None = None,
+def backtest_worker(args_tuple):
+    """Worker function for parallel backtesting."""
+    strat_name, strat_class, pair, timeframe, df, params, initial_balance, lot_size, tier = args_tuple
+    try:
+        # Run backtest
+        strategy_instance = strat_class(params=params)
+        bt = BacktestEngine(initial_balance=initial_balance, lot_size=lot_size)
+        
+        # Set running mode to BACKTEST for pool optimization
+        os.environ["RUNNING_MODE"] = "BACKTEST"
+        
+        trades_df, signals_df = bt.run(strategy_instance, pair, timeframe, df, silent=True)
+
+        if trades_df is None or trades_df.empty:
+            return {
+                "strategy": strat_name, "pair": pair, "timeframe": timeframe,
+                "tier": tier, "status": "NO_TRADES", "reason": "zero_signals",
+            }
+
+        metrics = BacktestMetrics(signals_df, trades_df, initial_balance)
+        stats = metrics.calculate_all()
+        stats = {k: (round(v, 4) if isinstance(v, float) else v)
+                 for k, v in stats.items()}
+
+        tweaks = suggest_tweaks(strat_name, pair, stats)
+        win_rate = stats.get("win_rate", 0)
+        sharpe   = stats.get("sharpe_ratio", 0)
+        max_dd   = stats.get("max_drawdown_pct", 0)
+        n_trades = stats.get("total_trades", 0)
+
+        status = "PASS" if (win_rate >= MIN_WIN_RATE and sharpe >= MIN_SHARPE) else "REVIEW"
+
+        return {
+            "strategy": strat_name,
+            "pair": pair,
+            "timeframe": timeframe,
+            "tier": tier,
+            "status": status,
+            "win_rate": win_rate,
+            "sharpe_ratio": sharpe,
+            "max_drawdown_pct": max_dd,
+            "total_trades": n_trades,
+            "profit_factor": stats.get("profit_factor"),
+            "total_pnl": stats.get("total_pnl"),
+            "parameter_tweaks": tweaks,
+            "stats": stats,
+        }
+    except Exception as e:
+        return {
+            "strategy": strat_name, "pair": pair, "timeframe": timeframe,
+            "tier": tier, "status": "ERROR", "reason": str(e),
+        }
+
+
+def run_all_backtests(config_path: str,
+                      tier_filter: int | None = None,
                       strategy_filter: str | None = None,
                       initial_balance: float = 10_000.0,
                       lot_size: float = 0.1) -> list[dict]:
@@ -200,90 +242,119 @@ def run_all_backtests(tier_filter: int | None = None,
     results = []
     data_cache: dict[tuple, pd.DataFrame] = {}
 
+    # Load strategy configuration
+    if not os.path.exists(config_path):
+        print(f"ERROR: Config file not found: {config_path}")
+        return []
+
+    with open(config_path, 'r') as f:
+        full_config = yaml.safe_load(f)
+
+    active_strategies = full_config.get("active", [])
+    if not active_strategies:
+        print("WARNING: No active strategies found in config.")
+        return []
+
+    # Map tier names to integers for filtering
+    tier_map = {"TIER_1": 1, "TIER_2": 2, "DISABLED": 0}
+
+    # Generate combos dynamically
+    dynamic_combos = {}
+    for strat_name in active_strategies:
+        if strat_name not in full_config:
+            continue
+        
+        strat_conf = full_config[strat_name]
+        if not strat_conf.get("enabled", True):
+            continue
+            
+        pairs = strat_conf.get("pairs", [])
+        timeframes = strat_conf.get("timeframes", [])
+        
+        # Normalize timeframes to list
+        if isinstance(timeframes, str):
+            timeframes = [timeframes]
+            
+        combos = []
+        for p in pairs:
+            for tf in timeframes:
+                combos.append((p, tf))
+        dynamic_combos[strat_name] = combos
+
     strategies_to_run = {
         k: v for k, v in STRATEGY_MAP.items()
-        if (tier_filter is None or v[1] == tier_filter)
+        if k in active_strategies
         and (strategy_filter is None or k in {s.strip() for s in strategy_filter.split(",")})
     }
+    
+    # Second pass: check tier filter
+    if tier_filter is not None:
+        strategies_to_run = {
+            k: v for k, v in strategies_to_run.items()
+            if tier_map.get(full_config[k].get("tier"), 0) == tier_filter
+        }
 
-    total_combos = sum(len(STRATEGY_COMBOS.get(s, [])) for s in strategies_to_run)
+    total_combos = sum(len(dynamic_combos.get(s, [])) for s in strategies_to_run)
     print(f"\n{'='*60}")
     print(f"OVERNIGHT BACKTEST  |  {date.today()}  |  {total_combos} combos")
     print(f"{'='*60}")
 
-    for strat_name, (strat_class, tier) in strategies_to_run.items():
-        combos = STRATEGY_COMBOS.get(strat_name, [])
+    # Prepare tasks for parallel execution
+    tasks = []
+    for strat_name, (strat_class, _) in strategies_to_run.items():
+        combos = dynamic_combos.get(strat_name, [])
+        tier_str = full_config[strat_name].get("tier", "UNKNOWN")
+        tier = tier_map.get(tier_str, 0)
+        
         for pair, timeframe in combos:
-            label = f"{strat_name} | {pair} | {timeframe}"
-            print(f"\n▶ {label} ...")
-
-            try:
-                # Load & cache data
-                cache_key = (pair, timeframe)
-                if cache_key not in data_cache:
-                    df = load_data(db, pair, timeframe)
-                    if df is None or len(df) < 100:
-                        print(f"  ⚠ Skipped — insufficient data ({len(df) if df is not None else 0} bars)")
-                        results.append({
-                            "strategy": strat_name, "pair": pair, "timeframe": timeframe,
-                            "tier": tier, "status": "SKIP", "reason": "insufficient_data",
-                        })
-                        continue
-                    data_cache[cache_key] = df
-                df = data_cache[cache_key]
-
-                # Run backtest
-                strategy_instance = strat_class()
-                bt = BacktestEngine(initial_balance=initial_balance, lot_size=lot_size)
-                trades_df, signals_df = bt.run(strategy_instance, pair, timeframe, df)
-
-                if trades_df is None or trades_df.empty:
-                    print(f"  ⚠ No trades generated")
+            # Load & cache data (main process does the heavy I/O)
+            cache_key = (pair, timeframe)
+            if cache_key not in data_cache:
+                df = load_data(db, pair, timeframe)
+                if df is None or len(df) < 100:
                     results.append({
                         "strategy": strat_name, "pair": pair, "timeframe": timeframe,
-                        "tier": tier, "status": "NO_TRADES", "reason": "zero_signals",
+                        "tier": tier, "status": "SKIP", "reason": "insufficient_data",
                     })
                     continue
+                data_cache[cache_key] = df
+            
+            df = data_cache[cache_key]
+            
+            # Prepare params
+            params = full_config[strat_name].get("parameters", {}).copy()
+            pair_overrides = full_config[strat_name].get("pair_overrides", {})
+            if pair in pair_overrides:
+                params.update(pair_overrides[pair])
+            
+            tf_key = f"{pair}:{timeframe}"
+            if tf_key in pair_overrides:
+                params.update(pair_overrides[tf_key])
 
-                metrics = BacktestMetrics(signals_df, trades_df, initial_balance)
-                stats = metrics.calculate_all()
-                stats = {k: (round(v, 4) if isinstance(v, float) else v)
-                         for k, v in stats.items()}
-
-                tweaks = suggest_tweaks(strat_name, pair, stats)
-                win_rate = stats.get("win_rate", 0)
-                sharpe   = stats.get("sharpe_ratio", 0)
-                max_dd   = stats.get("max_drawdown_pct", 0)
-                n_trades = stats.get("total_trades", 0)
-
-                status = "PASS" if (win_rate >= MIN_WIN_RATE and sharpe >= MIN_SHARPE) else "REVIEW"
-
-                print(f"  {'✓' if status == 'PASS' else '⚠'} WR={win_rate:.1f}%  "
-                      f"Sharpe={sharpe:.2f}  DD={max_dd:.1f}%  Trades={n_trades}  [{status}]")
-
-                results.append({
-                    "strategy": strat_name,
-                    "pair": pair,
-                    "timeframe": timeframe,
-                    "tier": tier,
-                    "status": status,
-                    "win_rate": win_rate,
-                    "sharpe_ratio": sharpe,
-                    "max_drawdown_pct": max_dd,
-                    "total_trades": n_trades,
-                    "profit_factor": stats.get("profit_factor"),
-                    "total_pnl": stats.get("total_pnl"),
-                    "parameter_tweaks": tweaks,
-                    "stats": stats,
-                })
-
-            except Exception as e:
-                print(f"  ✗ ERROR: {e}")
+            if not params.get("enabled", True):
                 results.append({
                     "strategy": strat_name, "pair": pair, "timeframe": timeframe,
-                    "tier": tier, "status": "ERROR", "reason": str(e),
+                    "tier": tier, "status": "SKIP", "reason": "disabled_in_overrides",
                 })
+                continue
 
+            tasks.append((
+                strat_name, strat_class, pair, timeframe, df, params, initial_balance, lot_size, tier
+            ))
+
+    # Run in parallel
+    num_cores = min(cpu_count() - 1, 8) if cpu_count() > 1 else 1
+    print(f"Launching {len(tasks)} backtests across {num_cores} cores...")
+    
+    with Pool(processes=num_cores) as pool:
+        parallel_results = pool.map(backtest_worker, tasks)
+        
+    results.extend(parallel_results)
+    
+    # Summary of results
+    passed = sum(1 for r in results if r.get("status") == "PASS")
+    print(f"Parallel batch complete. Pass: {passed}/{len(results)}")
+    
     return results
 
 
@@ -346,6 +417,53 @@ def save_report(results: list[dict], out_dir: Path, suffix: str = "") -> tuple[P
     return json_path, md_path
 
 
+def save_pair_reports(results: list[dict], out_dir: Path):
+    """Save individual MD reports per pair for comparison."""
+    pair_dir = out_dir / "pair_results"
+    pair_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Group results by pair
+    by_pair = {}
+    for r in results:
+        p = r.get("pair")
+        if not p: continue
+        if p not in by_pair: by_pair[p] = []
+        by_pair[p].append(r)
+        
+    stamp = date.today().strftime("%Y%m%d")
+    
+    for pair, p_results in by_pair.items():
+        md_path = pair_dir / f"{stamp}_{pair}_report.md"
+        passed = [r for r in p_results if r.get("status") == "PASS"]
+        reviews = [r for r in p_results if r.get("status") == "REVIEW"]
+        errors = [r for r in p_results if r.get("status") in ("ERROR", "SKIP", "NO_TRADES")]
+        
+        lines = [
+            f"# Pair Backtest Report: {pair} — {date.today().strftime('%d %B %Y')}",
+            f"\n## Summary\n",
+            f"| Status | Count |",
+            f"|---|---|",
+            f"| ✅ PASS | {len(passed)} |",
+            f"| ⚠️ REVIEW | {len(reviews)} |",
+            f"| ❌ ERROR/SKIP | {len(errors)} |",
+            f"| **Total Combos** | **{len(p_results)}** |",
+            f"\n## Details\n",
+            f"| Strategy | TF | WR% | Sharpe | PF | MaxDD% |",
+            f"|---|---|---|---|---|---|",
+        ]
+        
+        # Sort by WR descending
+        for r in sorted(p_results, key=lambda x: -x.get("win_rate", 0) if x.get("win_rate") else 0):
+            wr = r.get('win_rate', 0)
+            sh = r.get('sharpe_ratio', 0)
+            pf = r.get('profit_factor', 0)
+            dd = r.get('max_drawdown_pct', 0)
+            lines.append(f"| {r['strategy']} | {r['timeframe']} | {wr:.1f} | {sh:.2f} | {pf:.2f} | {dd:.1f} |")
+            
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+
+
 def build_telegram_summary(results: list[dict]) -> str:
     passed  = [r for r in results if r.get("status") == "PASS"]
     reviews = [r for r in results if r.get("status") == "REVIEW"]
@@ -377,9 +495,10 @@ def build_telegram_summary(results: list[dict]) -> str:
         msg += f"\n🔻 <b>Needs Attention</b>\n"
         for r in bottom3:
             msg += f"  • {r['strategy']} {r['pair']} → WR={r['win_rate']:.1f}%\n"
+            import html
             tweaks = r.get("parameter_tweaks", [])
             if tweaks and tweaks[0] != "✓ All metrics within acceptable range — no changes needed":
-                msg += f"    💡 {tweaks[0][:80]}\n"
+                msg += f"    💡 {html.escape(tweaks[0][:80])}\n"
 
     if errors:
         msg += f"\n⚠️ <b>Skipped ({len(errors)}):</b> "
@@ -392,6 +511,98 @@ def build_telegram_summary(results: list[dict]) -> str:
     return msg
 
 
+def save_results_to_db(results: list[dict], db: DBClient):
+    import math
+    def _sanitize(obj):
+        if isinstance(obj, float):
+            return None if (math.isinf(obj) or math.isnan(obj)) else obj
+        if isinstance(obj, dict):
+            return {k: _sanitize(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_sanitize(v) for v in obj]
+        return obj
+
+    def _safe_num(val, clamp=9999.0):
+        if val is None: return None
+        if isinstance(val, float) and (math.isnan(val) or math.isinf(val)): return None
+        return max(-clamp, min(clamp, float(val)))
+
+    # Clear old overnight backtests to keep dashboard clean
+    try:
+        db.execute_query("DELETE FROM backtest_runs WHERE run_id LIKE 'BT-%'")
+    except Exception as e:
+        print(f"  ⚠ Could not clear old backtests: {e}")
+
+    stamp = date.today().strftime("%Y%m%d")
+    inserted = 0
+
+    for i, r in enumerate(results):
+        if r.get("status") in ("ERROR", "SKIP", "NO_TRADES"):
+            continue
+
+        run_id = f"BT-{stamp}-{i+1:04d}"
+        strat_display = f"{r['strategy']} ({r['pair']} {r['timeframe']})"
+        tweaks_str = "; ".join(r.get("parameter_tweaks", []))
+        
+        # Scale percentages down to fractions for DB schema
+        wr = _safe_num(r.get("win_rate"))
+        if wr is not None: wr = wr / 100.0
+        
+        dd = _safe_num(r.get("max_drawdown_pct"))
+        if dd is not None: 
+            # Make sure drawdown is negative for DB convention
+            dd = -abs(dd) / 100.0
+
+        try:
+            db.execute_query(
+                """
+                INSERT INTO backtest_runs (
+                    run_id, strategy_name, period_start, period_end,
+                    win_rate, sharpe_ratio, profit_factor, net_profit_zar,
+                    max_drawdown_pct, total_trades, status,
+                    params_json, metrics_json, notes
+                ) VALUES (
+                    %s, %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s
+                )
+                ON CONFLICT (run_id) DO UPDATE SET
+                    win_rate = EXCLUDED.win_rate,
+                    sharpe_ratio = EXCLUDED.sharpe_ratio,
+                    profit_factor = EXCLUDED.profit_factor,
+                    net_profit_zar = EXCLUDED.net_profit_zar,
+                    max_drawdown_pct = EXCLUDED.max_drawdown_pct,
+                    total_trades = EXCLUDED.total_trades,
+                    status = EXCLUDED.status,
+                    metrics_json = EXCLUDED.metrics_json,
+                    notes = EXCLUDED.notes,
+                    updated_at = NOW()
+                """,
+                (
+                    run_id,
+                    strat_display,
+                    None, None,
+                    wr,
+                    _safe_num(r.get("sharpe_ratio")),
+                    _safe_num(r.get("profit_factor")),
+                    _safe_num(r.get("total_pnl"), 999999999.0),
+                    dd,
+                    r.get("total_trades", 0),
+                    r.get("status", "REVIEW"),
+                    json.dumps({}),
+                    json.dumps(_sanitize(r.get("stats", {}))),
+                    tweaks_str
+                )
+            )
+            inserted += 1
+        except Exception as e:
+            # Fallback to pure print if unicode fails
+            sys.stdout.buffer.write(f"  [!] Failed to insert {run_id}: {e}\n".encode('utf-8'))
+
+    print(f"  [OK] Saved {inserted} backtest runs to the database.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Overnight backtest runner — Tier 1 & 2 strategies")
     parser.add_argument("--tier",     type=int,   default=None, help="Filter by tier (1 or 2)")
@@ -400,10 +611,12 @@ def main():
     parser.add_argument("--lot",      type=float, default=0.1,      help="Lot size (default 0.1)")
     parser.add_argument("--no-telegram", action="store_true", help="Skip Telegram notification")
     parser.add_argument("--suffix",   type=str,   default="",    help="Suffix for report filename (e.g. _retest1)")
+    parser.add_argument("--config",   type=str,   default="config/strategies.yaml", help="Path to config YAML file")
     args = parser.parse_args()
 
-    print(f"\n[{datetime.now()}] Overnight backtest starting…")
+    print(f"\n[{datetime.now()}] Overnight backtest starting using config: {args.config}")
     results = run_all_backtests(
+        config_path=args.config,
         tier_filter=args.tier,
         strategy_filter=args.strategy,  # may be comma-separated; handled in run_all_backtests
         initial_balance=args.balance,
@@ -413,9 +626,20 @@ def main():
     # Save reports
     out_dir = Path(__file__).parent.parent / "results" / "overnight"
     json_path, md_path = save_report(results, out_dir, suffix=args.suffix)
+    
+    # Save per-pair reports
+    save_pair_reports(results, out_dir)
     print(f"\n[{datetime.now()}] Reports saved:")
     print(f"  JSON: {json_path}")
     print(f"  MD:   {md_path}")
+
+    # Save to Database
+    print(f"\n[{datetime.now()}] Syncing results to database...")
+    try:
+        db = DBClient()
+        save_results_to_db(results, db)
+    except Exception as e:
+        print(f"Failed to sync to database: {e}")
 
     # Print summary to console
     passed  = sum(1 for r in results if r.get("status") == "PASS")

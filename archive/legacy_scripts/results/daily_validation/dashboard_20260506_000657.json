@@ -1,0 +1,59 @@
+{
+  "last_update": "2026-05-06T00:06:57Z",
+  "runtime_mode": "direct",
+  "note": "Docker runs on host (not visible from sandbox). Python executed directly in sandbox — packages match docker/requirements.docker.txt.",
+  "validation_summary": {
+    "total_strategies": 19,
+    "total_tests": 95,
+    "passed": 95,
+    "failed": 0,
+    "warned": 0,
+    "pass_rate": "100.0%"
+  },
+  "system_health": {
+    "docker_containers_up": "host-only (not visible from sandbox)",
+    "last_log_error": "2026-05-06 01:36 UTC — ERROR: Error validating config: No module named 'yaml' (recurring every ~6h; affects config validator & paper trading cycle, NOT daily_validation_suite)",
+    "errors_last_24h": 6,
+    "telegram_bot_active": true,
+    "telegram_last_seen": "2026-05-06T00:06:47Z"
+  },
+  "overnight_backtest": {
+    "last_run": "2026-05-05",
+    "report_time": "2026-05-05T21:15:00Z",
+    "pass_count": 35,
+    "review_count": 90,
+    "error_skip_count": 23,
+    "total_combos": 148,
+    "overnight_pass_rate": "23.6%",
+    "report_age_hours": 2.9
+  },
+  "recommendations": {
+    "report_date": "20260501",
+    "report_age_days": 5,
+    "regressions": 1,
+    "regression_detail": "gold_momentum_breakout XAUUSD D1 — Sharpe=0.00, WR=100%, only 1 trade (anomaly, persists since 20260428)",
+    "improvements": 1,
+    "improvement_detail": "ma_crossover AUDUSD H1 — new PASS (Sharpe 48.07, WR 100%)",
+    "near_pass_count": 2,
+    "near_pass_top": [
+      "gold_momentum_breakout GBPUSD H4 — Sharpe 0.72 (+0.28 needed), WR 55.2% (+4.8pp needed)",
+      "ma_crossover USDJPY D1 — Sharpe 0.60 (+0.40 needed), WR 50.0% (+10pp needed)"
+    ],
+    "removal_queue_count": 0,
+    "p1_critical_count": 4,
+    "p1_critical_detail": [
+      "bb_squeeze_scalp NVDA M15 — Sharpe -3.90, actively losing money",
+      "rsi_extremes_scalp XAUUSD M15 — Sharpe -4.20, actively losing money",
+      "rsi_pullback GBPJPY H4 — Sharpe -4.96, actively losing money",
+      "bb_squeeze_scalp AAPL M15 — Sharpe -10.21, actively losing money"
+    ]
+  },
+  "alerts": [
+    "WARN: 6 ERROR entries in main.log in last 24h (>3 threshold) — recurring 'No module named yaml' every ~6h; affects config_validator.py and daily_paper_trading_cycle.py. Install pyyaml in host env or Docker.",
+    "WARN: 4 P1 critical strategy combos in recommendations (all deeply negative Sharpe — actively losing). Report is 5 days old (no new reco since 20260501).",
+    "INFO: Overnight backtest has 23 ERROR/SKIP combos out of 148 (15.5% error rate) — review skipped combos in 20260505_backtest_report.json.",
+    "INFO: Recommendations report is 5 days old — new report will generate after next overnight backtest completes.",
+    "INFO: Regression persists — gold_momentum_breakout XAUUSD D1 (Sharpe=0.00, 1 trade anomaly) flagged since 20260428.",
+    "NOTE: Scheduled task prompt is stale — SCHEDULED_TASK_UPDATE.md in daily_validation/ contains an updated prompt. Apply it to remove false Docker-offline alerts."
+  ]
+}

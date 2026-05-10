@@ -318,7 +318,10 @@ class WalkForwardOptimizer:
 
                 if "error" not in metrics:
                     sharpe = metrics.get("sharpe_ratio", 0.0)
-                    if sharpe > best_sharpe:
+                    wr = metrics.get("win_rate", 0.0)
+                    # Require a minimum WR floor in IS so we don't select high-Sharpe
+                    # outlier-driven params that will fail the OOS WR >= 65% threshold.
+                    if sharpe > best_sharpe and wr >= 50.0:
                         best_sharpe = sharpe
                         best_params = combo
 
@@ -353,10 +356,12 @@ class WalkForwardOptimizer:
                 print(f"  WARNING OOS: {test_metrics['error']}", flush=True)
                 test_sharpe = 0.0
                 test_pf = 0.0
+                test_win_rate = 0.0
                 test_trades_count = 0
             else:
                 test_sharpe = test_metrics.get("sharpe_ratio", 0.0)
                 test_pf = test_metrics.get("profit_factor", 0.0)
+                test_win_rate = test_metrics.get("win_rate", 0.0)
                 test_trades_count = test_metrics.get("total_trades", 0)
             print(f"  Validation OOS:  Sharpe: {test_sharpe:.2f} | PF: {test_pf:.2f}", flush=True)
 
@@ -370,6 +375,7 @@ class WalkForwardOptimizer:
                 "is_sharpe": best_sharpe,
                 "oos_sharpe": test_sharpe,
                 "oos_profit_factor": test_pf,
+                "oos_win_rate": test_win_rate,
                 "oos_trades": test_trades_count,
             }
             oos_results.append(window_result)
@@ -379,8 +385,8 @@ class WalkForwardOptimizer:
                     "INSERT INTO walk_forward_results "
                     "(strategy_id, symbol, timeframe, window_index, "
                     " is_start, is_end, oos_start, oos_end, "
-                    " best_params, is_sharpe, oos_sharpe, oos_profit_factor, oos_trades) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                    " best_params, is_sharpe, oos_sharpe, oos_profit_factor, oos_win_rate, oos_trades) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
                     "ON CONFLICT DO NOTHING"
                 ),
                 (
@@ -388,7 +394,7 @@ class WalkForwardOptimizer:
                     train_start_date, train_end_date,
                     test_start_date, test_end_date,
                     json.dumps(best_params),
-                    best_sharpe, test_sharpe, test_pf, test_trades_count,
+                    best_sharpe, test_sharpe, test_pf, test_win_rate, test_trades_count,
                 ),
             )
 

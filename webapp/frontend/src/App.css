@@ -134,9 +134,22 @@
 .card {
   background: var(--panel-bg);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 1.25rem;
-  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.card:hover {
+  border-color: rgba(0, 242, 255, 0.2);
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
 }
 
 .card-head {
@@ -233,12 +246,29 @@
 .kpi-card {
   background: var(--panel-bg);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 1rem 1.1rem;
-  transition: border-color 0.2s;
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.kpi-card:hover { border-color: rgba(0, 242, 255, 0.25); }
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.kpi-card:hover { 
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.kpi-card:hover::before { opacity: 1; }
 
 .kpi-label {
   font-size: 0.68rem;
@@ -592,3 +622,17 @@
 
 .recharts-tooltip-wrapper { outline: none !important; }
 .recharts-layer { outline: none !important; }
+
+/* -- Intelligence & Archive -- */
+.intel-card { border: 1px solid rgba(0, 242, 255, 0.1); }
+.intel-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
+.intel-row { background: rgba(255,255,255,0.01); transition: background 0.2s; }
+.intel-row:hover { background: rgba(255,255,255,0.03); }
+.intel-row td { padding: 12px; border-top: 1px solid rgba(255,255,255,0.02); }
+.intel-histogram { display: flex; align-items: center; gap: 4px; height: 16px; width: 60px; }
+.histogram-bar { background: var(--accent-primary); border-radius: 1px; transition: height 0.3s; }
+.maturity-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.maturity-high { background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.2); }
+.maturity-mid { background: rgba(255, 204, 0, 0.1); color: #ffcc00; border: 1px solid rgba(255, 204, 0, 0.2); }
+.maturity-low { background: rgba(255, 68, 68, 0.1); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.2); }
+.tweak-tag { font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-secondary); margin-right: 4px; }

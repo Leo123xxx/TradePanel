@@ -1,6 +1,6 @@
 # TradePanel — Skills & Knowledge Base
 > Reusable context for Cowork / Claude AI sessions on this project.
-> Last updated: 2026-05-01
+> Last updated: 2026-05-06
 
 ---
 
@@ -57,7 +57,7 @@
 
 ## 3. Strategy Registry
 
-**v3 Strategy Upgrades (2026-05-01) — All strategies upgraded for 70%+ WR target**
+**v4 Strategy Upgrades (2026-05-06) — Directional biases and 0.15 lot limit enforced**
 
 | Strategy | Version | Key Changes |
 |---|---|---|
@@ -110,11 +110,12 @@
 | MACD Zero Scalp | DISABLED | — | — | — | WR 31-40%, confirmed broken |
 | EMA Ribbon Scalp | DISABLED | — | — | — | WR 50.7%, insufficient edge |
 
-Pass criteria (2026-05-01):
-- Win Rate: >= 70% minimum (all strategies overhauled to this target)
-- Risk Reward: >= 1:2 on M15/M30/H1/H4 (tp_atr_mult=2.0, sl_atr_mult=1.0)
-- Risk Reward: >= 1:4 on D1/W1 swing trades (tp_atr_mult=4.0, sl_atr_mult=1.0)
-- Sharpe: >= 1.0 | Max Drawdown: <= 20% | All P&L in ZAR (R18.50/USD)
+Pass criteria (aligned 2026-05-07 — single source of truth across all files):
+- Win Rate: >= 70% (PASS gate in run_overnight_backtest.py + recommendations.py)
+- Sharpe: >= 2.0 (PASS gate — enforced in both engines)
+- Risk Reward: >= 1:2 minimum (tp_atr_mult=2.0, sl_atr_mult=1.0)
+- Max Drawdown: <= 12% | Lot Size: max 0.15 | All P&L in ZAR (R18.50/USD)
+- Near-PASS threshold (priority tuning): Sharpe >= 1.2
 
 ---
 
@@ -162,6 +163,16 @@ Pass criteria (2026-05-01):
 - **Root cause 2**: `in_bear = close < ema200` almost never True for XAUUSD (multi-year bull) or FX pairs during consolidation (EMA200 too slow).
 - **Fix**: Separate `sell_threshold=30` param. Pair-aware gate: EMA200 for XAUUSD/XAGUSD (hard gate), EMA50 direction for EURUSD/GBPUSD/USDJPY.
 - **Trade-off**: EURUSD COT sell signals are currently losing (Sharpe -0.82). Monitor whether sells should be disabled for FX.
+
+### Bug 9: Lot size limit bypass in backtests (2026-05-06)
+- **Symptom**: Backtest results for high-ATR strategies showed excessive drawdowns.
+- **Root cause**: `BacktestEngine` used a fixed lot size (0.1) but some scripts might have requested higher, and there was no hard cap in the engine.
+- **Fix**: Enforced `min(lot_size, 0.15)` hard cap in `BacktestEngine.__init__`.
+
+### Bug 10: Lack of directional filtering (2026-05-06)
+- **Symptom**: Strategies were forced to trade both directions even when one side was clearly unprofitable (e.g. trading long in a structural bear market).
+- **Root cause**: `BaseStrategy` lacked `allow_long`/`allow_short` flags.
+- **Fix**: Added `allow_long` and `allow_short` (default: True) to `BaseStrategy` and implemented `filter_by_direction()` in engines.
 
 ---
 
@@ -299,6 +310,279 @@ When a strategy shows 0 trades in backtest output:
 ### 12.6 Breakeven Management
 - **Trigger**: Moves SL to entry price once the trade profit reaches `breakeven_trigger_mult * ATR` (default 1.5x).
 - **Persistence**: Verified on every engine scan cycle. Prevents winners from turning into losers.
+
+---
+
+---
+
+## 13. File Writing Rules — CRITICAL (2026-05-04 Session, Reconfirmed 2026-05-06)
+
+### 13.1 Never use the Edit tool on .py files
+The Edit tool silently introduces UTF-16 null bytes mid-file. The file appears to write successfully, but Windows Python exits silently with zero output and Linux Python says "source code cannot contain null bytes".
+
+Use bash Python inline instead:
+```
+python3 << 'PYEOF'
+path = "/sessions/.../mnt/TradePanel/forward_test/paper_engine.py"
+with open(path, "r", encoding="utf-8") as f:
+    src = f.read()
+src = src.replace("old string here", "new string here")
+with open(path, "w", encoding="utf-8") as f:
+    f.write(src)
+print("Done")
+PYEOF
+```
+
+Null byte check: `python3 -c "print(open(path,'rb').read().count(b'\x00'))"`
+
+### 13.2 Never use Write tool for long Python files with f-strings
+The Write tool may truncate at Unicode characters (em-dashes, smart quotes).
+Use bash heredoc instead: `cat > file << 'PYEOF' ... PYEOF`
+
+### 13.3 YAML files from bash mount may have null bytes
+Copy to outputs folder then strip before parsing:
+```
+raw = open(path, 'rb').read().replace(b'\x00', b'')
+yaml.safe_load(raw.decode('utf-8'))
+```
+
+### 13.4 Bash mount truncates long Python lines (false SyntaxError)
+The Linux mount of the Windows filesystem truncates very long lines, causing py_compile to report SyntaxError on valid code.
+Fix: Use the Read tool to verify Python syntax — never bash py_compile for validation.
+
+---
+
+## 14. Database — Patterns & Tools (2026-05-06)
+
+### 14.1 Adminer (preferred DB GUI)
+- URL: http://localhost:8080
+- Server: `host.docker.internal:5433` — NOT `db` (hostname does not resolve inside Docker on Windows Docker Desktop)
+- DB: `trading_platform` | User: `trader` | Password: `traderpass`
+- Collation warning on login is non-blocking — run `ALTER DATABASE trading_platform REFRESH COLLATION VERSION;` to dismiss
+
+### 14.2 net_pnl write pattern (trade close)
+Always fetch real P&L from MT5 deal history when closing a trade — not a tick approximation:
+
+```python
+deals = mt5.history_deals_get(
+    datetime.now() - timedelta(days=1),
+    datetime.now() + timedelta(hours=1),
+    position=ticket
+)
+real_pnl = sum(d.profit for d in deals) if deals else fallback_calc
+self.db.execute_query(
+    "UPDATE trades SET exit_price=%s, close_time=%s, status=%s, close_reason=%s, net_pnl=%s WHERE mt5_ticket=%s",
+    (exit_price, close_time, 'CLOSED', reason, real_pnl, ticket)
+)
+```
+
+### 14.3 triggered_trade_id linking pattern (signal to trade)
+After inserting a new trade, link it back to the most recent unlinked signal:
+
+```python
+if strategy_id:
+    self.db.execute_query("""
+        UPDATE signals
+        SET triggered_trade_id = %s
+        WHERE signal_id = (
+            SELECT signal_id FROM signals
+            WHERE strategy_id = %s
+              AND pair = %s
+              AND triggered_trade_id IS NULL
+            ORDER BY timestamp DESC
+            LIMIT 1
+        )
+    """, (trade_id, strategy_id, symbol))
+```
+
+### 14.4 COALESCE for backward-compatible P&L queries
+Old rows have net_pnl = NULL. Use COALESCE so historical data still renders:
+`COALESCE(t.net_pnl, t.exit_price - t.entry_price) AS pnl`
+Note: exit_price - entry_price is NOT real account-currency P&L — it is a price diff fallback for pre-fix rows only.
+
+---
+
+## 15. Health and Connectivity Endpoint Pattern (2026-05-06)
+
+`webapp/api/router_health.py` provides real connectivity checks (not hardcoded strings):
+
+| Service | Check | ONLINE threshold |
+|---|---|---|
+| PostgreSQL | `SELECT 1` live query | Succeeds |
+| MT5 Bridge | Last HEARTBEAT in `bot_health` table | < 5 minutes ago |
+| Event Bus | `bus._running` attribute | True |
+
+Frontend: `useConnectivity()` hook polls `/api/health` every 15 seconds and feeds `ConnStatus` component coloured by real status value.
+
+---
+
+## 16. signal_taken Dashboard Pattern (2026-05-06)
+
+The full chain from trade execution to dashboard display:
+
+1. DB: `signals.triggered_trade_id UUID` set by `paper_engine._log_trade_open()` after inserting into `trades`
+2. API (`/api/papertrades/signals`): `(sig.triggered_trade_id IS NOT NULL) AS signal_taken` in SELECT
+3. Response: `"signal_taken": bool(r[8])` in the JSON dict
+4. Dashboard (`App.jsx`): checkmark if signal_taken, dash if not
+5. Telegram (`/signals` command): "TAKEN" or "Not taken" badge per signal
+
+When debugging "all signals show Not taken": check whether `_log_trade_open()` is actually executing the UPDATE. If `strategy_id` is None the UPDATE is skipped — ensure strategy_id is passed through from the signal record.
+
+---
+
+
+## 17. Signals Tab & Account-Aware Signals (2026-05-07)
+
+### 17.1 Signals Dashboard Tab
+A dedicated "Signals" tab (with LIVE badge) was added to `webapp/frontend/src/App.jsx`.
+Component: `SignalsTab` (line ~1756). Features:
+- Auto-refreshes every 30 seconds via `usePolling`
+- Time window selector: 6h / 24h / 48h / 7d
+- Account filter pills — one pill per `account_profiles` entry; amber pill for pending/untaken signals
+- Stats strip: total signals, taken count, take rate %
+- Signal table: Time | Account | Strategy | Pair | TF | Direction | Price | Validity | Status
+
+### 17.2 Account-Aware Signals Endpoint (2026-05-07)
+`GET /api/papertrades/signals` (in `webapp/api/router_papertrades.py`) now JOINs:
+```sql
+LEFT JOIN trades t ON sig.triggered_trade_id = t.trade_id
+LEFT JOIN account_profiles ap ON t.account_id = ap.account_id
+```
+Each signal in the response now includes:
+- `account_id` — NULL if signal not yet taken
+- `account_name` — human-readable name (e.g. "Exness DEMO"), "—" if untaken
+- `account_type` — "DEMO" | "LIVE" | "PAPER"
+
+This means taken signals show which account executed the trade; pending signals show "—".
+
+### 17.3 Debugging Signal-to-Account Linkage
+If all signals show `account_name: "—"` even after trades are placed:
+1. Check `signals.triggered_trade_id` is being SET — see Section 16 for the UPDATE pattern
+2. Check `trades.account_id` is non-NULL — verify `paper_engine` is passing `account_id` at trade insert
+3. The JOIN is a LEFT JOIN chain, so any NULL in the chain silently returns NULL for account fields
+
+---
+
+## 18. Walk-Forward Optimisation (WFO) — Commands, Schedule & Interpretation (2026-05-07)
+
+WFO validates that a strategy's parameters generalise to **unseen out-of-sample data**,
+making it the strongest confirmation beyond a regular overnight backtest.
+A strategy that passes both the overnight backtest AND WFO is market-ready.
+
+---
+
+### 18.1 Commands
+
+**Full suite — all enabled strategies (preferred, run this):**
+```powershell
+# Inside Docker (preferred — has all deps):
+docker exec tradepanel-backend python scripts/run_wfo_all.py --n_windows 3 --is_pct 0.70 --oos_pct 0.20
+
+# Native (outside Docker — requires psycopg2, yaml in host env):
+cd F:\REPOS\leo123xxx\TradePanel\TradePanel
+python scripts/run_wfo_all.py --n_windows 3 --is_pct 0.70 --oos_pct 0.20
+```
+
+**Single strategy (faster iteration / debugging):**
+```powershell
+docker exec tradepanel-backend python scripts/run_wfo_all.py --strategy stat_arb_gold_silver
+docker exec tradepanel-backend python scripts/run_wfo_all.py --strategy range_breakout
+```
+
+**Expected runtime:** 30–90 minutes for the full suite (~22 strategies x 2–4 combos = ~60 WFO runs).
+
+**Output:** `results/wfo_master_summary.md` — updated in place after every run.
+
+---
+
+### 18.2 Parameters
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `--n_windows` | 3 | Number of rolling IS/OOS windows |
+| `--is_pct` | 0.70 | In-sample fraction of each window (70%) |
+| `--oos_pct` | 0.20 | Out-of-sample fraction (20%), gap = remaining 10% |
+| `--strategy` | (all) | Run a single strategy by its yaml name |
+
+**Recommended defaults:** `--n_windows 3 --is_pct 0.70 --oos_pct 0.20`
+Use `--n_windows 5` for strategies with > 500 trades to get richer OOS validation.
+
+---
+
+### 18.3 Pass Thresholds
+
+WFO uses slightly looser thresholds than the full overnight backtest because OOS windows
+are smaller and inherently noisier. These are calibrated for OOS realism:
+
+| Gate | WFO OOS per-window | Overnight backtest |
+|------|-------------------|-------------------|
+| Win Rate | >= 65% | >= 70% |
+| Sharpe | >= 1.5 | >= 2.0 |
+| Trades | >= 10 | >= 20 |
+| **Strategy verdict** | >= 70% of windows pass | — |
+
+A strategy is **WFO VALIDATED** when >= 70% of its OOS windows meet all three gates.
+
+---
+
+### 18.4 Schedule
+
+WFO runs automatically **twice a week** via the APScheduler job added to `docker_jobs.py`:
+- **Wednesday 03:00 UTC** (Thu 05:00 SAST)
+- **Sunday 03:00 UTC** (Sun 05:00 SAST)
+
+Job ID: `wfo_biweekly` | Method: `_run_wfo_suite` → `_wfo_worker`
+
+Telegram alerts are sent on start and completion with a PASS/FAIL/ERROR count digest.
+
+**Why twice a week?** Market regime can shift materially in 48–72h (e.g. FOMC, NFP).
+Wednesday catches mid-week regime state; Sunday catches the weekly close and reset.
+
+---
+
+### 18.5 How Recommendations Cross-Reference WFO
+
+`scheduler/recommendations.py` reads `results/wfo_master_summary.md` on every run via
+`_load_wfo_results()`. The generated recommendations report now includes a
+**WFO Validation Status** section that annotates each combo with its WFO verdict:
+
+- **WFO PASS** — OOS validated; safe to increase lot size or promote to live
+- **WFO FAIL** — Fails OOS gate — do not promote, even if overnight backtest says PASS
+- **WFO ERROR** — Run error (usually missing data or yaml dep) — re-run manually
+
+**Key rule:** a strategy that passes the overnight backtest but **fails WFO** should be
+treated as REVIEW, not PASS. WFO is the final gate before live promotion.
+
+---
+
+### 18.6 Interpreting Results
+
+```
+results/wfo_master_summary.md   — overview table + per-window detail
+results/wfo/                    — individual strategy log files
+```
+
+**Red flags in WFO results:**
+- OOS Sharpe < 0 on any window → strategy may be overfit; diagnose before enabling
+- OOS win rate trending down window by window → regime sensitivity; add regime filter
+- 0 OOS trades on any window → data gap or strategy too restrictive; check pair data freshness
+- All windows ERROR → usually missing Python deps (`yaml`, `psycopg2`) or no DB data for that pair/TF
+
+**Good signs:**
+- OOS Sharpe > IS Sharpe on any window → strategy is genuinely predictive, not overfit
+- Consistent win rate across all windows (low variance) → robust to regime changes
+- Pass rate >= 70% → promote to live consideration
+
+---
+
+### 18.7 Adding a New Strategy to WFO
+
+Add an entry to `WFO_CONFIGS` in `scripts/run_wfo_all.py`:
+```python
+"your_strategy_name": [("XAUUSD", "H4"), ("EURUSD", "H1")],
+```
+Choose 2 primary pairs that are representative of the strategy's intended market.
+The strategy class must already be in `STRATEGY_MAP` in `scripts/run_walk_forward.py`.
 
 ---
 

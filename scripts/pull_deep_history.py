@@ -64,8 +64,14 @@ DEEP_PULL_PAIRS = [
     # Index CFDs added Jan 2026 — only ~455 H4 bars
     "US500",
     "USTEC",
-    # Silver — may be thin depending on account history
+    # Silver — may be thin depending on account history 
     "XAGUSD",
+    "XAUUSD",
+    "BTCUSD",
+    "ETHUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
     # Stock CFDs — broker caps at 1-3 years; script pulls what's available
     "NVDA",
     "AMD",
@@ -77,14 +83,14 @@ DEEP_PULL_PAIRS = [
 DEEP_START_DATE = datetime(2010, 1, 1)
 
 # Timeframes to resample from M1 after the pull
-RESAMPLE_TIMEFRAMES = ["M5", "M15", "M30", "H1", "H2", "H4", "H12", "D1"]
+RESAMPLE_TIMEFRAMES = ["M2","M5", "M15", "M30", "H1", "H2", "H4", "H12", "D1"]
 
 
 # ── Coverage helpers ─────────────────────────────────────────────────────────
 
 def get_coverage(db: DBClient, pairs: list) -> dict:
     """Returns {pair: {tf: (count, min_ts, max_ts)}} for key timeframes."""
-    tfs = ["M1", "H4", "D1"]
+    tfs = ["M1", "M5", "M15", "M30", "H1", "H2","H4", "D1"]
     coverage = {}
     for pair in pairs:
         coverage[pair] = {}
@@ -105,12 +111,15 @@ def get_coverage(db: DBClient, pairs: list) -> dict:
 def print_coverage(coverage: dict, label: str = ""):
     if label:
         print(f"\n  {label}")
-    print(f"  {'Pair':<10} {'M1 bars':>10}  {'H4 bars':>8}  {'D1 bars':>8}  {'M1 from':>12}  {'M1 to':>12}")
+    print(f"  {'Pair':<10} {'M1 bars':>10}  {'H4 bars':>8}  {'D1 bars':>8}  {'M1 from':>12}  {'M1 to':>12}  {'H2 bars':>8}  {'H12 bars':>8}  {'M2 bars':>10}")
     print("  " + "-" * 72)
     for pair in sorted(coverage):
         m1  = coverage[pair].get("M1",  (0, None, None))
         h4  = coverage[pair].get("H4",  (0, None, None))
         d1  = coverage[pair].get("D1",  (0, None, None))
+        h2  = coverage[pair].get("H2",  (0, None, None))
+        h12 = coverage[pair].get("H12", (0, None, None))
+        m2  = coverage[pair].get("M2",  (0, None, None))
         m1_from = str(m1[1])[:10] if m1[1] else "—"
         m1_to   = str(m1[2])[:10] if m1[2] else "—"
         print(f"  {pair:<10} {m1[0]:>10,}  {h4[0]:>8,}  {d1[0]:>8,}  {m1_from:>12}  {m1_to:>12}")
@@ -124,11 +133,15 @@ def print_coverage(coverage: dict, label: str = ""):
 # even when M1 only has a few months.
 DIRECT_PULL_TIMEFRAMES = [
     ("D1",  "TIMEFRAME_D1"),
+    ("H12", "TIMEFRAME_H12"),
     ("H4",  "TIMEFRAME_H4"),
+    ("H2",  "TIMEFRAME_H2"),
     ("H1",  "TIMEFRAME_H1"),
-    ("M15", "TIMEFRAME_M15"),
     ("M30", "TIMEFRAME_M30"),
+    ("M15", "TIMEFRAME_M15"),
     ("M5",  "TIMEFRAME_M5"),
+    ("M2",  "TIMEFRAME_M2"),
+    ("M1",  "TIMEFRAME_M1"),
 ]
 
 
@@ -143,11 +156,14 @@ def pull_pair_direct(feed, pair: str, start_date: datetime) -> dict:
 
     tf_map = {
         "TIMEFRAME_M1":  mt5.TIMEFRAME_M1,
+        "TIMEFRAME_M2":  mt5.TIMEFRAME_M2,
         "TIMEFRAME_M5":  mt5.TIMEFRAME_M5,
         "TIMEFRAME_M15": mt5.TIMEFRAME_M15,
         "TIMEFRAME_M30": mt5.TIMEFRAME_M30,
         "TIMEFRAME_H1":  mt5.TIMEFRAME_H1,
+        "TIMEFRAME_H2":  mt5.TIMEFRAME_H2,
         "TIMEFRAME_H4":  mt5.TIMEFRAME_H4,
+        "TIMEFRAME_H12": mt5.TIMEFRAME_H12,
         "TIMEFRAME_D1":  mt5.TIMEFRAME_D1,
     }
 
@@ -246,7 +262,7 @@ def main():
 
     # ── Pull loop ────────────────────────────────────────────────────────────
     print("=" * 72)
-    print("  STEP 1 — Pulling D1/H4/H1/M30/M15/M5 directly from MT5")
+    print("  STEP 1 — Pulling D1/H4/H2/H1/M30/M15/M5/M2/M1 directly from MT5")
     print("=" * 72)
     print("  (MT5 serves H4/D1 up to 10-15yr; M1 only ~3 months — bypassing M1→resample)")
 
@@ -264,7 +280,7 @@ def main():
             tf_results = pull_pair_direct(feed, pair, start_date)
             pull_results[pair] = tf_results
             h4_bars = tf_results.get("H4", 0)
-            d1_bars = tf_results.get("D1", 0)
+            d1_bars = tf_results.get("D1", 0)  
             detail = "  ".join(f"{tf}:{n:,}" for tf, n in tf_results.items())
             if h4_bars > 0 or d1_bars > 0:
                 print(f"  [{pair}] ✅  {detail}")
@@ -293,7 +309,7 @@ def main():
 
     # Summary table
     print("  PULL SUMMARY")
-    print(f"  {'Pair':<10} {'H4 added':>10}  {'H4 before':>10}  {'H4 after':>10}  {'Status'}")
+    print(f"  {'Pair':<10} {'H4 added':>10} {'H4 before':>10}  {'H4 after':>10}  {'Status'}")
     print("  " + "-" * 60)
     for pair in pairs:
         before_h4 = coverage_before[pair].get("H4", (0,))[0]

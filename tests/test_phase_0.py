@@ -57,9 +57,9 @@ def test_signal_dedup_logic(engine):
 def test_dedup_cache_cleanup(engine):
     """Test that expired entries are removed from the cache."""
     key = ("strat", "sym", 0, 1)
-    old_time = datetime.now() - timedelta(minutes=10)
+    old_time = datetime.now() - timedelta(hours=26)
     
-    engine.attempted_signals[key] = old_time
+    engine.attempted_signals[key] = (old_time, old_time)
     assert len(engine.attempted_signals) == 1
     
     engine._clean_dedup_cache()
@@ -125,8 +125,8 @@ def test_stale_data_detection():
     checker = SignalChecker()
     checker.max_data_age_hours = 24
     
-    # Create synthetic data with old timestamp
-    old_time = datetime.now() - timedelta(hours=25)
+    # Create synthetic data with old timestamp using UTC to match _is_data_stale logic
+    old_time = pd.Timestamp.utcnow().tz_localize(None) - timedelta(hours=25)
     df = pd.DataFrame({'close': [1.0, 1.1]}, index=[old_time - timedelta(hours=1), old_time])
     
     is_fresh, msg = checker._is_data_stale("EURUSD", mt5.TIMEFRAME_H1, df)

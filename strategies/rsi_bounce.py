@@ -8,28 +8,31 @@ APPROVED_TIMEFRAMES = ["H4", "D1"]
 
 class RSIBounceStrategy(BaseStrategy):
     """
-    RSI Mean Reversion Strategy — v3 Complete Overhaul.
+    RSI Mean Reversion Strategy — v3.1 Threshold Correction.
 
     v3 upgrades (2026-05-01) — targeting 70%+ WR:
-    - ADX max tightened 30->18: only trade in strictly ranging, choppy markets.
-      Divergence/mean reversion in ADX 18-30 markets has inconsistent follow-through.
-    - RSI extremes tightened to 15/85 (from 20/80): only trade the deepest, most
-      statistically reliable RSI extremes. 15/85 occurs far less often but has
-      significantly higher reversion probability.
     - Confirmation candle filter: after the RSI crossover, the NEXT bar must be a
       bullish close (close > open for longs) or bearish close (close < open for shorts).
       This one-bar confirmation dramatically reduces false crossover entries.
+
+    v3.1 fix (2026-05-09) — RSI 15/85 + ADX max 18 produced ZERO signals in WFO.
+    - RSI extremes relaxed back to 20/80: RSI 15/85 is statistically rare on H1-D1;
+      combined with ADX max 18, the strategy fired literally 0 trades across all windows.
+    - ADX max raised 18->25: ADX 18-25 is still a ranging regime but fires signals.
+      ADX 30+ (strong trend) remains excluded to avoid mean-reversion into a trend.
+    - Vol threshold loosened 1.2->1.0: the vol gate stacked with ADX+RSI gates was
+      over-filtering. Remove as a redundant layer — RSI extreme IS the vol proxy.
     """
 
     def __init__(self, params: dict = None):
         if params is None:
             params = {
                 "rsi_period":          14,
-                "oversold":            15,    # tightened 20->15: deepest extremes only
-                "overbought":          85,    # tightened 80->85: deepest extremes only
+                "oversold":            20,    # relaxed 15->20: 15 almost never fires
+                "overbought":          80,    # relaxed 85->80: 85 almost never fires
                 "ema_trend":          200,
-                "adx_max":             18,    # tightened 30->18: strictly ranging
-                "vol_threshold_mult":   1.2,
+                "adx_max":             25,    # raised 18->25: 18 is too quiet, still excludes trends
+                "vol_threshold_mult":   1.0,  # loosened 1.2->1.0: vol gate redundant with RSI extreme
                 "atr_period":          14,
                 "session_start_utc":    7,
                 "session_end_utc":     17,
@@ -50,11 +53,11 @@ class RSIBounceStrategy(BaseStrategy):
         df = data.copy()
 
         rsi_period       = self.params.get("rsi_period",         14)
-        overbought       = self.params.get("overbought",         85)
-        oversold         = self.params.get("oversold",           15)
+        overbought       = self.params.get("overbought",         80)
+        oversold         = self.params.get("oversold",           20)
         ema_trend_period = self.params.get("ema_trend",         200)
-        adx_max          = self.params.get("adx_max",            18)
-        vol_mult         = self.params.get("vol_threshold_mult",  1.2)
+        adx_max          = self.params.get("adx_max",            25)
+        vol_mult         = self.params.get("vol_threshold_mult",  1.0)
         atr_p            = self.params.get("atr_period",         14)
         sess_start       = self.params.get("session_start_utc",   7)
         sess_end         = self.params.get("session_end_utc",    17)

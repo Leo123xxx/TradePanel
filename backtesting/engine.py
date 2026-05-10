@@ -22,8 +22,22 @@ from utils.pip_sizes import get_pip_size
 
 class BacktestEngine:
 
-    def __init__(self, config_path=None, lot_size=0.1, initial_balance=None):
-        self.lot_size = lot_size
+    def __init__(self, config_path=None, lot_size=None, initial_balance=None):
+        # Default lot size mapping by timeframe (if not explicitly overridden)
+        self.tf_lot_map = {
+            "M1":  1.5,
+            "M5":  1.2,
+            "M15": 1.0,
+            "M30": 0.8,
+            "H1":  0.5,
+            "H2":  0.3,
+            "H4":  0.15,
+            "H6":  0.12,
+            "H12": 0.08,
+            "D1":  0.05,
+            "W1":  0.02
+        }
+        self.override_lot = lot_size
         self.trades = []
         self.logger = EventLogger()
 
@@ -48,6 +62,13 @@ class BacktestEngine:
         self.balance = self.initial_balance  # ZAR throughout
 
     def run(self, strategy, symbol, timeframe, data_df, silent=False):
+        # Determine lot size: override or mapped by TF, capped at 1.5
+        if self.override_lot is not None:
+            self.lot_size = min(self.override_lot, 1.5)
+        else:
+            base_lot = self.tf_lot_map.get(timeframe, 0.1)
+            self.lot_size = min(base_lot, 1.5)
+
         # Minimum data guard — prevents running on noise
         if len(data_df) < 100:
             raise ValueError(
@@ -78,6 +99,13 @@ class BacktestEngine:
         if hasattr(strategy, "filter_by_session"):
             df = strategy.filter_by_session(df, symbol)
 
+        # Direction filter: zero out signals based on allow_long/allow_short
+        if hasattr(strategy, "filter_by_direction"):
+            df = strategy.filter_by_direction(df)
+
+        # Force-exit signal support (99): ensure these are NOT filtered out by direction filters
+        # (Since 99 is neither 1 nor -1, filter_by_direction shouldn't touch it, but we confirm here)
+
         atr_period = strategy.params.get("atr_period", 14)
         df = self._add_atr(df, atr_period, pip_size)
 
@@ -92,37 +120,62 @@ class BacktestEngine:
         current_spread_pips = pair_cfg.get("spread_pips", 2.0)
         skipped_spread = 0
 
+        # Convert to numpy for performance
+        opens = df["open"].values
+        highs = df["high"].values
+        lows = df["low"].values
+        closes = df["close"].values
+        signals = df["signal"].values
+        atrs = df["atr"].values
+        timestamps = df.index.values
+
         self.trades = []
         active_trade = None
 
         for i in range(1, len(df)):
-            bar = df.iloc[i]
-            prev_bar = df.iloc[i - 1]
-            ts = df.index[i]
+            # Bar data
+            b_open = opens[i]
+            b_high = highs[i]
+            b_low = lows[i]
+            b_close = closes[i]
+            b_atr = atrs[i]
+            
+            # Prev bar data
+            p_signal = signals[i-1]
+            p_atr = atrs[i-1]
+            ts = timestamps[i]
 
             if active_trade is not None:
-                closed = self._check_exit(active_trade, bar, ts, prev_bar, pair_cfg, pip_size)
-                if closed:
+                # Force exit if strategy signals 99
+                if p_signal == 99:
+                    self._close_trade(
+                        active_trade, b_open, ts, "STRATEGY_EXIT", pair_cfg, pip_size
+                    )
                     active_trade = None
+                else:
+                    # Optimized _check_exit inline logic
+                    closed = self._check_exit_optimized(active_trade, b_open, b_high, b_low, b_close, ts, p_signal, pair_cfg, pip_size)
+                    if closed:
+                        active_trade = None
 
-            if active_trade is None and prev_bar["signal"] != 0:
-                # Spread guard — skip entry if spread exceeds max_spread_pips
+            if active_trade is None and p_signal in [1, -1]:
+                # Spread guard
                 if current_spread_pips > max_spread_pips:
                     skipped_spread += 1
                     continue
-                direction = "BUY" if prev_bar["signal"] == 1 else "SELL"
-                atr_val = prev_bar.get("atr", np.nan)
+                
+                direction = "BUY" if p_signal == 1 else "SELL"
                 active_trade = self._open_trade(
                     strategy, symbol, direction,
-                    bar["open"], ts, atr_val,
+                    b_open, ts, p_atr,
                     tp_mult, sl_mult, pair_cfg, pip_size,
                     use_partial_tp=use_partial_tp
                 )
 
         if active_trade is not None:
             self._close_trade(
-                active_trade, df.iloc[-1]["close"],
-                df.index[-1], "END_OF_DATA", pair_cfg, pip_size
+                active_trade, closes[-1],
+                timestamps[-1], "END_OF_DATA", pair_cfg, pip_size
             )
 
         if not silent:
@@ -209,54 +262,54 @@ class BacktestEngine:
             "tp1_achieved_price": None,
         }
 
-    def _check_exit(self, trade, bar, ts, prev_bar, pair_cfg, pip_size):
+    def _check_exit_optimized(self, trade, b_open, b_high, b_low, b_close, ts, p_signal, pair_cfg, pip_size):
         direction = trade["direction"]
-        tp  = trade.get("tp_price")
-        tp1 = trade.get("tp1_price")
-        sl  = trade.get("sl_price")
+        tp  = trade["tp_price"]
+        tp1 = trade["tp1_price"]
+        sl  = trade["sl_price"]
         exit_price = None
         reason = None
 
         if direction == "BUY":
             # --- Phase 1: partial TP not yet hit ---
             if not trade["partial_tp_hit"]:
-                if sl is not None and bar["low"] <= sl:
+                if sl is not None and b_low <= sl:
                     exit_price, reason = sl, "SL_HIT"
-                elif tp1 is not None and bar["high"] >= tp1:
+                elif tp1 is not None and b_high >= tp1:
                     trade["partial_tp_hit"] = True
                     trade["tp1_achieved_price"] = tp1
-                    trade["sl_price"] = trade["entry_open"]  # BE = raw open
+                    trade["sl_price"] = trade["entry_open"]  # BE
                     return False
-                elif tp is not None and bar["high"] >= tp:
+                elif tp is not None and b_high >= tp:
                     exit_price, reason = tp, "TP_HIT"
             # --- Phase 2: partial TP hit, SL now at BE ---
             else:
-                if sl is not None and bar["low"] <= sl:
+                if sl is not None and b_low <= sl:
                     exit_price, reason = sl, "BE_STOP"
-                elif tp is not None and bar["high"] >= tp:
+                elif tp is not None and b_high >= tp:
                     exit_price, reason = tp, "TP2_HIT"
         else:  # SELL
             if not trade["partial_tp_hit"]:
-                if sl is not None and bar["high"] >= sl:
+                if sl is not None and b_high >= sl:
                     exit_price, reason = sl, "SL_HIT"
-                elif tp1 is not None and bar["low"] <= tp1:
+                elif tp1 is not None and b_low <= tp1:
                     trade["partial_tp_hit"] = True
                     trade["tp1_achieved_price"] = tp1
                     trade["sl_price"] = trade["entry_open"]
                     return False
-                elif tp is not None and bar["low"] <= tp:
+                elif tp is not None and b_low <= tp:
                     exit_price, reason = tp, "TP_HIT"
             else:
-                if sl is not None and bar["high"] >= sl:
+                if sl is not None and b_high >= sl:
                     exit_price, reason = sl, "BE_STOP"
-                elif tp is not None and bar["low"] <= tp:
+                elif tp is not None and b_low <= tp:
                     exit_price, reason = tp, "TP2_HIT"
 
         # Signal reversal exit
         if exit_price is None:
-            if (direction == "BUY" and prev_bar["signal"] == -1) or \
-               (direction == "SELL" and prev_bar["signal"] == 1):
-                exit_price = bar["open"]
+            if (direction == "BUY" and p_signal == -1) or \
+               (direction == "SELL" and p_signal == 1):
+                exit_price = b_open
                 reason = "SIGNAL_REVERSAL"
 
         if exit_price is not None:

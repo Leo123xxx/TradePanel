@@ -18,13 +18,13 @@ class MACDTrendStrategy(BaseStrategy):
                 "macd_slow":         26,
                 "macd_signal":        9,
                 "adx_length":        14,
-                "adx_threshold":     25,   # loosened 28→25: catch more trends
+                "adx_threshold":     28,   # restored to 28
                 "tp_atr_mult":        3.0,
                 "sl_atr_mult":        1.0,
                 "atr_period":        14,
                 "rsi_period":        14,
-                "rsi_long_min":      55,
-                "rsi_short_max":     45,
+                "rsi_long_min":      58,
+                "rsi_short_max":     42,
                 "ema200_period":    200,
                 "hist_slope_bars":    1,   # loosened 2→1: one rising bar sufficient   # NEW: histogram must rise for N bars pre-entry
             }

@@ -141,6 +141,7 @@ class TelegramBot:
             ("news_blackout",   self.news_blackout_command),
             ("trade",           self.trade_command),
             ("close_manual",    self.close_manual_command),
+            ("backups",         self.backups_command),
         ]
         for name, handler in handlers:
             self.app.add_handler(CommandHandler(name, handler))
@@ -161,7 +162,7 @@ class TelegramBot:
         # ── Start morning push background task ───────────────────────────────
         asyncio.create_task(self._morning_push_loop())
 
-        logger.info("Telegram bot polling. Dashboard: http://localhost:5000")
+        logger.info("Telegram bot polling. Dashboard: http://tradepanel.mraskwhy.local")
 
     async def stop(self):
         if self.app:
@@ -290,6 +291,7 @@ class TelegramBot:
             "<b>🛠 System</b>\n"
             "/health — system health + heartbeat\n"
             "/dashboard — web dashboard link\n"
+            "/backups — show backup status\n"
             "/help — this list"
         )
         await update.message.reply_html(msg)
@@ -395,8 +397,8 @@ class TelegramBot:
     async def dashboard_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = (
             "<b>📊 TradePanel Dashboard</b>\n\n"
-            "🌐 <a href='http://localhost:5000'>http://localhost:5000</a>\n\n"
-            "<i>Local server — must be running on your machine.</i>"
+            "🌐 <a href='http://tradepanel.mraskwhy.local'>http://tradepanel.mraskwhy.local</a>\n\n"
+            "<i>Available on your local network via Traefik.</i>"
         )
         await update.message.reply_html(msg)
 
@@ -419,6 +421,10 @@ class TelegramBot:
     @auth_required
     async def strategy_params_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_html(self.router.get_strategy_params())
+
+    @auth_required
+    async def backups_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await update.message.reply_html(self.router.get_backups())
 
     # ── Outbound push utilities ───────────────────────────────────────────────
 
@@ -445,15 +451,39 @@ class TelegramBot:
             await bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
     def send_sync_message(self, text: str):
-        """Synchronous wrapper — call from non-async engine code."""
-        import nest_asyncio
-        nest_asyncio.apply()
+        """Synchronous wrapper — call from non-async engine code.
+        Uses requests for stability in short-lived synchronous scripts.
+        """
+        import requests
+        chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        if not chat_id:
+            logger.warning("TELEGRAM_CHAT_ID not set — cannot send push")
+            return
+
+        # WhatsApp Integration (already sync via requests)
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.send_direct_message(text))
+            from notifications.whatsapp_bot import WhatsAppBot
+            wa = WhatsAppBot()
+            if wa.default_phone:
+                wa.send_alert(text)
+        except Exception as e:
+            logger.error(f"WhatsApp sending failed: {e}")
+
+        # Telegram Integration (Sync)
+        try:
+            url = f"https://api.telegram.org/bot{self.token}/sendMessage"
+            payload = {
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": "HTML"
+            }
+            response = requests.post(url, json=payload, timeout=15)
+            if response.status_code != 200:
+                logger.error(f"Telegram API error: {response.status_code} - {response.text}")
+            else:
+                logger.info("Telegram sync report sent successfully.")
+        except Exception as e:
+            logger.error(f"Telegram sync sending failed: {e}")
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────

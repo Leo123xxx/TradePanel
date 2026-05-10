@@ -2,8 +2,8 @@
 REM tail_logs.bat — View real-time logs
 setlocal enabledelayedexpansion
 
-set TRADEPANEL_DIR=%~dp0
-cd /d "%TRADEPANEL_DIR%.."
+set TRADEPANEL_DIR=%~dp0..
+cd /d "%TRADEPANEL_DIR%"
 
 if not exist "logs" (
     echo ERROR: logs directory not found

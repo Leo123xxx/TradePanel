@@ -28,6 +28,8 @@ if /i "%CMD%"=="logs"    goto LOGS
 if /i "%CMD%"=="rebuild" goto REBUILD
 if /i "%CMD%"=="backtest" goto BACKTEST
 if /i "%CMD%"=="sync"    goto SYNC
+if /i "%CMD%"=="backup"  goto BACKUP
+if /i "%CMD%"=="wfo"     goto WFO
 
 echo Unknown command: %CMD%
 goto USAGE
@@ -75,6 +77,16 @@ echo Running daily data sync...
 call "%~dp0scripts\RUN_DAILY_DATA_SYNC.bat"
 goto END
 
+:BACKUP
+echo Triggering manual database backup...
+docker exec tradepanel-db-backup /app/scripts/db_backup.sh
+goto END
+
+:WFO
+echo Starting Walk-Forward Optimization suite...
+docker exec -it tradepanel-backend python scripts/run_wfo_all.py --n_windows 3 --is_pct 0.70 --oos_pct 0.20
+goto END
+
 :USAGE
 echo.
 echo TradePanel Management CLI
@@ -89,6 +101,8 @@ echo   logs      Tail all service logs
 echo   rebuild   Force rebuild and restart containers
 echo   sync      Run daily data sync
 echo   backtest  Run a backtest (e.g. trade.bat backtest dual_ema_fractal EURUSD H1)
+echo   backup    Trigger a manual dual-cloud backup
+echo   wfo       Run full Walk-Forward Optimization suite
 echo.
 goto END
 

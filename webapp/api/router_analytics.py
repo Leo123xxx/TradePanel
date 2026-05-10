@@ -37,28 +37,28 @@ async def get_analytics_summary(lookback_days: int = 30):
             "lookback_days": lookback_days,
             "generated_at": datetime.now().isoformat(),
             "account_summary": {
-                "total_trades": m.total_trades,
-                "winning_trades": m.winning_trades,
-                "losing_trades": m.losing_trades,
-                "win_rate": m.win_rate,
-                "profit_factor": m.profit_factor,
-                "sharpe_ratio": m.sharpe_ratio,
-                "max_drawdown_pct": m.max_drawdown_pct,
-                "max_drawdown_usd": m.max_drawdown_usd,
-                "net_profit": m.net_profit,
-                "gross_profit": m.gross_profit,
-                "gross_loss": m.gross_loss,
-                "roi_pct": m.roi_pct,
-                "risk_reward_ratio": m.risk_reward_ratio,
-                "recovery_factor": m.recovery_factor,
-                "avg_win": m.avg_win_usd,
-                "avg_loss": m.avg_loss_usd,
-                "consecutive_wins": m.consecutive_wins,
-                "consecutive_losses": m.consecutive_losses
+                "total_trades": m['total_trades'],
+                "winning_trades": m['winning_trades'],
+                "losing_trades": m['losing_trades'],
+                "win_rate": m['win_rate'],
+                "profit_factor": m['profit_factor'],
+                "sharpe_ratio": m['sharpe_ratio'],
+                "max_drawdown_pct": m['max_drawdown_pct'],
+                "max_drawdown_usd": m['max_drawdown_usd'],
+                "net_profit": m['net_profit'],
+                "gross_profit": m['gross_profit'],
+                "gross_loss": m['gross_loss'],
+                "roi_pct": m['roi_pct'],
+                "risk_reward_ratio": m['risk_reward_ratio'],
+                "recovery_factor": m['recovery_factor'],
+                "avg_win": m.get('avg_win_usd', 0),
+                "avg_loss": m.get('avg_loss_usd', 0),
+                "consecutive_wins": m['consecutive_wins'],
+                "consecutive_losses": m['consecutive_losses']
             }
         }
     except Exception as e:
-        logger.error(f"Error in get_analytics_summary: {e}", exc_info=True)
+        logger.error(f"Error in get_analytics_summary: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -76,16 +76,16 @@ async def get_performance_by_strategy(lookback_days: int = 30):
         for strat_name, m in metrics['by_strategy'].items():
             if m:
                 strategies[strat_name] = {
-                    "total_trades": m.total_trades,
-                    "winning_trades": m.winning_trades,
-                    "losing_trades": m.losing_trades,
-                    "win_rate": m.win_rate,
-                    "profit_factor": m.profit_factor,
-                    "sharpe_ratio": m.sharpe_ratio,
-                    "max_drawdown_pct": m.max_drawdown_pct,
-                    "net_profit": m.net_profit,
-                    "roi_pct": m.roi_pct,
-                    "risk_reward_ratio": m.risk_reward_ratio
+                    "total_trades": m['total_trades'],
+                    "winning_trades": m['winning_trades'],
+                    "losing_trades": m['losing_trades'],
+                    "win_rate": m['win_rate'],
+                    "profit_factor": m['profit_factor'],
+                    "sharpe_ratio": m['sharpe_ratio'],
+                    "max_drawdown_pct": m['max_drawdown_pct'],
+                    "net_profit": m['net_profit'],
+                    "roi_pct": m['roi_pct'],
+                    "risk_reward_ratio": m['risk_reward_ratio']
                 }
 
         return {
@@ -112,16 +112,16 @@ async def get_performance_by_asset(lookback_days: int = 30):
         for pair, m in metrics['by_asset'].items():
             if m:
                 assets[pair] = {
-                    "total_trades": m.total_trades,
-                    "winning_trades": m.winning_trades,
-                    "losing_trades": m.losing_trades,
-                    "win_rate": m.win_rate,
-                    "profit_factor": m.profit_factor,
-                    "sharpe_ratio": m.sharpe_ratio,
-                    "max_drawdown_pct": m.max_drawdown_pct,
-                    "net_profit": m.net_profit,
-                    "roi_pct": m.roi_pct,
-                    "risk_reward_ratio": m.risk_reward_ratio
+                    "total_trades": m['total_trades'],
+                    "winning_trades": m['winning_trades'],
+                    "losing_trades": m['losing_trades'],
+                    "win_rate": m['win_rate'],
+                    "profit_factor": m['profit_factor'],
+                    "sharpe_ratio": m['sharpe_ratio'],
+                    "max_drawdown_pct": m['max_drawdown_pct'],
+                    "net_profit": m['net_profit'],
+                    "roi_pct": m['roi_pct'],
+                    "risk_reward_ratio": m['risk_reward_ratio']
                 }
 
         return {
@@ -264,13 +264,13 @@ async def get_full_dashboard(lookback_days: int = 30):
         if metrics['account']:
             m = metrics['account']
             summary = {
-                "total_trades": m.total_trades,
-                "win_rate": m.win_rate,
-                "profit_factor": m.profit_factor,
-                "sharpe_ratio": m.sharpe_ratio,
-                "max_drawdown_pct": m.max_drawdown_pct,
-                "net_profit": m.net_profit,
-                "roi_pct": m.roi_pct
+                "total_trades": m['total_trades'],
+                "win_rate": m['win_rate'],
+                "profit_factor": m['profit_factor'],
+                "sharpe_ratio": m['sharpe_ratio'],
+                "max_drawdown_pct": m['max_drawdown_pct'],
+                "net_profit": m['net_profit'],
+                "roi_pct": m['roi_pct']
             }
 
         # Format by-strategy
@@ -278,10 +278,10 @@ async def get_full_dashboard(lookback_days: int = 30):
         for strat_name, m in metrics['by_strategy'].items():
             if m:
                 by_strategy[strat_name] = {
-                    "total_trades": m.total_trades,
-                    "win_rate": m.win_rate,
-                    "profit_factor": m.profit_factor,
-                    "net_profit": m.net_profit
+                    "total_trades": m['total_trades'],
+                    "win_rate": m['win_rate'],
+                    "profit_factor": m['profit_factor'],
+                    "net_profit": m['net_profit']
                 }
 
         # Format by-asset
@@ -289,10 +289,10 @@ async def get_full_dashboard(lookback_days: int = 30):
         for pair, m in metrics['by_asset'].items():
             if m:
                 by_asset[pair] = {
-                    "total_trades": m.total_trades,
-                    "win_rate": m.win_rate,
-                    "profit_factor": m.profit_factor,
-                    "net_profit": m.net_profit
+                    "total_trades": m['total_trades'],
+                    "win_rate": m['win_rate'],
+                    "profit_factor": m['profit_factor'],
+                    "net_profit": m['net_profit']
                 }
 
         # Format heatmap

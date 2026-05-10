@@ -49,7 +49,7 @@ class RiskManager:
             return False, "RiskCheck Failed: News blackout active."
 
         # 1. Strategy is active and not paused
-        if not self._check_strategy_active(strategy_name):
+        if not self._check_strategy_active(strategy_name, pair):
             return False, f"RiskCheck Failed: Strategy {strategy_name} is disabled/paused."
 
         # 2. Market regime matches strategy category
@@ -291,15 +291,21 @@ class RiskManager:
             return res[0][0]
         return None
 
-    def _check_strategy_active(self, strategy_name):
-        # BUGFIX: config.yaml has no 'strategies' list — strategies are defined in
-        # strategies.yaml, which is already loaded into self.strategies_meta.
-        # The old code always returned False (blocking all trades) because
-        # self.config.get('strategies', []) was always an empty list.
+    def _check_strategy_active(self, strategy_name, pair=None):
         strat_meta = self.strategies_meta.get(strategy_name.lower())
         if strat_meta is None:
             return False  # Unknown strategy
-        return strat_meta.get('enabled', False)
+            
+        if not strat_meta.get('enabled', False):
+            return False
+            
+        # Check pair-level override
+        if pair:
+            overrides = strat_meta.get('pair_overrides', {})
+            if pair in overrides:
+                return overrides[pair].get('enabled', True)
+                
+        return True
 
     def _check_regime(self, strategy_name, pair):
         """

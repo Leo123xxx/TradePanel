@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 import pandas as pd
+pd.set_option('future.no_silent_downcasting', True)
 
 # Session hours (UTC) for peak liquidity per pair.
 # Signals generated OUTSIDE these windows are suppressed on intraday bars.
@@ -60,10 +61,24 @@ class BaseStrategy(ABC):
         self.confirm_tf = params.get("confirm_timeframe")
         self.use_regime_filter = params.get("use_regime_filter", False)
         self.use_session_filter = params.get("use_session_filter", True)
+        self.allow_long = params.get("allow_long", True)
+        self.allow_short = params.get("allow_short", True)
+
 
     @abstractmethod
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         pass
+
+    def filter_by_direction(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Zeroes out signals based on 'allow_long' and 'allow_short' parameters.
+        """
+        df = df.copy()
+        if not self.allow_long:
+            df.loc[df['signal'] == 1, 'signal'] = 0
+        if not self.allow_short:
+            df.loc[df['signal'] == -1, 'signal'] = 0
+        return df
 
     def filter_by_session(self, df: pd.DataFrame, pair: str) -> pd.DataFrame:
         """

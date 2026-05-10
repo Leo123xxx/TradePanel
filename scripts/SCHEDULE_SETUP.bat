@@ -17,8 +17,8 @@ REM To remove all tasks: run with argument /delete
 REM   SCHEDULE_SETUP.bat /delete
 REM ============================================================================
 setlocal
-cd /d "%~dp0"
-set PROJECT=%~dp0
+cd /d "%~dp0.."
+set PROJECT=%~dp0..
 
 REM ── Handle /delete flag ───────────────────────────────────────────────────
 if /i "%1"=="/delete" goto DELETE_TASKS

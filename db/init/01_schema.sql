@@ -128,6 +128,9 @@ CREATE TABLE IF NOT EXISTS trades (
 );
 
 CREATE INDEX IF NOT EXISTS idx_trades_account_id ON trades(account_id);
+CREATE INDEX IF NOT EXISTS idx_trades_created_at ON trades(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_trades_strategy_pair ON trades(strategy_id, pair);
+CREATE INDEX IF NOT EXISTS idx_trades_mode_live ON trades(mode) WHERE mode = 'LIVE';
 
 -- 6. positions
 CREATE TABLE IF NOT EXISTS positions (
@@ -187,6 +190,8 @@ CREATE TABLE IF NOT EXISTS market_data (
     UNIQUE(pair, timeframe, timestamp)
 );
 
+CREATE INDEX IF NOT EXISTS idx_market_data_symbol_tf ON market_data(pair, timeframe, timestamp DESC);
+
 -- 11. regime_log
 CREATE TABLE IF NOT EXISTS regime_log (
     regime_id SERIAL PRIMARY KEY,
@@ -224,6 +229,22 @@ CREATE TABLE IF NOT EXISTS wfo_runs (
     metrics JSONB,
     status VARCHAR(20) DEFAULT 'COMPLETED'
 );
+
+-- 14. mv_daily_metrics (Materialized View for Dashboard Performance)
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_daily_metrics AS
+SELECT 
+    DATE(created_at) as trade_date,
+    strategy_id,
+    pair,
+    mode,
+    SUM(net_pnl) as total_pnl,
+    COUNT(*) as trade_count,
+    ROUND(SUM(CASE WHEN net_pnl > 0 THEN 1 ELSE 0 END)::NUMERIC / COUNT(*) * 100, 2) as win_rate
+FROM trades
+GROUP BY DATE(created_at), strategy_id, pair, mode
+WITH DATA;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_daily_metrics_unique ON mv_daily_metrics (trade_date, strategy_id, pair, mode);
 
 -- Seed Account Profiles
 INSERT INTO account_profiles (account_name, account_type, broker, currency, initial_balance, notes)

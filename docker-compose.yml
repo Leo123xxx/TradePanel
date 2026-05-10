@@ -30,8 +30,16 @@ services:
       - DB_PORT=5432
       - MT5_BRIDGE_URL=http://host.docker.internal:8001
       - WAHA_URL=http://waha:3000
+    networks:
+      - default
+      - gateway_net
     ports:
       - "8000:8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tradepanel-backend.rule=Host(`api.tradepanel.mraskwhy.local`)"
+      - "traefik.http.services.tradepanel-backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.tradepanel-backend.entrypoints=web"
     volumes:
       - ./config:/app/config
       - ./results:/app/results
@@ -42,11 +50,14 @@ services:
       - ./utils:/app/utils
       - ./strategies:/app/strategies
       - ./scheduler:/app/scheduler
+      - ./webapp:/app/webapp
+      - ./analytics:/app/analytics
       - ./.env:/app/.env
+      - ./backups:/app/backups
     depends_on:
       db:
         condition: service_healthy
-    command: uvicorn webapp.main:app --host 0.0.0.0 --port 8000
+    command: uvicorn webapp.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build:
@@ -54,8 +65,16 @@ services:
       dockerfile: docker/Dockerfile.frontend
     container_name: tradepanel-frontend
     restart: unless-stopped
+    networks:
+      - default
+      - gateway_net
     ports:
       - "3000:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tradepanel-frontend.rule=Host(`tradepanel.mraskwhy.local`)"
+      - "traefik.http.services.tradepanel-frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.tradepanel-frontend.entrypoints=web"
     depends_on:
       - backend
 
@@ -81,7 +100,10 @@ services:
       - ./utils:/app/utils
       - ./strategies:/app/strategies
       - ./scheduler:/app/scheduler
+      - ./webapp:/app/webapp
+      - ./analytics:/app/analytics
       - ./.env:/app/.env
+      - ./backups:/app/backups
     depends_on:
       db:
         condition: service_healthy
@@ -109,6 +131,8 @@ services:
       - ./utils:/app/utils
       - ./strategies:/app/strategies
       - ./scheduler:/app/scheduler
+      - ./webapp:/app/webapp
+      - ./analytics:/app/analytics
       - ./.env:/app/.env
     depends_on:
       db:
@@ -120,8 +144,16 @@ services:
     image: devlikeapro/waha:latest
     container_name: tradepanel-waha
     restart: unless-stopped
+    networks:
+      - default
+      - gateway_net
     ports:
       - "8025:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tradepanel-waha.rule=Host(`waha.mraskwhy.local`)"
+      - "traefik.http.services.tradepanel-waha.loadbalancer.server.port=3000"
+      - "traefik.http.routers.tradepanel-waha.entrypoints=web"
     environment:
       - WAHA_API_KEY=tradepanel_secret
       - WAHA_DASHBOARD_USERNAME=admin
@@ -131,12 +163,44 @@ services:
     volumes:
       - waha_sessions:/app/.sessions
 
+  db-backup:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backup
+    container_name: tradepanel-db-backup
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_NAME=trading_platform
+      # DB_PASSWORD is provided via .env
+      # AWS/R2/Telegram credentials should be in .env
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/app/scripts
+    networks:
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+
   adminer:
     image: adminer:4.8.1
     container_name: tradepanel-adminer
+
     restart: unless-stopped
+    networks:
+      - default
+      - gateway_net
     ports:
       - "8090:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tradepanel-adminer.rule=Host(`db-admin.mraskwhy.local`)"
+      - "traefik.http.services.tradepanel-adminer.loadbalancer.server.port=8080"
+      - "traefik.http.routers.tradepanel-adminer.entrypoints=web"
     depends_on:
       db:
         condition: service_healthy
@@ -144,3 +208,7 @@ services:
 volumes:
   postgres_data:
   waha_sessions:
+
+networks:
+  gateway_net:
+    external: true

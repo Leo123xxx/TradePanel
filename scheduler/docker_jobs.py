@@ -45,6 +45,8 @@ from logging_.health_monitor import HealthMonitor
 from notifications.telegram_bot import TelegramBot
 from notifications.router import CommandRouter
 from data.db_client import DBClient
+from utils.event_bus import bus
+from functools import wraps
 
 
 class TradingScheduler:
@@ -79,6 +81,11 @@ class TradingScheduler:
 
         # Overnight backtest state (non-blocking run)
         self._backtest_thread: threading.Thread | None = None
+        
+        # Task 3.3: Subscribe to health errors to trigger circuit breaker
+        bus.subscribe("HEALTH_ERROR", self._handle_health_error)
+        bus.subscribe("CIRCUIT_BREAKER_RESET", self._handle_cb_reset)
+        self._cb_active = False
 
     # ──────────────────────────────────────────────────────────────────────────
     # MT5 helpers (bridge-aware)
@@ -116,6 +123,36 @@ class TradingScheduler:
             return False
 
     # ──────────────────────────────────────────────────────────────────────────
+    # Task 3.2: Circuit Breaker Logic
+    # ──────────────────────────────────────────────────────────────────────────
+
+    def circuit_breaker_guard(self, func):
+        """Decorator to skip job execution if circuit breaker is active."""
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if self._cb_active:
+                logger.warning(f"Circuit Breaker active: Skipping job {func.__name__}")
+                return
+            return func(*args, **kwargs)
+        return wrapper
+
+    def _handle_health_error(self, data):
+        """Triggered via EventBus when a critical error occurs."""
+        logger.error(f"EventBus: Health error received - {data}")
+        # Automatically trigger breaker on critical MT5 errors
+        if "MT5" in str(data):
+            self._cb_active = True
+            self.db.execute_query(
+                "INSERT INTO bot_health (event_type, status, message) VALUES ('CIRCUIT_BREAKER', 'PAUSED', %s)",
+                (f"Auto-pause due to: {data}",)
+            )
+
+    def _handle_cb_reset(self, data):
+        """Resets the circuit breaker."""
+        logger.info("Circuit Breaker reset received.")
+        self._cb_active = False
+
+    # ──────────────────────────────────────────────────────────────────────────
     # Scheduler setup
     # ──────────────────────────────────────────────────────────────────────────
 
@@ -140,12 +177,12 @@ class TradingScheduler:
             id="position_sync", name="Position Sync MT5→DB",
         )
         self.scheduler.add_job(
-            self.engine.run_detect,
+            self.circuit_breaker_guard(self.engine.run_detect),
             IntervalTrigger(minutes=1),
             id="signal_detect", name="Signal Detection (1m)",
         )
         self.scheduler.add_job(
-            self.engine.run_execute,
+            self.circuit_breaker_guard(self.engine.run_execute),
             IntervalTrigger(minutes=5),
             id="trade_execute", name="Trade Execution (5m)",
         )
@@ -191,6 +228,16 @@ class TradingScheduler:
             id="overnight_backtest", name="Overnight Strategy Backtest",
         )
         self.scheduler.add_job(
+            self._run_wfo_suite,
+            CronTrigger(day_of_week="wed,sun", hour=3, minute=0),
+            id="wfo_biweekly", name="Bi-Weekly Walk-Forward Optimisation",
+        )
+        self.scheduler.add_job(
+            self._run_yahoo_history_fill,
+            CronTrigger(day_of_week="sun", hour=1, minute=30),
+            id="yahoo_history_fill", name="Weekly Yahoo CFD History Fill",
+        )
+        self.scheduler.add_job(
             self._refresh_cot_data,
             CronTrigger(day_of_week="fri", hour=21, minute=0),
             id="cot_refresh", name="CFTC COT Weekly Refresh",
@@ -210,6 +257,17 @@ class TradingScheduler:
             CronTrigger(hour=23, minute=0, timezone='UTC'),  # 23:00 UTC = 01:00 SAST
             id="signal_outcome_check", name="Nightly Signal Outcome Check",
         )
+        self.scheduler.add_job(
+            self._sync_mt5_history,
+            IntervalTrigger(hours=4),
+            id="mt5_history_sync", name="4-Hour Account History Sync",
+        )
+        self.scheduler.add_job(
+            self._run_weekly_archive,
+            CronTrigger(day_of_week="thu", hour=23, minute=59),
+            id="weekly_archive", name="Weekly Strategy Intelligence Archival",
+        )
+
 
         self.scheduler.start()
         job_count = len(self.scheduler.get_jobs())
@@ -450,7 +508,17 @@ class TradingScheduler:
             logger.error(f"Error in _trigger_circuit_breaker: {e}")
 
     def _run_regime_detection(self):
-        pairs = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD"]
+        pairs = [
+            # FX majors + crosses
+            "XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY",
+            "GBPJPY", "AUDUSD", "USDCAD", "USDZAR",
+            # Crypto
+            "BTCUSD", "ETHUSD",
+            # Commodities + Indices
+            "USOIL", "US500", "USTEC",
+            # Stock CFDs
+            "NVDA", "AMD", "MSFT", "AAPL",
+        ]
         for pair in pairs:
             try:
                 self.regime_detector.run_update(pair, "H1")
@@ -491,8 +559,7 @@ class TradingScheduler:
         win_rows = self.db.execute_query(
             """SELECT COUNT(*) FROM trades
                WHERE status='CLOSED' AND mode='PAPER' AND DATE(close_time)=%s
-                 AND ((direction='BUY'  AND exit_price > entry_price)
-                   OR (direction='SELL' AND exit_price < entry_price))""",
+                 AND net_pnl > 0""",
             (today,),
         )
         wins = int(win_rows[0][0]) if win_rows else 0
@@ -625,6 +692,79 @@ class TradingScheduler:
             logger.error(f"_backtest_worker: {e}")
             self.notif_bot.send_sync_message(f"❌ Overnight backtest error: {e}")
 
+    def _run_wfo_suite(self):
+        """
+        Launch the bi-weekly WFO suite in a background daemon thread so the
+        APScheduler thread-pool is not blocked for up to 90 minutes.
+        A guard prevents a second launch if the previous run is still active.
+        Scheduled: Wednesday and Sunday at 03:00 UTC.
+        """
+        if hasattr(self, '_wfo_thread') and self._wfo_thread and self._wfo_thread.is_alive():
+            logger.warning("WFO suite still running -- skipping this trigger.")
+            self.notif_bot.send_sync_message(
+                "WFO Suite Skipped -- Previous run still in progress."
+            )
+            return
+        self._wfo_thread = threading.Thread(
+            target=self._wfo_worker, daemon=True, name="wfo-suite"
+        )
+        self._wfo_thread.start()
+
+    def _wfo_worker(self):
+        """Worker executed in a background thread -- safe to block for up to 90 min."""
+        script = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "scripts", "run_wfo_all.py",
+        )
+        if not os.path.exists(script):
+            self.notif_bot.send_sync_message("WFO script not found: scripts/run_wfo_all.py")
+            return
+
+        self.notif_bot.send_sync_message(
+            "WFO Suite Started -- Running walk-forward optimisation for all enabled strategies. 3 windows | IS=70% | OOS=20% | ~30-90 min"
+        )
+        try:
+            result = subprocess.run(
+                [sys.executable, script,
+                 "--n_windows", "3",
+                 "--is_pct", "0.70",
+                 "--oos_pct", "0.20"],
+                capture_output=True, text=True, timeout=5400,
+            )
+            if result.returncode != 0:
+                self.notif_bot.send_sync_message(
+                    "WFO Suite Failed: " + result.stderr[-500:]
+                )
+            else:
+                logger.info("WFO suite completed successfully.")
+                summary_path = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "results", "wfo_master_summary.md",
+                )
+                pass_count = fail_count = error_count = 0
+                if os.path.exists(summary_path):
+                    with open(summary_path) as sf:
+                        for line in sf:
+                            if "| PASS |" in line:
+                                pass_count += 1
+                            elif "| FAIL |" in line:
+                                fail_count += 1
+                            elif "| ERROR |" in line:
+                                error_count += 1
+                self.notif_bot.send_sync_message(
+                    "WFO Suite Complete -- PASS: " + str(pass_count) +
+                    " | FAIL: " + str(fail_count) +
+                    " | ERROR: " + str(error_count) +
+                    " -- Full report: results/wfo_master_summary.md"
+                )
+        except subprocess.TimeoutExpired:
+            self.notif_bot.send_sync_message(
+                "WFO suite timed out (>90 min) -- partial results may exist."
+            )
+        except Exception as e:
+            logger.error("_wfo_worker: " + str(e))
+            self.notif_bot.send_sync_message("WFO suite error: " + str(e))
+
     def _run_recommendations(self):
         """Run the recommendation engine after a successful overnight backtest."""
         try:
@@ -642,11 +782,6 @@ class TradingScheduler:
             self.notif_bot.send_sync_message(
                 f"⚠️ <b>Recommendations engine error:</b> {e}"
             )
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # Maintenance jobs
-    # ──────────────────────────────────────────────────────────────────────────
-
     def _refresh_cot_data(self):
         try:
             from data.cot_feed import COTFeed
@@ -665,6 +800,54 @@ class TradingScheduler:
             self.notif_bot.send_sync_message(msg)
         except Exception as e:
             self.notif_bot.send_sync_message(f"❌ COT refresh failed: {e}")
+
+    def _run_yahoo_history_fill(self):
+        script = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "scripts", "pull_yahoo_history.py",
+        )
+        if not os.path.exists(script):
+            self.notif_bot.send_sync_message(
+                "⚠️ Yahoo history fill script not found: scripts/pull_yahoo_history.py"
+            )
+            return
+
+        self.notif_bot.send_sync_message(
+            "📈 Yahoo History Fill Started — topping up CFD history for "
+            "NVDA / AMD / MSFT / AAPL / US500 / USTEC / USOIL"
+        )
+        try:
+            result = subprocess.run(
+                [sys.executable, script, "--d1-years", "10"],
+                capture_output=True, text=True, timeout=600,
+            )
+            if result.returncode != 0:
+                self.notif_bot.send_sync_message(
+                    "⚠️ Yahoo history fill error: " + result.stderr[-400:]
+                )
+            else:
+                total_line = next(
+                    (line for line in result.stdout.splitlines() if "Total bars" in line),
+                    "N/A"
+                )
+                self.notif_bot.send_sync_message(f"✅ Yahoo history fill complete: {total_line}")
+        except Exception as e:
+            logger.error(f"_run_yahoo_history_fill: {e}")
+
+    def _run_weekly_archive(self):
+        script = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "scripts", "weekly_archive.py",
+        )
+        try:
+            result = subprocess.run([sys.executable, script], capture_output=True, text=True)
+            if result.returncode == 0:
+                logger.info("Weekly archival completed.")
+                self.notif_bot.send_sync_message("📁 <b>Weekly Archival Complete</b>\nStrategy intelligence moved to long-term storage.")
+            else:
+                logger.error(f"Weekly archival failed: {result.stderr}")
+        except Exception as e:
+            logger.error(f"Error in _run_weekly_archive: {e}")
 
     def _db_cleanup(self):
         cutoff90 = datetime.now() - timedelta(days=90)
@@ -710,6 +893,29 @@ class TradingScheduler:
                 f"  {a} vs {b}: {c}" for a, b, c in high
             )
             self.notif_bot.send_sync_message(msg)
+
+    def _sync_mt5_history(self):
+        """Runs the account history sync script every 4 hours."""
+        script = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "scripts", "sync_mt5_account.py",
+        )
+        if not os.path.exists(script):
+            logger.error(f"Sync script not found at {script}")
+            return
+
+        logger.info("Starting 4-hour account history sync...")
+        try:
+            result = subprocess.run(
+                [sys.executable, script],
+                capture_output=True, text=True, timeout=300
+            )
+            if result.returncode != 0:
+                logger.error(f"4-hour sync failed: {result.stderr}")
+            else:
+                logger.info("4-hour account history sync completed.")
+        except Exception as e:
+            logger.error(f"Error in _sync_mt5_history: {e}")
 
 
 # ──────────────────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 REM test_health.bat — Run TradePanel health check and validation
 
 setlocal enabledelayedexpansion
-set TRADEPANEL_DIR=%~dp0
+set TRADEPANEL_DIR=%~dp0..
 cd /d %TRADEPANEL_DIR%
 
 echo.

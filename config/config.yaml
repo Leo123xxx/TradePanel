@@ -450,8 +450,8 @@ backtesting:
 # RISK MANAGEMENT
 # ============================================================
 risk_management:
-  risk_per_trade_pct: 1.0 # % of account balance risked per trade
-  max_lot_size: 1.0 # Hard ceiling on any single trade
+  risk_per_trade_pct: 2.0 # % of account balance risked per trade
+  max_lot_size: 0.15 # Hard ceiling on any single trade (Capped 2026-05-06)
   blocked_pairs: ["USDZAR", "USDTRY"] # Pairs to ignore regardless of strategy
   max_concurrent_positions: 5 # Across ALL strategies combined
   max_spread_pips: 10.0 # Skip trade if live spread exceeds this

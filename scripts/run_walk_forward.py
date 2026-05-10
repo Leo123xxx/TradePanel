@@ -36,9 +36,20 @@ from strategies.stat_arb_gold_silver import StatArbGoldSilver
 from strategies.naked_price_action import NakedPriceAction
 from strategies.cot_sentiment import COTSentimentStrategy
 from strategies.ensemble import EnsembleStrategy
+from strategies.donchian_trend import DonchianTrendStrategy
+from strategies.supertrend import SuperTrendStrategy
+from strategies.ttm_squeeze import TTMSqueezeStrategy
+from strategies.bb_squeeze_scalp import BBSqueezeScalp
+from strategies.rsi_extremes_scalp import RSIExtremesScalp
+from strategies.multi_ema_crypto_scalper import MultiEmaCryptoScalper
+from strategies.silver_bullet_crypto import SilverBulletCrypto
+from strategies.power_of_3_amd import PowerOf3AMD
+from strategies.fast_ma_scalper import FastMAScalper
+from strategies.ema_ribbon_scalp import EMARibbonScalp
+from strategies.macd_zero_scalp import MACDZeroScalp
+from strategies.volatility_breakout_scalp import VolatilityBreakoutScalp
 
 STRATEGY_MAP = {
-    # Original FX/metals strategies
     "ma_crossover":                 MACrossoverStrategy,
     "rsi_bounce":                   RSIBounceStrategy,
     "gold_momentum_breakout":       GoldMomentumBreakoutStrategy,
@@ -49,7 +60,6 @@ STRATEGY_MAP = {
     "swing_pullback":               SwingPullbackStrategy,
     "session_momentum":             SessionMomentumStrategy,
     "stoch_divergence":             StochDivergenceStrategy,
-    # New crypto + cross-asset strategies (added 2026-04-18)
     "ema_ribbon_trend":             EMARibbonTrendStrategy,
     "crypto_rsi_extremes":          CryptoRSIExtremesStrategy,
     "volatility_squeeze_breakout":  VolatilitySqueezeBreakoutStrategy,
@@ -69,6 +79,18 @@ STRATEGY_MAP = {
     "naked_price_action":           NakedPriceAction,
     "cot_sentiment":                COTSentimentStrategy,
     "ensemble":                     EnsembleStrategy,
+    "donchian_trend":               DonchianTrendStrategy,
+    "supertrend":                   SuperTrendStrategy,
+    "ttm_squeeze":                  TTMSqueezeStrategy,
+    "bb_squeeze_scalp":             BBSqueezeScalp,
+    "rsi_extremes_scalp":           RSIExtremesScalp,
+    "multi_ema_crypto_scalper":     MultiEmaCryptoScalper,
+    "silver_bullet_crypto":         SilverBulletCrypto,
+    "power_of_3_amd":               PowerOf3AMD,
+    "fast_ma_scalper":              FastMAScalper,
+    "ema_ribbon_scalp":             EMARibbonScalp,
+    "macd_zero_scalp":              MACDZeroScalp,
+    "volatility_breakout_scalp":    VolatilityBreakoutScalp,
 }
 
 def run_wf(strategy_name, symbol, timeframe, is_pct, oos_pct, n_windows, limit=0):
@@ -114,9 +136,13 @@ def run_wf(strategy_name, symbol, timeframe, is_pct, oos_pct, n_windows, limit=0
     total_oos_pnl = 0
     
     for res in results:
-        pnl = res.get('oos_profit_factor', 0) # Just checking if it made money basically, Sharpe is better. Wait, we display PF.
-        status = "PASS" if res.get('oos_sharpe', 0) >= 1.0 else "FAIL"
-        if res.get('oos_sharpe', 0) >= 1.0: profitable_windows += 1
+        sharpe = res.get('oos_sharpe', 0)
+        wr = res.get('oos_win_rate', 0)
+        trades = res.get('oos_trades', 0)
+        
+        min_tr = 5 if timeframe in ["H4", "D1", "W1"] else 10
+        status = "PASS" if (sharpe >= 1.5 and wr >= 65.0 and trades >= min_tr) else "FAIL"
+        if status == "PASS": profitable_windows += 1
         
         print(f"Window {res['window_index']}: {status}", flush=True)
         print(f"  Sharpe: {res.get('oos_sharpe', 0):6.2f} | PF: {res.get('oos_profit_factor', 0):6.2f}", flush=True)
@@ -137,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("--pair", type=str, default="XAUUSD", help="Trading pair")
     parser.add_argument("--timeframe", type=str, default="H4", help="Timeframe (e.g. H1, H4)")
     parser.add_argument("--is_pct", type=float, default=0.70, help="In-sample fraction")
-    parser.add_argument("--oos_pct", type=float, default=0.20, help="Out-of-sample fraction")
+    parser.add_argument("--oos_pct", type=float, default=0.30, help="Out-of-sample fraction")
     parser.add_argument("--n_windows", type=int, default=5, help="Number of rolling windows")
     parser.add_argument("--limit", type=int, default=0, help="Limit number of rows")
     

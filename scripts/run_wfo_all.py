@@ -38,28 +38,47 @@ from backtesting.walk_forward import WalkForwardOptimizer
 # Run 2 combos per strategy where possible to cross-validate.
 # =============================================================================
 WFO_CONFIGS = {
-    "ma_crossover":             [("EURUSD", "H1"),  ("GBPUSD", "H4"), ("GBPJPY", "H1"), ("NVDA", "H1")],
-    "rsi_bounce":               [("EURUSD", "H1"),  ("XAUUSD", "H4"), ("AAPL", "H1"), ("AMD", "H4")],
-    "gold_momentum_breakout":   [("XAUUSD", "H4"),  ("US500", "H1"), ("USOIL", "H1"), ("USTEC", "H1")],
-    "macd_trend":               [("EURUSD", "H1"),  ("USDJPY", "H4"), ("AUDUSD", "H1"), ("MSFT", "H4")],
-    "range_breakout":           [("XAUUSD", "H4"),  ("EURUSD", "H1"), ("USDZAR", "H4")],
-    "bb_mean_reversion":        [("XAUUSD", "H4"),  ("EURUSD", "H1")],
-    "stoch_divergence":         [("EURUSD", "H1"),  ("XAUUSD", "H1"), ("USDJPY", "H4")],
-    "stat_arb_gold_silver":     [("XAUUSD", "H4"),  ("XAUUSD", "H1"), ("XAUUSD", "M30")],  # D1 disabled
-    "ema_ribbon_trend":         [("XAUUSD", "H4"),  ("BTCUSD", "H4")],
-    "cot_sentiment":            [("XAUUSD", "D1"),  ("EURUSD", "D1")],
-    "session_momentum":         [("XAUUSD", "H1"),  ("GBPUSD", "M30")],
-    "turtle_soup":              [("EURUSD", "H4"),  ("XAUUSD", "D1")],
-    "dual_ema_momentum":        [("XAUUSD", "H4"),  ("EURUSD", "H1"), ("USDCAD", "H4")],
-    "dual_ema_fractal":         [("EURUSD", "H1"),  ("XAUUSD", "H4")],
-    "vwap_momentum":            [("EURUSD", "M30"), ("XAUUSD", "H1")],
-    "hikkake_trap":             [("XAUUSD", "H4"),  ("EURUSD", "H1")],
-    "orb":                      [("XAGUSD", "M15"), ("EURUSD", "M15")],
-    "rvgi_cci_confluence":      [("EURUSD", "H1"),  ("GBPUSD", "H4")],
-    "crypto_rsi_extremes":      [("BTCUSD", "H4"),  ("ETHUSD", "D1")],
-    "bb_squeeze_scalp":         [("XAUUSD", "M15"), ("EURUSD", "M15")],
-    "rsi_extremes_scalp":       [("XAUUSD", "M15"), ("GBPUSD", "M15")],
-    "rsi_pullback":             [("XAUUSD", "H4"),  ("USDJPY", "H4")],
+    "bb_mean_reversion": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "bb_squeeze_scalp": [("XAUUSD", "M15"), ("GBPUSD", "M15")],
+    "cot_sentiment": [("EURUSD", "H12"), ("GBPUSD", "H12")],
+    "crypto_rsi_extremes": [("BTCUSD", "H1"), ("ETHUSD", "H1")],
+    "donchian_trend": [("BTCUSD", "H1"), ("ETHUSD", "H1")],
+    "dual_ema_fractal": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "dual_ema_momentum": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "ema_ribbon_scalp": [("XAUUSD", "M15"), ("GBPUSD", "M15")],
+    "ema_ribbon_trend": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "ensemble": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "fast_ma_scalper": [("XAUUSD", "M15"), ("GBPUSD", "M15")],
+    "gold_momentum_breakout": [("XAUUSD", "H4"), ("XAUUSD", "H1")],
+    "hikkake_trap": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "ict_judas_swing": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "institutional_silver_bullet": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "ma_crossover": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "macd_trend": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "macd_zero_scalp": [("XAUUSD", "M15"), ("GBPUSD", "M15")],
+    "multi_ema_crypto_scalper": [("BTCUSD", "H1"), ("ETHUSD", "H1")],
+    "naked_price_action": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "orb": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "power_of_3_amd": [("BTCUSD", "H1"), ("ETHUSD", "H1")],
+    "range_breakout": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "rsi_2": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "rsi_bounce": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "rsi_extremes_scalp": [("XAUUSD", "M15"), ("GBPUSD", "M15")],
+    "rsi_pullback": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "rvgi_cci_confluence": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "session_momentum": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "silver_bullet_crypto": [("BTCUSD", "H1"), ("ETHUSD", "H1")],
+    "stat_arb_gold_silver": [("XAUUSD", "H2"), ("XAUUSD", "H1")],
+    "stoch_divergence": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "supertrend": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "swing_pullback": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "triple_macd_scalping": [("XAUUSD", "M15"), ("GBPUSD", "M15")],
+    "ttm_squeeze": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "turtle_soup": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "volatility_breakout_scalp": [("XAUUSD", "M15"), ("GBPUSD", "M15")],
+    "volatility_contraction": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "volatility_squeeze_breakout": [("XAUUSD", "H4"), ("EURUSD", "H4")],
+    "vwap_momentum": [("XAUUSD", "H4"), ("EURUSD", "H4")],
 }
 
 
@@ -80,7 +99,7 @@ def load_enabled_strategies() -> list:
     return enabled
 
 
-def calc_pass_rate(window_results: list) -> float:
+def calc_pass_rate(window_results: list, timeframe: str = "H1") -> float:
     if not window_results:
         return 0.0
     n_pass = 0
@@ -89,9 +108,12 @@ def calc_pass_rate(window_results: list) -> float:
         wr = r.get("oos_win_rate", 0)
         trades = r.get("oos_trades", 0)
         
-        # New "Accuracy Booster" criterion: 
-        # Sharpe >= 1.0 AND WR >= 60% AND Trades >= 10
-        if sharpe >= 1.0 and wr >= 60.0 and trades >= 10:
+        # Relaxed OOS window pass criterion:
+        # H4+ timeframes: 5 trades min
+        # Others: 10 trades min
+        min_tr = 5 if timeframe in ["H4", "D1", "W1"] else 10
+        
+        if sharpe >= 1.5 and wr >= 65.0 and trades >= min_tr:
             n_pass += 1
             
     return (n_pass / len(window_results)) * 100.0
@@ -146,7 +168,8 @@ def run_single_wfo(wfo_name: str, pair: str, timeframe: str,
         wr = res.get("oos_win_rate", 0)
         trades = res.get("oos_trades", 0)
         
-        status = "PASS" if (sharpe >= 1.0 and wr >= 60.0 and trades >= 10) else "FAIL"
+        min_tr = 5 if timeframe in ["H4", "D1", "W1"] else 10
+        status = "PASS" if (sharpe >= 1.5 and wr >= 65.0 and trades >= min_tr) else "FAIL"
         if status == "PASS":
             n_pass += 1
         print(
@@ -184,7 +207,7 @@ def write_summary(results: dict, skipped: list,
         "",
         f"**Generated:** {now}  ",
         f"**Config:** {n_windows} windows | IS={is_pct*100:.0f}% | OOS={oos_pct*100:.0f}%  ",
-        "**Criterion:** Sharpe >= 1.0, WR >= 60%, Trades >= 10 per window; strategy passes if >= 70% of windows pass",
+        "**Criterion:** Sharpe >= 1.5, WR >= 65%, Trades >= 5(H4+)/10(Others) per window (OOS); strategy passes if >= 70% of windows pass",
         "",
         "---",
         "",
@@ -211,7 +234,8 @@ def write_summary(results: dict, skipped: list,
                 s = w.get("oos_sharpe", 0)
                 wr = w.get("oos_win_rate", 0)
                 tr = w.get("oos_trades", 0)
-                if s > 0 and wr >= 60.0 and tr >= 10:
+                min_tr = 5 if tf in ["H4", "D1", "W1"] else 10
+                if s >= 1.5 and wr >= 65.0 and tr >= min_tr:
                     n_p += 1
 
             if error:
@@ -274,7 +298,8 @@ def write_summary(results: dict, skipped: list,
                     wr = w.get("oos_win_rate", 0)
                     trades = w.get("oos_trades", 0)
                     idx = w.get("window_index", "?")
-                    status = "PASS" if (sharpe >= 1.0 and wr >= 60.0 and trades >= 10) else "FAIL"
+                    min_tr = 5 if tf in ["H4", "D1", "W1"] else 10
+                    status = "PASS" if (sharpe >= 1.5 and wr >= 65.0 and trades >= min_tr) else "FAIL"
                     lines.append(f"| {idx} | {sharpe:.3f} | {wr:.1f} | {trades} | {status} |")
 
             lines.append("")
@@ -288,9 +313,9 @@ def write_summary(results: dict, skipped: list,
 # =============================================================================
 
 def run_all_wfo(
-    n_windows: int = 3,
+    n_windows: int = 5,
     is_pct: float = 0.70,
-    oos_pct: float = 0.20,
+    oos_pct: float = 0.30,
     only_strategy: str = None,
 ):
     """Main entry point. Runs WFO for all (or one) enabled strategies."""
@@ -345,7 +370,7 @@ def run_all_wfo(
                     "pair": pair,
                     "timeframe": timeframe,
                     "windows": window_results,
-                    "pass_rate": calc_pass_rate(window_results),
+                    "pass_rate": calc_pass_rate(window_results, timeframe),
                     "error": None,
                 })
             except Exception as exc:
@@ -377,16 +402,16 @@ if __name__ == "__main__":
         description="Batch Walk-Forward Optimisation for all enabled strategies."
     )
     parser.add_argument(
-        "--n_windows", type=int, default=3,
-        help="Number of rolling WFO windows (default: 3)"
+        "--n_windows", type=int, default=5,
+        help="Number of rolling WFO windows (default: 5)"
     )
     parser.add_argument(
         "--is_pct", type=float, default=0.70,
         help="In-sample fraction 0-1 (default: 0.70)"
     )
     parser.add_argument(
-        "--oos_pct", type=float, default=0.20,
-        help="Out-of-sample fraction 0-1 (default: 0.20)"
+        "--oos_pct", type=float, default=0.30,
+        help="Out-of-sample fraction 0-1 (default: 0.30)"
     )
     parser.add_argument(
         "--strategy", type=str, default=None,

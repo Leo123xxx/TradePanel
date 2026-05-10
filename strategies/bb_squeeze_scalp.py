@@ -24,7 +24,7 @@ class BBSqueezeScalp(BaseStrategy):
             "squeeze_pct":        0.6,
             "tp_atr_mult":        2.0,
             "sl_atr_mult":        1.0,
-            "adx_min":           25,
+            "adx_min":           28,
             "rsi_period":        14,
             "rsi_confirm_long":  52,
             "rsi_confirm_short": 48,

@@ -48,15 +48,22 @@ from strategies.rvgi_cci_confluence import RVGICCIConfluence
 from strategies.volatility_contraction import VolatilityContraction
 from strategies.stat_arb_gold_silver import StatArbGoldSilver
 from strategies.naked_price_action import NakedPriceAction
-from strategies.ensemble import EnsembleStrategy
-
 from strategies.cot_sentiment import COTSentimentStrategy
-# NOTE: COT Sentiment RE-ENABLED (2026-04-24)
-# CFTC COT data pipeline operational via data/cot_feed.py
-# Initial setup: python data/cot_feed.py --history (run once)
+from strategies.ensemble import EnsembleStrategy
+from strategies.donchian_trend import DonchianTrendStrategy
+from strategies.supertrend import SuperTrendStrategy
+from strategies.ttm_squeeze import TTMSqueezeStrategy
+from strategies.bb_squeeze_scalp import BBSqueezeScalp
+from strategies.rsi_extremes_scalp import RSIExtremesScalp
+from strategies.multi_ema_crypto_scalper import MultiEmaCryptoScalper
+from strategies.silver_bullet_crypto import SilverBulletCrypto
+from strategies.power_of_3_amd import PowerOf3AMD
+from strategies.fast_ma_scalper import FastMAScalper
+from strategies.ema_ribbon_scalp import EMARibbonScalp
+from strategies.macd_zero_scalp import MACDZeroScalp
+from strategies.volatility_breakout_scalp import VolatilityBreakoutScalp
 
 STRATEGY_MAP = {
-    # Original FX/metals strategies
     "ma_crossover":                 MACrossoverStrategy,
     "rsi_bounce":                   RSIBounceStrategy,
     "gold_momentum_breakout":       GoldMomentumBreakoutStrategy,
@@ -67,32 +74,37 @@ STRATEGY_MAP = {
     "swing_pullback":               SwingPullbackStrategy,
     "session_momentum":             SessionMomentumStrategy,
     "stoch_divergence":             StochDivergenceStrategy,
-    # New crypto + cross-asset strategies (added 2026-04-18)
     "ema_ribbon_trend":             EMARibbonTrendStrategy,
     "crypto_rsi_extremes":          CryptoRSIExtremesStrategy,
     "volatility_squeeze_breakout":  VolatilitySqueezeBreakoutStrategy,
-    # Ensemble strategies (added 2026-04-19 for Path B enhancements)
-    "ensemble":                     EnsembleStrategy,
-    # Institutional Flow (LeoDeX V2)
     "institutional_silver_bullet":  InstitutionalSilverBullet,
     "ict_judas_swing":              ICTJudasSwing,
     "turtle_soup":                  TurtleSoup,
-    # Trend Following (LeoDeX V2)
     "dual_ema_momentum":            DualEMAMomentum,
     "triple_macd_scalping":         TripleMACDScalping,
     "dual_ema_fractal":             DualEMAFractal,
-    # Mean Reversion (LeoDeX V2)
     "rsi_2":                        RSITwoStrategy,
     "vwap_momentum":                VWAPMomentum,
     "hikkake_trap":                 HikkakeTrap,
-    # Breakout (LeoDeX V2)
     "orb":                          ORBStrategy,
     "rvgi_cci_confluence":          RVGICCIConfluence,
     "volatility_contraction":       VolatilityContraction,
-    # Advanced (LeoDeX V2)
     "stat_arb_gold_silver":         StatArbGoldSilver,
     "naked_price_action":           NakedPriceAction,
-    "cot_sentiment":            COTSentimentStrategy,
+    "cot_sentiment":                COTSentimentStrategy,
+    "ensemble":                     EnsembleStrategy,
+    "donchian_trend":               DonchianTrendStrategy,
+    "supertrend":                   SuperTrendStrategy,
+    "ttm_squeeze":                  TTMSqueezeStrategy,
+    "bb_squeeze_scalp":             BBSqueezeScalp,
+    "rsi_extremes_scalp":           RSIExtremesScalp,
+    "multi_ema_crypto_scalper":     MultiEmaCryptoScalper,
+    "silver_bullet_crypto":         SilverBulletCrypto,
+    "power_of_3_amd":               PowerOf3AMD,
+    "fast_ma_scalper":              FastMAScalper,
+    "ema_ribbon_scalp":             EMARibbonScalp,
+    "macd_zero_scalp":              MACDZeroScalp,
+    "volatility_breakout_scalp":    VolatilityBreakoutScalp,
 }
 
 
@@ -124,9 +136,23 @@ def run_backtest(strategy_name: str, symbol: str, timeframe: str,
     # ── 2. Run backtest ────────────────────────────────────────────────────────
     print(f"\nBacktest Execution: {strategy_name} on {symbol} {timeframe}...")
     
-    # Instantiate strategy
+    # Load strategy configuration from strategies.yaml
+    import yaml
+    strat_config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "strategies.yaml")
+    params = {}
+    if os.path.exists(strat_config_path):
+        with open(strat_config_path, 'r') as f:
+            full_config = yaml.safe_load(f)
+            if strategy_name in full_config:
+                params = full_config[strategy_name].get("parameters", {})
+                # Apply pair-specific overrides if they exist
+                overrides = full_config[strategy_name].get("pair_overrides", {})
+                if symbol in overrides:
+                    params.update(overrides[symbol])
+    
+    # Instantiate strategy with loaded params
     strat_class = STRATEGY_MAP[strategy_name]
-    strategy_instance = strat_class()
+    strategy_instance = strat_class(params=params)
     
     bt = BacktestEngine(
         initial_balance=initial_balance,

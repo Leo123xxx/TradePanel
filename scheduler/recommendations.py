@@ -44,9 +44,9 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 # ── Thresholds (match OPTIMIZATION_SCHEDULE.md) ───────────────────────────────
-PASS_SHARPE        = 1.0
-PASS_WIN_RATE      = 60.0   # must match MIN_WIN_RATE in scripts/run_overnight_backtest.py
-NEAR_PASS_SHARPE   = 0.6   # REVIEW strategies above this get priority attention
+PASS_SHARPE        = 2.0
+PASS_WIN_RATE      = 70.0   # must match MIN_WIN_RATE in scripts/run_overnight_backtest.py
+NEAR_PASS_SHARPE   = 1.2   # REVIEW strategies above this get priority attention
 REMOVAL_FAILS      = 15    # consecutive backtest fails → escalate to removal queue
 ESCALATE_FAILS     = 6     # consecutive fails → active tuning required
 CRITICAL_FAILS     = 10    # consecutive fails → strong removal candidate
@@ -113,6 +113,30 @@ class RecommendationEngine:
         self.tracker_path  = self.results_dir / "demotion_tracker.json"
         self.notif_bot     = notif_bot   # injected by TradingScheduler; None in standalone mode
 
+
+    def _load_wfo_results(self) -> dict:
+        """
+        Parse wfo_master_summary.md and return a dict keyed by
+        (strategy, pair, timeframe) -> verdict ("PASS" | "FAIL" | "ERROR").
+        Returns empty dict if no WFO summary exists yet.
+        """
+        wfo_path = self.results_dir / "wfo_master_summary.md"
+        if not wfo_path.exists():
+            return {}
+        results = {}
+        import re
+        try:
+            with open(wfo_path) as f:
+                for line in f:
+                    # Match table rows: | strategy | pair | tf | pass_rate | windows | verdict |
+                    m = re.match(r'\|\s*([\w_]+)\s*\|\s*(\w+)\s*\|\s*(\w+)\s*\|.*?\|\s*(PASS|FAIL|ERROR)\s*\|', line)
+                    if m:
+                        strategy, pair, tf, verdict = m.group(1), m.group(2), m.group(3), m.group(4)
+                        results[(strategy, pair, tf)] = verdict
+        except Exception as e:
+            logger.warning(f"Could not parse wfo_master_summary.md: {e}")
+        return results
+
     # ── Public entry point ────────────────────────────────────────────────────
 
     def run(self, report_path: str | None = None) -> Analysis:
@@ -124,6 +148,7 @@ class RecommendationEngine:
         current_path, current = self._load_report(report_path)
         previous_results      = self._load_previous_results(exclude=current_path)
         tracker               = self._load_tracker()
+        wfo_results           = self._load_wfo_results()
 
         report_date = Path(current_path).stem[:8]  # "20260428"
         logger.info(
@@ -151,7 +176,7 @@ class RecommendationEngine:
         analysis.tuning_hints = self._generate_tuning_hints(results)
 
         # 4. Deliver
-        md_path = self._write_markdown(analysis)
+        md_path = self._write_markdown(analysis, wfo_results=wfo_results)
         if self.notif_bot:
             self._send_telegram(analysis, md_path)
         else:
@@ -469,7 +494,7 @@ class RecommendationEngine:
             else:
                 return (
                     f"📈 Sharpe {sh:.2f} is promising but WR {wr:.0f}% needs "
-                    f"+{PASS_WIN_RATE - wr:.1f}pp to reach 60%. "
+                    f"+{PASS_WIN_RATE - wr:.1f}pp to reach 70%. "
                     "Tighten entry: add ADX filter or restrict to higher-TF "
                     "trend direction only.",
                     3,
@@ -528,7 +553,7 @@ class RecommendationEngine:
 
     # ── Delivery ──────────────────────────────────────────────────────────────
 
-    def _write_markdown(self, a: Analysis) -> str:
+    def _write_markdown(self, a: Analysis, wfo_results: dict | None = None) -> str:
         lines = [
             f"# TradePanel Recommendations — {a.report_date}",
             f"",
@@ -547,6 +572,38 @@ class RecommendationEngine:
             f"| ⏭ SKIP | {a.skip_count} |",
             f"",
         ]
+
+        # -- WFO Validation Status --
+        if wfo_results:
+            import re as _re
+            wfo_lines = ["## 🔬 WFO Validation Status", ""]
+            wfo_lines += [
+                "| Strategy | Pair | TF | WFO Verdict | Notes |",
+                "|----------|------|----|-------------|-------|",
+            ]
+            # Only annotate PASS strategies from the overnight backtest
+            pass_strategies = [(r.strategy, r.pair, r.timeframe) for r in [self._parse(x) for x in []] ]
+            # Show all WFO results, highlighting relevant ones
+            for (strat, pair, tf), verdict in sorted(wfo_results.items()):
+                icon = "WFO PASS" if verdict == "PASS" else ("WFO FAIL" if verdict == "FAIL" else "WFO ERROR")
+                note = "OOS validated (Sharpe>=1.5, WR>=65%)" if verdict == "PASS" else ("Fails OOS gate -- do not promote" if verdict == "FAIL" else "Run error -- re-check deps")
+                wfo_lines.append(f"| {strat} | {pair} | {tf} | {icon} | {note} |")
+            if len(wfo_results) == 0:
+                wfo_lines.append("| — | — | — | No results | Run scripts/run_wfo_all.py to generate |")
+            wfo_lines.append("")
+            wfo_date_note = ""
+            try:
+                wfo_path = self.results_dir / "wfo_master_summary.md"
+                if wfo_path.exists():
+                    import os
+                    age_days = (datetime.utcnow().timestamp() - os.path.getmtime(str(wfo_path))) / 86400
+                    wfo_date_note = f"_WFO last run: {age_days:.0f} day(s) ago_"
+            except Exception:
+                pass
+            if wfo_date_note:
+                wfo_lines.append(wfo_date_note)
+                wfo_lines.append("")
+            lines += wfo_lines
 
         # ── Improvements ──────────────────────────────────────────────────
         if a.improvements:

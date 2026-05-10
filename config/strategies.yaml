@@ -1,515 +1,1006 @@
-# ============================================================================
-# TRADEPANEL STRATEGIES — Master Configuration
-# Updated: 2026-04-29 — crypto/commodity WR optimisation (target ≥70% WR)
-# Updated: 2026-04-26 — params updated from param_optimizer.py (21/22 PASS, 95%)
-# Target: WR >= 70% crypto/commodity | WR >= 60% FX | RR >= 1:2 intraday | 1:4 D1/W1
-# Account currency: ZAR (R18.50/USD fixed for backtesting)
-# Tiers: TIER_1 (high conviction), TIER_2 (solid, validated)
-#
-# GO-LIVE ACCEPTANCE CRITERIA (2-week forward test):
-# - Forward test WR >= 90% of backtest WR
-# - Forward test Sharpe >= 0.8
-# - No more than 3 consecutive losing days
-# - Max drawdown in forward test < 12%
-# ============================================================================
-
-# ── Active strategies ─────────────────────────────────────────────────────────
-# 25 total: 11 Tier 1 + 14 Tier 2
-# 2026-04-29: crypto_rsi_extremes enabled; all strategies upgraded to target 70% WR; M15 scalpers re-enabled
-# 2026-05-03: +3 new crypto strategies (LeoDeX framework): multi_ema_crypto_scalper, silver_bullet_crypto, power_of_3_amd
-#             +turtle_soup and vwap_momentum extended to BTCUSD/ETHUSD
 active:
-  - ma_crossover
-  - gold_momentum_breakout
-  - stat_arb_gold_silver
-  - hikkake_trap
-  - range_breakout
-  - dual_ema_fractal
-  - rsi_pullback
-  - ema_ribbon_trend
-  - cot_sentiment
-  - session_momentum
-  - turtle_soup
-  - dual_ema_momentum
-  - orb
-  - rvgi_cci_confluence
-  - rsi_extremes_scalp
-  - bb_squeeze_scalp
-  - macd_trend
-  - rsi_bounce
-  - vwap_momentum
+- dual_ema_fractal
+- rsi_pullback
+- stat_arb_gold_silver
+- gold_momentum_breakout
+- macd_trend
+- supertrend
+- range_breakout
+- session_momentum
+- naked_price_action
+- volatility_squeeze_breakout
+- ttm_squeeze
+- hikkake_trap
+- dual_ema_momentum
+- rsi_2
 dual_ema_fractal:
   name: Dual EMA Fractal Breaker
   category: Trend Following
   status: implemented
-  regime: [TRENDING]
+  regime:
+  - TRENDING
   enabled: true
-  tier: TIER_2              # DEMOTED 2026-04-26; v2 2026-04-29: RSI gate + vol confirm added
-  pairs: [EURUSD, GBPUSD, XAUUSD, GBPJPY, AUDUSD, USDCAD, USOIL]
-  timeframes: [H4, D1]     # Narrowed 2026-04-29: M15/M30/H1 removed — fractal noise on short TFs
-  # RR: 1:2 on H4 | 1:4 on D1 (applied by runner via get_rr_override)
+  tier: TIER_1
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  - GBPJPY
+  - AUDUSD
+  - USDCAD
+  - USOIL
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     ema_fast: 50
-    ema_slow: 200
-    adx_min: 25              # Raised 20→25 (2026-04-29): higher conviction trending markets only
+    ema_slow: 100
+    adx_min: 28
     rsi_period: 14
-    rsi_long_min: 55         # NEW 2026-04-29: only buy fractal breaks with bullish RSI momentum
-    rsi_short_max: 45        # NEW 2026-04-29: only sell fractal breaks with bearish RSI momentum
+    rsi_long_min: 55
+    rsi_short_max: 42
     atr_period: 14
-    tp_atr_mult: 2.0         # 1:2 default (runner overrides D1 to 4.0)
+    tp_atr_mult: 3.5
     sl_atr_mult: 1.0
-    use_breakeven: true      # NEW: lock in profits
+    use_breakeven: true
     breakeven_trigger_mult: 1.5
     use_multi_tf_confirmation: true
-    confirm_timeframe: H4    # H4 trend must agree with entry
-    vol_threshold_mult: 1.2  # Entry bar must be above-average volume
+    confirm_timeframe: H4
+    vol_threshold_mult: 1.5
   pair_overrides:
     XAUUSD:
-      adx_min: 25            # Gold trends are real at lower ADX
-      tp_atr_mult: 3.0       # Adjusted 2026-04-26 to reduce DD
-      sl_atr_mult: 0.8       # Adjusted 2026-04-26 to reduce DD
+      adx_min: 30
+      tp_atr_mult: 3.8
+      sl_atr_mult: 0.8
     GBPUSD:
-      confirm_timeframe: D1  # GBP needs D1 confirmation (more whippy)
+      confirm_timeframe: D1
+      adx_min: 30
+      tp_atr_mult: 3.8
+    GBPJPY:
+      adx_min: 28
+      tp_atr_mult: 4.0
+    AUDUSD:
+      adx_min: 33
+      vol_threshold_mult: 1.6
+    USDCAD:
+      adx_min: 30
+      vol_threshold_mult: 1.6
+      tp_atr_mult: 3.8
+    USOIL:
+      adx_min: 33
+      sl_atr_mult: 0.7
+      tp_atr_mult: 3.5
+    EURUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
   mode: trade
-
+  lot_size: 0.3
 rsi_pullback:
   name: RSI Pullback
   category: Trend + Reversion Hybrid
   status: implemented
-  regime: [TRENDING]
+  regime:
+  - TRENDING
   enabled: true
-  tier: TIER_2
-  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY, XAGUSD]
-  timeframes: [H4, D1]
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - XAGUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     rsi_period: 14
-    rsi_pullback_lower: 38   # v3: tightened 35->38 — higher quality long pullbacks
-    rsi_pullback_upper: 47   # v3: tightened 50->47
-    rsi_short_lower: 53      # v3 NEW: short zone lower bound
-    rsi_short_upper: 65      # v3 NEW: short zone upper bound
+    rsi_pullback_lower: 33
+    rsi_pullback_upper: 45
+    rsi_short_lower: 55
+    rsi_short_upper: 67
     fast_ema: 20
     slow_ema: 50
-    ema200_period: 200        # v3 NEW: macro trend gate
-    adx_min: 20
-    adx_max: 45              # v3 NEW: avoid exhausted trends
+    ema200_period: 200
+    adx_min: 22
+    adx_max: 45
     macd_fast: 12
     macd_slow: 26
-    macd_signal: 9           # v3 NEW: MACD histogram turn confirmation
+    macd_signal: 9
     atr_period: 14
-    tp_atr_mult: 3.0
-    sl_atr_mult: 1.0
+    tp_atr_mult: 3.5
+    sl_atr_mult: 1.2
     use_breakeven: true
     breakeven_trigger_mult: 1.5
   mode: trade
-
+  lot_size: 0.3
+  pair_overrides:
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    USDJPY:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    XAGUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    GBPUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
 ma_crossover:
   name: Moving Average Crossover
   category: Trend Following
   status: implemented
-  regime: [TRENDING, ANY]
-  enabled: true
-  tier: TIER_1
-  pairs: [EURUSD, GBPUSD, USDJPY, AUDUSD, GBPJPY, USDCAD]
-  timeframes: [H1, H4, D1]
+  regime:
+  - TRENDING
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - EURUSD
+  - AUDUSD
+  - GBPJPY
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    fast_period: 5           # Optimized: 5 → WR 85.7%
-    slow_period: 50          # Optimized: 50 (was 21)
+    fast_period: 10
+    slow_period: 21
     ma_type: EMA
     atr_period: 14
-    adx_filter: 20           # Optimized: 20 (was 28)
-    tp_atr_mult: 2.0
-    sl_atr_mult: 0.8         # Optimized: 0.8
+    adx_filter: 28
+    tp_atr_mult: 3.5
+    sl_atr_mult: 0.8
     use_multi_tf_confirmation: true
     confirm_timeframe: H4
-    vol_threshold_mult: 1.1
+    vol_threshold_mult: 1.3
   pair_overrides:
     USDJPY:
       fast_period: 10
       slow_period: 25
-      adx_filter: 28
+      adx_filter: 30
       confirm_timeframe: D1
     GBPUSD:
       adx_filter: 28
       sl_atr_mult: 1.1
+    GBPUSD:H4:
+      allow_long: false
+    GBPUSD:H1:
+      allow_short: false
+    EURUSD:
+      adx_filter: 28
+      confirm_timeframe: D1
+      vol_threshold_mult: 1.5
+      adx_min: 30
+      tp_atr_mult: 3.8
+    GBPJPY:
+      adx_filter: 28
+      confirm_timeframe: D1
+      adx_min: 30
+      tp_atr_mult: 3.8
   mode: trade
-
+  lot_size: 0.5
 rsi_bounce:
   name: RSI Mean Reversion
   category: Mean Reversion
   status: implemented
-  regime: [RANGING, ANY]
-  enabled: true
-  tier: TIER_2
-  pairs: [EURUSD, XAUUSD, GBPUSD, USDJPY, GBPJPY, AUDUSD, USDCAD, USOIL]
-  timeframes: [H4, D1]      # v3: H1 removed — confirmation candle filter needs structure
+  regime:
+  - RANGING
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - EURUSD
+  - XAUUSD
+  - GBPUSD
+  - USDJPY
+  - GBPJPY
+  - AUDUSD
+  - USDCAD
+  - USOIL
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     rsi_period: 14
-    oversold: 15             # v3: tightened 25->15 — deepest RSI extremes only
-    overbought: 85           # v3: tightened 75->85
+    oversold: 18
+    overbought: 82
     ema_trend: 200
-    adx_max: 18              # v3: tightened 30->18 — strictly ranging markets only
-    vol_threshold_mult: 1.2
+    adx_max: 22
+    vol_threshold_mult: 1.0
     atr_period: 14
-    tp_atr_mult: 2.0
-    sl_atr_mult: 1.0
-    session_start_utc: 7
-    session_end_utc: 17
+    tp_atr_mult: 2.5
+    sl_atr_mult: 0.8
+    session_start_utc: 0
+    session_end_utc: 23
+    rsi_lower: 18
+    rsi_upper: 72
   mode: trade
-
+  lot_size: 0.5
+  pair_overrides:
+    EURUSD:
+      adx_min: 28
+      tp_atr_mult: 3.0
+    GBPUSD:
+      adx_min: 28
+      tp_atr_mult: 3.0
+    GBPJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USDCAD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USOIL:
+      adx_min: 30
+      tp_atr_mult: 2.8
 stat_arb_gold_silver:
   name: Stat Arb (Gold/Silver Spread)
   category: Advanced
   status: implemented
-  regime: [RANGING, ANY]
+  regime:
+  - RANGING
+  - ANY
   enabled: true
   tier: TIER_1
-  pairs: [XAUUSD]
-  timeframes: [H4, H1, M30, M15]   # v3: D1 disabled (MaxDD=106.4%); H1/M30/M15 added
+  pairs:
+  - XAUUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    window: 200
-    z_entry: 2.0             # Back to 2.0 sigma (2.5 was too restrictive on short TFs)
+    window: 100
+    z_entry: 2.0
     z_exit: 0.0
     secondary_symbol: XAGUSD
-    tp_atr_mult: 2.0
+    tp_atr_mult: 3.0
     sl_atr_mult: 1.0
   mode: trade
-
+  pair_overrides:
+    XAUUSD:
+      z_exit: 0.0
+      adx_max: 25
+      allow_long: false
+      adx_min: 30
+      tp_atr_mult: 3.3
+  lot_size: 0.3
 bb_mean_reversion:
   name: Bollinger Band Mean Reversion
   category: Mean Reversion
   status: implemented
-  regime: [RANGING, ANY]
-  enabled: false
+  regime:
+  - RANGING
+  - ANY
+  enabled: true
   tier: TIER_1
-  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY, GBPJPY, USOIL, US500]  # expanded 2026-04-30
-  timeframes: [H1, H4]                       # v2: M15/M30 removed (too noisy for BB mean rev)
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - GBPJPY
+  - USOIL
+  - US500
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     bb_period: 20
-    bb_deviation: 3.0        # v3: 3-sigma only
+    bb_deviation: 2.5
     atr_period: 14
     rsi_period: 14
     rsi_os_low: 10
-    rsi_os_high: 28          # v3: tightened 35->28
-    rsi_ob_low: 72           # v3: tightened 65->72
+    rsi_os_high: 28
+    rsi_ob_low: 72
     rsi_ob_high: 90
     vol_threshold_mult: 1.2
-    vol_exhaustion_bars: 2   # v3 NEW: volume declining 2 bars pre-touch
-    adx_max: 15              # v3: tightened 25->15 — dead-flat ranging only
-    tp_atr_mult: 2.0
+    vol_exhaustion_bars: 0
+    adx_max: 25
+    tp_atr_mult: 2.5
     sl_atr_mult: 1.0
     ema200_period: 200
     session_start_utc: 7
     session_end_utc: 17
   mode: trade
-
+  lot_size: 0.5
+  pair_overrides:
+    EURUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USOIL:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USDJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    US500:
+      adx_min: 30
+      tp_atr_mult: 2.8
 stoch_divergence:
   name: Stochastic Divergence Bounce
   category: Divergence
   status: implemented
-  regime: [RANGING, ANY]
-  enabled: false
+  regime:
+  - RANGING
+  - ANY
+  enabled: true
   tier: TIER_1
-  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY, GBPJPY, AUDUSD, USDCAD]  # expanded 2026-04-30
-  timeframes: [H1, H4]                       # v3: D1 removed; H1 added — dual-TF H1+H4 overhaul
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - GBPJPY
+  - AUDUSD
+  - USDCAD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    stoch_period: 14         # v2: reset to standard 14 (9 was over-optimized)
+    stoch_period: 10
     stoch_smooth_k: 3
     stoch_smooth_d: 3
-    divergence_lookback: 10
-    stoch_oversold: 20       # v2: tightened 25→20 — genuine oversold extremes only
-    stoch_overbought: 80     # v2: tightened 85→80 — consistent with code default
+    divergence_lookback: 18
+    stoch_oversold: 20
+    stoch_overbought: 80
     atr_period: 14
-    tp_atr_mult: 2.0
-    sl_atr_mult: 1.0
-    adx_max: 30              # v2: raised 22→30 — H4/D1 ranging gate (was too tight for D1)
-    ema200_period: 200       # v2 NEW: macro trend gate
-    rsi_period: 14           # v2 NEW: RSI confirmation gate
-    rsi_bull_min: 25         # v2 NEW: bull divergence RSI lower bound
-    rsi_bull_max: 55         # v2 NEW: bull divergence RSI upper bound
-    rsi_bear_min: 45         # v2 NEW: bear divergence RSI lower bound
-    rsi_bear_max: 75         # v2 NEW: bear divergence RSI upper bound
+    tp_atr_mult: 2.5
+    sl_atr_mult: 1.2
+    adx_max: 22
+    ema200_period: 200
+    rsi_period: 14
+    rsi_bull_min: 15
+    rsi_bull_max: 55
+    rsi_bear_min: 45
+    rsi_bear_max: 85
   mode: trade
-
+  lot_size: 0.3
+  pair_overrides:
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    EURUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    AUDUSD:
+      adx_min: 28
+      tp_atr_mult: 3.0
+    USDCAD:
+      adx_min: 30
+      tp_atr_mult: 2.8
 macd_trend:
   name: MACD Trend Continuation
   category: Trend Following
   status: implemented
-  regime: [TRENDING]
+  regime:
+  - TRENDING
   enabled: true
-  tier: TIER_2              # DEMOTED 2026-04-26: 0% WFO pass rate (0/3)
-  # v2 2026-04-29: ADX raised 25→28, RSI gate added, EMA200 macro gate, TFs narrowed to H1/H4
-  pairs: [EURUSD, USDJPY, GBPJPY, AUDUSD, USOIL, US500, USTEC]  # expanded 2026-04-30
-  timeframes: [H1, H4]
+  tier: TIER_1
+  pairs:
+  - USDJPY
+  - GBPJPY
+  - AUDUSD
+  - USOIL
+  - US500
+  - USTEC
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     macd_fast: 12
-    macd_slow: 21            # Optimized: 21 → WR 60.0%
+    macd_slow: 21
     macd_signal: 9
     adx_length: 14
-    adx_threshold: 28        # raised 25→28: filter weaker trends
+    adx_threshold: 25
     rsi_period: 14
-    rsi_long_min: 58         # v3: raised 55→58 for stronger trend confirmation
-    rsi_short_max: 42        # v3: lowered 45→42 for stronger trend confirmation
-    ema200_period: 200       # NEW: EMA200 macro trend gate
-    tp_atr_mult: 2.0
+    rsi_long_min: 55
+    rsi_short_max: 38
+    ema200_period: 200
+    tp_atr_mult: 2.5
     sl_atr_mult: 1.0
     use_multi_tf_confirmation: true
     confirm_timeframe: H4
+    fast_period: 12
+    slow_period: 21
+    signal_period: 9
+    vol_threshold_mult: 1.3
   pair_overrides:
     USDJPY:
-      adx_threshold: 28
+      adx_threshold: 30
       confirm_timeframe: H4
+      adx_min: 30
+      tp_atr_mult: 2.8
+    US500:
+      allow_short: false
+      adx_threshold: 28
+      vol_threshold_mult: 1.5
+      adx_min: 30
+      tp_atr_mult: 2.8
+    US500:H4:
+      allow_short: false
+    AUDUSD:
+      adx_threshold: 28
+      vol_threshold_mult: 1.5
+      adx_min: 30
+      tp_atr_mult: 2.8
+    GBPJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USTEC:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USOIL:
+      adx_min: 30
+      tp_atr_mult: 2.8
   mode: trade
-
+  lot_size: 0.3
 gold_momentum_breakout:
   name: Gold Momentum Breakout
   category: Breakout
   status: implemented
-  regime: [TRENDING, HIGH_VOL]
+  regime:
+  - TRENDING
+  - HIGH_VOL
   enabled: true
   tier: TIER_1
-  pairs: [XAUUSD, GBPUSD, USOIL, US500, USTEC, NVDA, AMD, MSFT, AAPL]  # expanded 2026-04-30
-  timeframes: [H1, H4, D1]      # Expanded 2026-04-30: H1 added to increase signal count for stocks
+  pairs:
+  - XAUUSD
+  - GBPUSD
+  - USOIL
+  - US500
+  - USTEC
+  - NVDA
+  - AMD
+  - MSFT
+  - AAPL
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    bb_length: 14            # Optimized: 14 → WR 66.7%
+    bb_length: 14
     bb_std: 2.0
     rsi_length: 14
-    rsi_buy_min: 60          # Tightened 55→60 (2026-04-29): momentum must be clearly bullish
-    rsi_sell_max: 40         # Tightened 45→40 (2026-04-29): momentum must be clearly bearish
+    rsi_buy_min: 55
+    rsi_sell_max: 40
     squeeze_threshold_pct: 0.03
     squeeze_lookback: 3
     atr_period: 14
-    tp_atr_mult: 2.0
+    tp_atr_mult: 3.5
     sl_atr_mult: 1.0
     use_breakeven: true
     breakeven_trigger_mult: 1.2
-    vol_threshold_mult: 1.5  # Volume gate — breakout bar must exceed 1.5x avg volume
-    adx_min: 25              # ADX gate — confirms trending/impulsive market structure
-    ema200_period: 200        # Macro trend gate — NEW 2026-04-29
+    vol_threshold_mult: 1.5
+    adx_min: 22
+    ema200_period: 200
   pair_overrides:
     GBPUSD:
-      rsi_buy_min: 60        # v3: tightened 57→60 — require clearer GBP momentum (WR 55.2%→target 62%)
-      rsi_sell_max: 40       # v3: tightened 43→40
-      adx_min: 28            # v3: raised 22→28 — stronger trend filter for GBP
-      tp_atr_mult: 3.0       # v3: raised 2.0→3.0 — let winners run further
+      rsi_buy_min: 58
+      rsi_sell_max: 42
+      adx_min: 30
+      tp_atr_mult: 3.8
+    XAUUSD:
+      sl_atr_mult: 0.8
+      rsi_buy_min: 62
+      rsi_sell_max: 38
+      adx_min: 30
+      tp_atr_mult: 3.8
+    NVDA:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    MSFT:
+      adx_min: 28
+      tp_atr_mult: 4.0
+    AAPL:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    US500:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    USTEC:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    AMD:
+      adx_min: 30
+      tp_atr_mult: 3.8
   mode: trade
-
+  lot_size: 0.2
 range_breakout:
   name: Range Breakout
   category: Breakout
   status: implemented
-  regime: [ANY]
+  regime:
+  - ANY
   enabled: true
   tier: TIER_1
-  pairs: [XAUUSD, EURUSD, USOIL, US500, USTEC]  # expanded 2026-04-30
-  timeframes: [H4]            # Narrowed 2026-04-29: M30/H1 removed (noise); H4 only
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - USOIL
+  - US500
+  - USTEC
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    consolidation_bars: 15    # Optimized: 15 → WR 61.7%
-    vol_threshold_mult: 1.3   # Vol gate (raised slightly — AND logic means fewer signals)
-    tp_range_mult: 2.0
+    consolidation_bars: 10
+    vol_threshold_mult: 1.5
+    tp_range_mult: 2.5
     sl_buffer_pips: 15
-    adx_min_filter: 25        # Raised 20→25 (2026-04-29): both vol AND ADX required now
-    ema_period: 50            # Raised 20→50 (2026-04-29): EMA20 too short to define H4 trend
+    adx_min_filter: 22
+    ema_period: 50
     rsi_period: 14
-    rsi_long_min: 40          # RSI band filter — long zone
-    rsi_long_max: 70
-    rsi_short_min: 30         # RSI band filter — short zone
-    rsi_short_max: 60
+    rsi_long_min: 48
+    rsi_long_max: 72
+    rsi_short_min: 28
+    rsi_short_max: 52
     use_regime_filter: true
     confirm_timeframe: D1
   pair_overrides:
     XAUUSD:
       sl_buffer_pips: 30
-      tp_range_mult: 2.0
-      sl_atr_mult: 0.7        # Reduced 2026-04-26 to fix 21.9% DD
-      max_concurrent: 1       # Limit gold exposure
+      tp_range_mult: 2.5
+      sl_atr_mult: 0.6
+      max_concurrent: 1
+      adx_min: 30
+      tp_atr_mult: 2.3
     EURUSD:
       sl_buffer_pips: 10
       vol_threshold_mult: 1.4
+      adx_min: 30
+      tp_atr_mult: 2.3
+    USOIL:
+      adx_min: 30
+      tp_atr_mult: 2.3
+    US500:
+      adx_min: 30
+      tp_atr_mult: 2.3
+    USTEC:
+      adx_min: 30
+      tp_atr_mult: 2.3
   mode: trade
-
+  lot_size: 0.2
 ema_ribbon_trend:
   name: EMA Ribbon Trend
   category: Trend Following
   status: implemented
-  regime: [TRENDING, ANY]
-  enabled: true
-  tier: TIER_2              # DEMOTED 2026-04-26: 0% WFO pass rate; v2 2026-04-29 upgrade
-  pairs: [BTCUSD, ETHUSD, XAUUSD, US500, USTEC, NVDA, AMD, MSFT, AAPL]  # expanded 2026-04-30
-  timeframes: [H1, H4, D1]      # Expanded 2026-04-30: H1 added for better stock trend tracking
+  regime:
+  - TRENDING
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  - XAUUSD
+  - US500
+  - USTEC
+  - NVDA
+  - AMD
+  - MSFT
+  - AAPL
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    fast_ema: 8              # Optimized: 8 → WR 66.7%
-    mid_ema: 21              # Optimized: 21
+    fast_ema: 10
+    mid_ema: 26
     slow_ema: 55
-    adx_min: 28              # Raised 20→28 (2026-04-29): crypto needs stronger trend confirm
+    adx_min: 28
     rsi_period: 14
     atr_period: 14
-    vol_threshold_mult: 1.3  # ATR expansion filter — active (was effectively 0 before v2)
-    ema200_period: 200        # Macro trend gate — NEW 2026-04-29
-    tp_atr_mult: 2.0         # Runner overrides to 4.0 for D1
-    sl_atr_mult: 0.8         # Optimized: 0.8
+    vol_threshold_mult: 1.2
+    ema200_period: 200
+    tp_atr_mult: 3.5
+    sl_atr_mult: 1.2
   pair_overrides:
     BTCUSD:
-      tp_atr_mult: 2.5       # Crypto needs wider targets
+      tp_atr_mult: 3.5
       sl_atr_mult: 1.2
     ETHUSD:
-      tp_atr_mult: 2.5
+      tp_atr_mult: 3.8
       sl_atr_mult: 1.5
+      adx_min: 30
+      vol_threshold_mult: 1.3
     XAUUSD:
-      adx_min: 25
+      adx_min: 30
       sl_atr_mult: 1.0
+      tp_atr_mult: 3.8
+    NVDA:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    US500:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    USTEC:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    AMD:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    MSFT:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    AAPL:
+      adx_min: 30
+      tp_atr_mult: 3.8
   mode: trade
-
+  lot_size: 0.3
 cot_sentiment:
   name: COT Sentiment Swing
   category: Advanced
   status: implemented
-  regime: [TRENDING]
-  enabled: true
-  tier: TIER_2
-  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY]  # v2: XAGUSD removed (COT data too noisy)
-  timeframes: [D1, W1]
+  regime:
+  - TRENDING
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - XAUUSD
+  - EURUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
+  - W1
   parameters:
-    sentiment_threshold: 85   # v3: tightened back to 85 — delta filter handles false positives
-    sell_threshold: 20        # v3: tightened back to 20
+    sentiment_threshold: 85
+    sell_threshold: 15
     ema_filter: 50
-    tp_atr_mult: 4.0
+    tp_atr_mult: 3.5
     sl_atr_mult: 1.0
     atr_period: 14
     rsi_period: 14
-    rsi_buy_min: 52
-    rsi_sell_max: 48
-    cot_delta_weeks: 4        # v3 NEW: COT must still be building toward extreme (4-week delta filter)
+    rsi_buy_min: 55
+    rsi_sell_max: 45
+    cot_delta_weeks: 4
   mode: trade
-
-# =============================================================================
-# TIER 2 STRATEGY DEFINITIONS
-# =============================================================================
-
+  pair_overrides:
+    XAUUSD:
+      tp_atr_mult: 4.0
+    GBPUSD:D1:
+      enabled: false
+    USDJPY:D1:
+      enabled: false
 session_momentum:
   name: London/NY Session Momentum
   category: Session-Based
   status: implemented
-  regime: [TRENDING]
+  regime:
+  - TRENDING
   enabled: true
-  tier: TIER_2
-  pairs: [EURUSD, GBPUSD, XAUUSD, GBPJPY, AUDUSD, USOIL, US500, USTEC]  # expanded 2026-04-30
-  timeframes: [H1]                   # v2: M15/M30 removed — session breakouts need H1
+  tier: TIER_1
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  - GBPJPY
+  - AUDUSD
+  - USOIL
+  - US500
+  - USTEC
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    london_start_utc: 7       # v2: London open (was single 13:30–15:30 window)
-    london_end_utc: 10        # v2: London momentum window
-    ny_start_utc: 13          # v2: NY open
-    ny_end_utc: 16            # v2: NY close
-    pre_session_bars: 12      # v2: raised 8→12 for stable range
+    london_start_utc: 7
+    london_end_utc: 10
+    ny_start_utc: 13
+    ny_end_utc: 16
+    pre_session_bars: 12
     atr_period: 14
-    tp_atr_mult: 2.0
-    sl_atr_mult: 0.8
-    min_adx_filter: 28        # v3: raised 25->28 — tighter trend requirement
+    tp_atr_mult: 3.5
+    sl_atr_mult: 1.0
+    min_adx_filter: 25
     fast_ema: 20
     slow_ema: 50
     ema200_period: 200
-    vol_threshold_mult: 1.5   # v3: raised 1.2->1.5 — stronger volume conviction
+    vol_threshold_mult: 2.0
     rsi_period: 14
-    rsi_long_min: 57          # v3: raised 52->57
-    rsi_short_max: 43         # v3: lowered 48->43
-    breakout_atr_min: 0.3     # v3 NEW: min breakout distance from range in ATR units
+    rsi_long_min: 58
+    rsi_short_max: 42
+    breakout_atr_min: 0.3
   mode: trade
-
+  pair_overrides:
+    GBPJPY:
+      vol_threshold_mult: 2.2
+      adx_min: 30
+      tp_atr_mult: 3.8
+    XAUUSD:
+      vol_threshold_mult: 2.0
+    EURUSD:
+      vol_threshold_mult: 2.2
+      adx_min: 30
+      tp_atr_mult: 3.8
+    AUDUSD:
+      vol_threshold_mult: 2.2
+      adx_min: 30
+      tp_atr_mult: 3.8
+    GBPUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    USOIL:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    US500:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    USTEC:
+      adx_min: 30
+      tp_atr_mult: 3.8
+  lot_size: 0.3
 turtle_soup:
   name: Turtle Soup (False Break Reversal)
   category: SMC
   status: implemented
-  regime: [RANGING, ANY]
+  regime:
+  - RANGING
+  - ANY
   enabled: true
-  tier: TIER_2
-  pairs: [EURUSD, GBPUSD, XAUUSD, GBPJPY, AUDUSD, USDCAD, BTCUSD, ETHUSD]  # crypto added 2026-05-03
-  timeframes: [H1, H4]      # Narrowed 2026-04-29: M15/M30 too noisy; D1 removed (too few signals)
+  tier: TIER_1
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  - GBPJPY
+  - AUDUSD
+  - USDCAD
+  - BTCUSD
+  - ETHUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    lookback: 10             # Optimized: 10 → WR 66.7%
+    lookback: 25
     cooldown_bars: 15
-    min_penetration_pips: 8  # Raised 5→8 (2026-04-29): filter shallow noise sweeps
+    min_penetration_pips: 5
     max_penetration_pips: 40
     atr_period: 14
-    tp_atr_mult: 2.5
+    tp_atr_mult: 3.5
     sl_atr_mult: 1.0
-    adx_max: 30              # Code now reads this (was ignored before v2)
-    vol_threshold_mult: 1.3  # NEW: sweep bar volume confirmation
-    ema200_period: 200        # NEW: macro trend context filter
+    adx_max: 22
+    vol_threshold_mult: 1.5
+    ema200_period: 200
   pair_overrides:
     XAUUSD:
       min_penetration_pips: 15
       max_penetration_pips: 50
       sl_atr_mult: 1.2
+      adx_min: 30
+      tp_atr_mult: 3.8
     GBPUSD:
       min_penetration_pips: 8
       max_penetration_pips: 25
+      adx_min: 30
+      tp_atr_mult: 3.8
     BTCUSD:
-      min_penetration_pips: 50   # BTC: 1 pip ≈ $1; need $50+ sweep to count
-      max_penetration_pips: 600  # Cap at $600 (deep sweeps = no edge)
-      sl_atr_mult: 1.5           # Wider SL for crypto volatility
-      tp_atr_mult: 3.5           # Let winners run on BTC reversals
-      adx_max: 35                # BTC often trends at higher ADX
-    ETHUSD:
-      min_penetration_pips: 20   # ETH: 1 pip ≈ $0.01; need $20+ sweep
-      max_penetration_pips: 250
+      min_penetration_pips: 50
+      max_penetration_pips: 600
       sl_atr_mult: 1.5
       tp_atr_mult: 3.5
       adx_max: 35
+    ETHUSD:
+      min_penetration_pips: 20
+      max_penetration_pips: 250
+      sl_atr_mult: 1.5
+      tp_atr_mult: 3.8
+      adx_max: 35
+      adx_min: 30
+    GBPJPY:
+      adx_max: 20
+    GBPJPY:H4:
+      allow_short: false
+    USDCAD:
+      adx_max: 20
+      adx_min: 30
+      tp_atr_mult: 3.8
+    AUDUSD:
+      adx_max: 18
+      vol_threshold_mult: 1.6
+      adx_min: 30
+      tp_atr_mult: 3.8
+    EURUSD:
+      adx_max: 18
+      vol_threshold_mult: 1.6
   mode: trade
-
+  lot_size: 0.2
 dual_ema_momentum:
   name: Dual EMA Momentum Continuity
   category: Trend Following
   status: implemented
-  regime: [TRENDING]
+  regime:
+  - TRENDING
   enabled: true
-  tier: TIER_2
-  pairs: [XAUUSD, EURUSD, GBPUSD, GBPJPY, AUDUSD, USOIL, US500, USTEC]  # expanded 2026-04-30
-  timeframes: [H1, H4, D1]  # v3 2026-04-30: D1 re-added for XAUUSD swing signals (Sharpe 4.17)
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - GBPJPY
+  - AUDUSD
+  - USOIL
+  - US500
+  - USTEC
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    fast_ema: 15             # Optimized: 15 → WR 63.6%
-    slow_ema: 100            # Optimized: 100 (was 50)
-    adx_min: 25              # Raised 22→25 (2026-04-29)
+    fast_ema: 15
+    slow_ema: 100
+    adx_min: 25
     rsi_period: 14
-    rsi_long_min: 55         # NEW: bull engulfing only above RSI 55
-    rsi_short_max: 45        # NEW: bear engulfing only below RSI 45
-    vol_threshold_mult: 1.2  # NEW: engulfing bar volume gate
-    ema200_period: 200        # NEW: macro trend gate
+    rsi_long_min: 55
+    rsi_short_max: 45
+    vol_threshold_mult: 1.4
+    ema200_period: 200
     atr_period: 14
-    tp_atr_mult: 2.0
+    tp_atr_mult: 2.5
     sl_atr_mult: 1.0
     use_multi_tf_confirmation: true
     confirm_timeframe: H4
+    mid_ema: 50
+    adx_rising: false
   pair_overrides:
     XAUUSD:
       sl_atr_mult: 1.2
-      adx_min: 25
-      tp_atr_mult: 4.0       # v3 NEW: XAUUSD D1 Sharpe 4.17 — let winners run far
-      timeframes: [H1, H4, D1]
+      adx_min: 30
+      tp_atr_mult: 2.8
+      timeframes:
+      - H1
+      - H4
+      - D1
     GBPUSD:
       confirm_timeframe: D1
+    US500:
+      allow_short: false
+      adx_min: 28
+      tp_atr_mult: 3.0
+    EURUSD:
+      allow_short: false
+      adx_min: 30
+      tp_atr_mult: 2.8
+    GBPJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    AUDUSD:
+      adx_min: 30
+      vol_threshold_mult: 1.6
+    USOIL:
+      adx_min: 30
+      vol_threshold_mult: 1.6
+      tp_atr_mult: 2.8
+    USTEC:
+      adx_min: 30
+      tp_atr_mult: 2.8
   mode: trade
-
+  lot_size: 0.3
 vwap_momentum:
   name: VWAP Momentum Shift
   category: Intraday
   status: implemented
-  regime: [RANGING, HIGH_VOL]
-  enabled: true
-  tier: TIER_2
-  pairs: [GBPUSD, EURUSD, XAUUSD, GBPJPY, US500, USTEC, BTCUSD, ETHUSD]  # crypto added 2026-05-03
-  timeframes: [M15, H1]     # Narrowed 2026-04-29: M5/M30 removed; H1 added for better signal quality
+  regime:
+  - RANGING
+  - HIGH_VOL
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - GBPUSD
+  - EURUSD
+  - XAUUSD
+  - GBPJPY
+  - US500
+  - USTEC
+  - BTCUSD
+  - ETHUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    std_dev_mult: 2.0
+    std_dev_mult: 2.5
     atr_period: 14
     tp_atr_mult: 2.0
     sl_atr_mult: 1.0
-    adx_max: 22              # v3: tightened 30->22
+    adx_max: 18
     rsi_period: 14
-    rsi_buy_max: 35          # v3: tightened 45->35 (deep oversold only)
-    rsi_sell_min: 65         # v3: tightened 55->65 (deep overbought only)
+    rsi_buy_max: 30
+    rsi_sell_min: 70
     vol_threshold_mult: 1.2
-    vwap_atr_min_excess: 0.8 # v3 NEW: min distance beyond band in ATR
-    vol_exhaustion_bars: 3   # v3 NEW: volume must be declining N bars pre-touch
+    vwap_atr_min_excess: 1.0
+    vol_exhaustion_bars: 3
     session_start_utc: 7
     session_end_utc: 17
   pair_overrides:
@@ -517,14 +1008,15 @@ vwap_momentum:
       sl_atr_mult: 1.2
       std_dev_mult: 2.5
       adx_max: 22
+      enabled: false
     BTCUSD:
-      std_dev_mult: 3.0      # BTC needs wider bands (high daily volatility)
+      std_dev_mult: 3.0
       sl_atr_mult: 1.5
-      tp_atr_mult: 3.0       # 3:1 min RR for crypto (Exness floating spreads)
-      adx_max: 30            # BTC VWAP extremes valid at higher ADX
-      rsi_buy_max: 40        # Slightly looser for 24/7 crypto market
+      tp_atr_mult: 3.0
+      adx_max: 30
+      rsi_buy_max: 40
       rsi_sell_min: 60
-      session_start_utc: 0   # Crypto trades 24/7; remove session gate
+      session_start_utc: 0
       session_end_utc: 24
     ETHUSD:
       std_dev_mult: 3.0
@@ -535,106 +1027,198 @@ vwap_momentum:
       rsi_sell_min: 60
       session_start_utc: 0
       session_end_utc: 24
+    GBPUSD:
+      enabled: false
+    EURUSD:
+      enabled: false
+    GBPJPY:
+      enabled: false
+    US500:
+      enabled: false
+    USTEC:
+      enabled: false
   mode: trade
-
+  lot_size: 0.2
 hikkake_trap:
   name: Hikkake Inside Bar Trap
   category: Mean Reversion
   status: implemented
-  regime: [CHOPPY, RANGING]
+  regime:
+  - CHOPPY
+  - RANGING
   enabled: true
   tier: TIER_2
-  pairs: [XAUUSD, EURUSD, GBPUSD, GBPJPY, USOIL, US500]  # expanded 2026-04-30
-  timeframes: [H1, H4]      # Narrowed 2026-04-29: M30 too noisy; D1 too few signals
+  pairs:
+  - XAUUSD
+  - GBPUSD
+  - USOIL
+  - US500
+  timeframes:
+  - H4
+  - D1
   parameters:
-    lookback_bars: 3
-    cooldown_bars: 8         # Optimized: 8 → WR 68.7%
+    cooldown_bars: 2
     atr_period: 14
-    tp_atr_mult: 2.0
-    sl_atr_mult: 1.0
-    adx_max: 25              # Raised 22→25 (code now reads this — was ignored before v2)
+    tp_atr_mult: 1.5
+    sl_atr_mult: 0.6
+    adx_max: 22
+    lookback_bars: 3
     rsi_period: 14
-    rsi_long_min: 35         # NEW: bull Hikkake RSI zone lower bound
-    rsi_long_max: 58         # NEW: bull Hikkake RSI zone upper bound
-    rsi_short_min: 42        # NEW: bear Hikkake RSI zone lower bound
-    rsi_short_max: 65        # NEW: bear Hikkake RSI zone upper bound
+    rsi_long_min: 35
+    rsi_long_max: 55
+    rsi_short_min: 45
+    rsi_short_max: 65
+    vol_threshold_mult: 1.3
   pair_overrides:
     XAUUSD:
       sl_atr_mult: 1.2
-      adx_max: 22            # Gold Hikkake valid at slightly higher ADX
+      adx_max: 20
+    GBPUSD:
+      adx_max: 20
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USOIL:
+      sl_atr_mult: 0.8
+      adx_max: 18
+      adx_min: 30
+      tp_atr_mult: 2.8
+    US500:
+      adx_max: 18
+      tp_atr_mult: 2.8
+      adx_min: 30
   mode: trade
-
+  lot_size: 0.3
 orb:
   name: Opening Range Breakout
   category: Breakout
   status: implemented
-  regime: [TRENDING, ANY]
+  regime:
+  - TRENDING
+  - ANY
   enabled: true
-  tier: TIER_2
-  pairs: [GBPUSD, EURUSD, XAUUSD, GBPJPY, AUDUSD]  # expanded 2026-04-30
-  timeframes: [M15]                  # v2: H1 removed (only 1 bar in range); M5 removed (too noisy)
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  - GBPJPY
+  - AUDUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     ny_offset_hours: 7
     range_start_ny: 9.5
     range_duration_mins: 60
-    vol_filter: 1.3           # Raised 1.2→1.3 (2026-04-30): XAGUSD at 59.3% WR — filter noise
-    tp_atr_mult: 2.0
+    vol_filter: 1.6
+    tp_atr_mult: 2.5
     sl_atr_mult: 1.0
-    adx_min: 22              # Raised 20→22 (2026-04-30): stronger breakout confirmation
-    post_range_window_hours: 5  # v2: raised 4→5 for M15 granularity
-    use_session_filter: false   # CRITICAL: ORB manages own session windows
+    adx_min: 28
+    post_range_window_hours: 5
+    use_session_filter: false
   mode: trade
-
+  pair_overrides:
+    GBPUSD:
+      allow_short: false
+    EURUSD:
+      allow_short: false
+    XAUUSD:
+      enabled: false
+    GBPJPY:
+      enabled: false
+    AUDUSD:
+      adx_min: 28
+      vol_filter: 1.8
+      tp_atr_mult: 3.0
 rvgi_cci_confluence:
   name: RVGI-CCI Confluence Breakout
   category: Breakout
   status: implemented
-  regime: [TRENDING, ANY]
+  regime:
+  - TRENDING
+  - ANY
   enabled: true
   tier: TIER_2
-  pairs: [EURUSD, GBPUSD, GBPJPY, AUDUSD, USDCAD]  # expanded 2026-04-30
-  timeframes: [H1, H4]      # Narrowed 2026-04-29: M15/M30 removed — RVGI too noisy intraday
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - GBPJPY
+  - AUDUSD
+  - USDCAD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    rvgi_period: 14          # Optimized: 14 → WR 68.2%
+    rvgi_period: 10
     cci_period: 14
-    sma_period: 20           # Kept as fallback; code now uses EMA100 for trend
-    ema100_period: 100        # NEW: EMA100 trend gate (replaces SMA30 which was too short)
-    cci_buy_min: 0           # TIGHTENED -80→0 (2026-04-29): CCI must be positive = bullish momentum
-    cci_sell_max: 0          # TIGHTENED 50→0 (2026-04-29): CCI must be negative = bearish momentum
-    adx_min: 22              # ADX now actively used in code (was already in yaml but code had it)
+    sma_period: 20
+    ema100_period: 100
+    cci_buy_min: 50
+    cci_sell_max: -50
+    adx_min: 22
     atr_period: 14
-    tp_atr_mult: 2.0
-    sl_atr_mult: 0.8
+    tp_atr_mult: 2.5
+    sl_atr_mult: 0.7
     cooldown_bars: 15
   pair_overrides:
     GBPUSD:
-      adx_min: 25            # GBP needs stronger trend confirm
-      cci_buy_min: 0
-      cci_sell_max: 0
+      adx_min: 30
+      cci_buy_min: 75
+      cci_sell_max: -75
+    EURUSD:
+      enabled: false
+    AUDUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USDCAD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    GBPJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
   mode: trade
-
-# =============================================================================
-# TIER 2 SCALPERS — Promoted 2026-04-25 (M1/M5 timeframe coverage)
-# All scalpers: session-gated (London/NY only), ADX-confirmed, 1:2 RR
-# WR target: 60%+ through tight RSI/ADX entry conditions
-# =============================================================================
-
+  lot_size: 0.2
 fast_ma_scalper:
   name: Fast MA Crossover Scalper
   category: Scalping
   status: implemented
-  regime: [TRENDING, ANY]
-  enabled: false             # DISABLED 2026-04-30: WR 32-46% across all FX pairs (pip_size confirmed correct)
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
   tier: TIER_2
-  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY]
-  timeframes: [M1, M5]
+  pairs:
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
+  - M1
   parameters:
-    fast_period: 7           # Optimized: 7 → WR 77.8%
-    slow_period: 20          # Optimized: 20 (was 12)
+    fast_period: 5
+    slow_period: 12
     tp_atr_mult: 2.0
     sl_atr_mult: 1.0
     atr_period: 14
-    min_adx: 25
+    min_adx: 22
     session_start_utc: 8
     session_end_utc: 17
     vol_threshold_mult: 1.2
@@ -642,107 +1226,210 @@ fast_ma_scalper:
     XAUUSD:
       min_adx: 22
       sl_atr_mult: 1.2
+      adx_min: 30
+      tp_atr_mult: 2.3
     USDJPY:
       min_adx: 25
+      adx_min: 30
+      tp_atr_mult: 2.3
+    GBPUSD:
+      adx_min: 30
+      tp_atr_mult: 2.3
   mode: trade
-
+  lot_size: 0.5
 bb_squeeze_scalp:
   name: Bollinger Band Squeeze Scalp
   category: Scalping
   status: implemented
-  regime: [TRENDING, ANY]
-  enabled: true              # RE-ENABLED 2026-04-29: rehabilitated for M15 with strict gates
-  tier: TIER_2
-  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY, GBPJPY, AUDUSD, US500, USTEC]  # expanded 2026-04-30
-  timeframes: [M15]          # M1/M5 removed — noise; M15 is the minimum viable timeframe
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  - USDJPY
+  - GBPJPY
+  - US500
+  - USTEC
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    bb_period: 15
-    bb_std: 2.5              # Optimized: 2.5 → WR 83.3%
+    bb_period: 20
+    bb_std: 2.0
     atr_period: 14
     squeeze_bars: 3
-    squeeze_pct: 0.6         # Tighter: 60% of avg width (was 70%)
-    tp_atr_mult: 2.0
+    squeeze_pct: 0.8
+    tp_atr_mult: 2.5
     sl_atr_mult: 1.0
-    adx_min: 28              # Raised 25→28 (2026-04-30): USDJPY 56.2% WR needs stronger trend confirm
+    adx_min: 22
     rsi_period: 14
-    rsi_confirm_long: 52
-    rsi_confirm_short: 48
-    ema50_period: 50         # NEW: direction gate
-    session_start_utc: 7    # London open
+    rsi_confirm_long: 56
+    rsi_confirm_short: 44
+    ema50_period: 50
+    session_start_utc: 7
     session_end_utc: 17
   pair_overrides:
     XAUUSD:
       sl_atr_mult: 1.2
-      adx_min: 22
-  mode: monitor_only
-
+      adx_min: 30
+      tp_atr_mult: 2.8
+    AUDUSD:
+      allow_short: false
+    AUDUSD:M15:
+      allow_short: false
+    EURUSD:
+      enabled: false
+    US500:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    GBPJPY:
+      tp_atr_mult: 2.8
+      adx_min: 30
+    USTEC:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USDJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
+  mode: trade
+  lot_size: 0.5
 rsi_extremes_scalp:
   name: RSI Extremes Scalp
   category: Scalping
   status: implemented
-  regime: [RANGING, CHOPPY]
-  enabled: true              # RE-ENABLED 2026-04-29: rehabilitated for M15 with ADX/vol/session gates
-  tier: TIER_2
-  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY, GBPJPY, AUDUSD, USOIL]  # expanded 2026-04-30
-  timeframes: [M15]          # M1/M5 removed — too noisy; genuine RSI extremes appear on M15
+  regime:
+  - RANGING
+  - CHOPPY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - USOIL
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     rsi_period: 14
-    oversold: 18             # Tightened 25→18 (2026-04-29): only genuine capitulation
-    overbought: 82           # Tightened 75→82 (2026-04-29): only genuine blow-off
+    oversold: 22
+    overbought: 78
     atr_period: 14
     tp_atr_mult: 2.0
     sl_atr_mult: 1.0
-    min_rsi_move: 5          # Raised 2→5 (2026-04-29): stronger bounce required
-    adx_max: 30              # NEW: ranging markets only
-    vol_spike_mult: 1.5      # NEW: require volume on reversal bar
-    session_start_utc: 7    # London open
+    min_rsi_move: 5
+    adx_max: 25
+    vol_spike_mult: 1.5
+    session_start_utc: 7
     session_end_utc: 17
   pair_overrides:
     XAUUSD:
-      oversold: 18
-      overbought: 82
+      oversold: 12
+      overbought: 88
       sl_atr_mult: 1.2
-      adx_max: 25            # Gold needs tighter ranging gate
+      adx_max: 20
+    GBPUSD:
+      allow_long: false
+      adx_max: 20
+      adx_min: 30
+      tp_atr_mult: 2.3
+    AUDUSD:
+      allow_long: false
+    GBPUSD:M15:
+      allow_long: false
+    AUDUSD:M15:
+      allow_long: false
+    USOIL:
+      enabled: false
+    EURUSD:
+      adx_min: 30
+      tp_atr_mult: 2.3
   mode: trade
-
+  lot_size: 0.5
 macd_zero_scalp:
   name: MACD Zero-Line Scalp
   category: Scalping
   status: implemented
-  regime: [TRENDING, ANY]
-  enabled: false             # DISABLED 2026-04-30: WR 31-40% across all pairs — confirmed broken
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
   tier: TIER_2
-  pairs: [EURUSD, GBPUSD, USDJPY, BTCUSD]
-  timeframes: [M1, M5]
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - BTCUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
+  - M1
   parameters:
     macd_fast: 8
-    macd_slow: 26            # Optimized: 26 → WR 80.0%
+    macd_slow: 17
     macd_signal: 9
     atr_period: 14
     tp_atr_mult: 2.0
     sl_atr_mult: 1.0
-    volume_filter: 1.2
+    volume_filter: 1.0
     adx_min: 22
     session_start_utc: 8
     session_end_utc: 17
   mode: trade
-
+  lot_size: 0.5
+  pair_overrides:
+    BTCUSD:
+      adx_min: 30
+      tp_atr_mult: 2.3
 volatility_breakout_scalp:
   name: Volatility Breakout Scalp
   category: Scalping
   status: implemented
-  regime: [HIGH_VOL, ANY]
-  enabled: false             # DISABLED 2026-04-30: WR 33-47%, 1700+ trades on BTC at WR=33% — confirmed broken
-  tier: TIER_2
-  pairs: [XAUUSD, BTCUSD, ETHUSD]
-  timeframes: [M1, M5]
+  regime:
+  - HIGH_VOL
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - XAUUSD
+  - BTCUSD
+  - ETHUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
+  - M1
   parameters:
-    atr_period: 7            # Optimized: 7 → WR 61.3%
-    atr_multiplier: 1.1      # Optimized: 1.1 (was 1.8)
-    momentum_period: 3       # Optimized: 3
+    atr_period: 10
+    atr_multiplier: 1.1
+    momentum_period: 5
     tp_atr_mult: 2.0
     sl_atr_mult: 1.0
-    min_volatility_bars: 1   # Optimized: 1
+    min_volatility_bars: 1
     session_start_utc: 8
     session_end_utc: 17
     rsi_period: 14
@@ -754,28 +1441,46 @@ volatility_breakout_scalp:
     BTCUSD:
       atr_multiplier: 2.0
       sl_atr_mult: 1.5
+      adx_min: 30
+      tp_atr_mult: 2.3
     ETHUSD:
       atr_multiplier: 2.0
       sl_atr_mult: 1.5
+      adx_min: 30
+      tp_atr_mult: 2.3
   mode: trade
-
+  lot_size: 0.5
 ema_ribbon_scalp:
   name: EMA Ribbon Scalp
   category: Scalping
   status: implemented
-  regime: [TRENDING, ANY]
-  enabled: false             # DISABLED 2026-04-30: WR 50.7% at 377 trades — insufficient edge
-  tier: TIER_2
-  pairs: [EURUSD, GBPUSD, XAUUSD]
-  timeframes: [M1, M5]
+  regime:
+  - TRENDING
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
+  - M1
   parameters:
-    fast_ema: 8              # Optimized: 8 → WR 78.6%
-    mid_ema: 21              # Optimized: 21
-    slow_ema: 34             # Optimized: 34
+    fast_ema: 5
+    mid_ema: 10
+    slow_ema: 20
     atr_period: 14
     tp_atr_mult: 2.0
     sl_atr_mult: 1.0
-    min_ribbon_separation: 0.0  # Optimized: 0 — crossover entry, spread not needed
+    min_ribbon_separation: 0.0
     adx_min: 22
     session_start_utc: 8
     session_end_utc: 17
@@ -784,27 +1489,32 @@ ema_ribbon_scalp:
     XAUUSD:
       min_ribbon_separation: 0.05
       sl_atr_mult: 1.2
+    GBPUSD:
+      adx_min: 30
+      tp_atr_mult: 2.3
   mode: trade
-
-# =============================================================================
-# CRYPTO STRATEGIES — LeoDeX Framework (2026-05-03)
-# v1 backtest results (2026-05-04): all FAILED (WR 14-53%, Sharpe -16 to -1.06)
-# Root cause: fixed ATR-multiple TP (3x-4.5x) is too far for M5/M15 noise.
-#   The PDF's "3:1 min" is for discretionary managed trades, not fixed exits.
-#   Working strategies use 2:1-2.5:1 (turtle_soup, dual_ema). Matching that here.
-# v2 changes: tp_atr_mult halved, M5 removed, silver_bullet conditions relaxed,
-#   power_of_3 EMA bias disabled (too restrictive at 44% WR with bias ON)
-# =============================================================================
-
+  lot_size: 0.5
 multi_ema_crypto_scalper:
   name: Multi-EMA Crypto Scalper (LeoDeX)
   category: Crypto Scalping
   status: implemented
-  regime: [TRENDING, ANY]
-  enabled: false             # DISABLED — v1 FAILED; re-enable after v2 backtest passes
-  tier: TIER_2
-  pairs: [BTCUSD, ETHUSD]
-  timeframes: [M15]          # M5 removed: only 3 months data, not representative
+  regime:
+  - TRENDING
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     ema_fast: 9
     ema_mid: 21
@@ -822,173 +1532,339 @@ multi_ema_crypto_scalper:
     adx_min: 25
     atr_period: 14
     sl_atr_mult: 1.0
-    tp_atr_mult: 1.5         # v2: halved from 3.0 — 3x ATR rarely reached on M15
+    tp_atr_mult: 2.0
     cvd_lookback: 8
     use_killzone: true
     cooldown_bars: 10
+    use_partial_tp: false
   pair_overrides:
     BTCUSD:
       sl_atr_mult: 1.0
-      tp_atr_mult: 2.0       # BTC more directional than ETH on M15
+      tp_atr_mult: 2.0
     ETHUSD:
       sl_atr_mult: 1.0
       tp_atr_mult: 1.5
   mode: trade
-
+  lot_size: 0.5
 silver_bullet_crypto:
   name: Silver Bullet Crypto (ICT Killzone + FVG)
   category: Crypto ICT
   status: implemented
-  regime: [ANY]
-  enabled: false             # DISABLED — v1: 27/21 trades only, insufficient sample
-  tier: TIER_2
-  pairs: [BTCUSD, ETHUSD]
-  timeframes: [M15]
+  regime:
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     ema200_period: 200
     atr_period: 14
     sl_atr_mult: 1.2
-    tp_atr_mult: 2.0         # v2: reduced from 3.5
-    sweep_buffer_atr: 0.15   # v2: relaxed from 0.3 — generates more signals
+    tp_atr_mult: 2.0
+    sweep_buffer_atr: 0.15
     session_lookback: 8
-    fvg_max_age_bars: 12     # v2: widened from 6 — FVG can be slightly older
-    cooldown_bars: 8         # v2: reduced from 12 — allow more trades
+    fvg_max_age_bars: 12
+    cooldown_bars: 8
+    use_partial_tp: false
   mode: trade
-
+  lot_size: 0.5
 power_of_3_amd:
   name: Power of 3 AMD (Asian/London/NY)
   category: Crypto ICT
   status: implemented
-  regime: [ANY]
-  enabled: false             # DISABLED — v1 FAILED; re-enable after v2 backtest passes
-  tier: TIER_2
-  pairs: [BTCUSD, ETHUSD]
-  timeframes: [H1]           # M15 removed (Sharpe -4.86); H1 closest to viable (-1.06)
+  regime:
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     ema200_period: 200
     atr_period: 14
     sl_atr_mult: 1.5
-    tp_atr_mult: 2.0         # v2: reduced from 4.5 — 4.5x ATR almost never hit
-    sweep_buffer_atr: 0.2    # v2: slightly relaxed from 0.25
-    asian_min_range_atr: 0.4 # v2: slightly relaxed from 0.5
-    cooldown_bars: 12        # v2: reduced from 16
-    require_ema_bias: false  # v2: disabled — was filtering too aggressively at 44% WR
+    tp_atr_mult: 2.0
+    sweep_buffer_atr: 0.2
+    asian_min_range_atr: 0.4
+    cooldown_bars: 12
+    require_ema_bias: false
+    use_partial_tp: false
   mode: trade
-
-# =============================================================================
-# DISABLED STRATEGIES (Tier 3/4 — kept for reference)
-# =============================================================================
-
+  lot_size: 0.5
+  pair_overrides:
+    BTCUSD:
+      adx_min: 28
+      tp_atr_mult: 2.5
 rsi_pullback_legacy:
   name: RSI Pullback (legacy params - superseded above)
   category: Mean Reversion
   status: deprecated
-  enabled: false
-  tier: DISABLED
-  mode: monitor_only
-  pairs: [EURUSD]
-  timeframes: [H4]
-
+  enabled: true
+  tier: TIER_2
+  mode: trade
+  pairs:
+  - EURUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
 rsi_2:
   name: Extreme RSI (2-period)
   category: Mean Reversion
   status: implemented
-  regime: [RANGING, TRENDING]
-  enabled: false
-  tier: DISABLED
-  pairs: [USDJPY]
-  timeframes: [H4, D1]
+  regime:
+  - RANGING
+  - TRENDING
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - USDJPY
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     rsi_period: 2
     sma_filter: 200
-    oversold: 10
-    overbought: 90
+    oversold: 8
+    overbought: 92
     exit_ema: 5
-  mode: monitor_only
-
-swing_pullback:
-  name: Swing Pullback (Price Action)
-  category: Price Action
-  status: implemented
-  regime: [RANGING, ANY]
-  enabled: false
-  tier: DISABLED
-  pairs: [XAUUSD, GBPUSD]
-  timeframes: [H4, D1]
-  parameters:
-    swing_lookback: 5
-    swing_buffer_pips: 20
-    tp_pips: 100
-    sl_pips: 30
     atr_period: 14
-    min_adx_filter: 15
-    bars_to_confirm: 1
-    use_regime_filter: true
-    confirm_timeframe: D1
-  mode: monitor_only
-
-naked_price_action:
-  name: Naked Price Action (Engulfing)
+    tp_atr_mult: 2.5
+    sl_atr_mult: 1.0
+  mode: trade
+  lot_size: 0.2
+  pair_overrides:
+    EURUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USDJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    GBPUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+swing_pullback:
+  name: Swing Pullback (Price Action + ICT)
   category: Price Action
   status: implemented
-  regime: [ANY, RANGING]
-  enabled: false
-  tier: DISABLED
-  pairs: [USDJPY]
-  timeframes: [H4]
+  regime:
+  - RANGING
+  - ANY
+  enabled: true
+  tier: TIER_2
+  pairs:
+  - XAUUSD
+  - GBPUSD
+  - EURUSD
+  - USDJPY
+  - AUDUSD
+  timeframes:
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
-    level_lookback: 50
-    engulf_buffer_pct: 0.05
-    tp_atr_mult: 2.0
-    sl_atr_mult: 1.5
-  mode: monitor_only
-
+    swing_lookback: 8
+    swing_buffer_pips: 15
+    atr_period: 14
+    min_adx_filter: 18
+    bars_to_confirm: 2
+    use_regime_filter: true
+    confirm_timeframe: H4
+    lookback: 15
+    adx_filter: 22
+    sl_atr_mult: 1.2
+    tp_atr_mult: 3.0
+    vol_threshold_mult: 1.3
+  mode: trade
+  lot_size: 0.2
+naked_price_action:
+  name: Naked Price Action (Engulfing + Key Levels)
+  category: Price Action
+  status: implemented
+  regime:
+  - ANY
+  - RANGING
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - USDJPY
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  - GBPJPY
+  timeframes:
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
+  parameters:
+    level_lookback: 100
+    engulf_buffer_pct: 0.03
+    tp_atr_mult: 2.5
+    sl_atr_mult: 1.2
+    atr_period: 14
+    adx_max: 25
+    vol_threshold_mult: 1.2
+  mode: trade
+  lot_size: 0.2
+  pair_overrides:
+    EURUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    GBPUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    USDJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
+    GBPJPY:
+      adx_min: 30
+      tp_atr_mult: 2.8
 ict_judas_swing:
-  name: ICT Judas Swing
+  name: ICT Judas Swing (Enhanced)
   category: SMC
   status: implemented
-  regime: [LOW_VOL, TRENDING]
+  regime:
+  - LOW_VOL
+  - TRENDING
+  - ANY
   enabled: false
-  tier: DISABLED
-  pairs: [EURUSD]
-  timeframes: [M15, H1]
+  tier: TIER_3
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  - GBPJPY
+  - USDJPY
+  timeframes:
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     ny_offset_hours: 7
-    asian_range_start: 22
-    asian_range_end: 4
+    asian_range_start: 20
+    asian_range_end: 2
     judas_window_start: 2
     judas_window_end: 5
-    fakeout_magnitude_pct: 0.002
+    fakeout_magnitude_pct: 0.0015
     atr_period: 14
     vol_p: 20
-  mode: monitor_only
-
+    tp_atr_mult: 3.0
+    sl_atr_mult: 1.2
+    adx_max: 25
+  mode: trade
+  lot_size: 0.2
 institutional_silver_bullet:
-  name: Institutional Silver Bullet
+  name: Institutional Silver Bullet (Enhanced)
   category: SMC
   status: implemented
-  regime: [TRENDING, ANY]
+  regime:
+  - TRENDING
+  - ANY
   enabled: false
-  tier: DISABLED
-  pairs: [EURUSD]
-  timeframes: [M15, M5]
+  tier: TIER_3
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  - USDJPY
+  - GBPJPY
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     ny_offset_hours: 7
     lookback_sweep: 20
     fvg_min_size_pct: 0.0001
-    risk_reward: 2.0
+    risk_reward: 2.5
     atr_period: 14
-  mode: monitor_only
-
+    tp_atr_mult: 3.0
+    sl_atr_mult: 1.0
+    adx_min: 20
+  mode: trade
+  lot_size: 0.2
+  pair_overrides:
+    GBPUSD:
+      adx_min: 28
+      tp_atr_mult: 3.5
+    GBPJPY:
+      adx_min: 30
+      tp_atr_mult: 3.3
 volatility_squeeze_breakout:
-  name: Volatility Squeeze Breakout
+  name: Volatility Squeeze Breakout (Multi-Pair)
   category: Breakout
   status: implemented
-  regime: [ANY]
-  enabled: false
-  tier: DISABLED
-  pairs: [GBPUSD]
-  timeframes: [H4, D1]
+  regime:
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - GBPUSD
+  - EURUSD
+  - XAUUSD
+  - USDJPY
+  - GBPJPY
+  timeframes:
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
   parameters:
     bb_period: 20
     bb_deviation: 2.0
@@ -996,17 +1872,41 @@ volatility_squeeze_breakout:
     squeeze_bars: 3
     atr_period: 14
     tp_atr_mult: 3.0
-    sl_atr_mult: 1.5
-
+    sl_atr_mult: 1.0
+    adx_min: 20
+    vol_threshold_mult: 1.3
+  mode: trade
+  lot_size: 0.2
+  pair_overrides:
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 3.3
+    GBPJPY:
+      adx_min: 30
+      tp_atr_mult: 3.3
 triple_macd_scalping:
   name: Triple MACD Momentum Scalping
   category: Trend Following
   status: implemented
-  regime: [TRENDING, HIGH_VOL]
-  enabled: false
-  tier: DISABLED
-  pairs: [EURUSD, GBPUSD, XAUUSD]
-  timeframes: [M1, M5]
+  regime:
+  - TRENDING
+  - HIGH_VOL
+  enabled: true
+  tier: TIER_2
+  pairs:
+  - EURUSD
+  - GBPUSD
+  - XAUUSD
+  timeframes:
+  - M5
+  - M15
+  - M30
+  - H1
+  - H2
+  - H4
+  - H12
+  - D1
+  - M1
   parameters:
     fast_macd_fast: 3
     fast_macd_slow: 10
@@ -1018,8 +1918,165 @@ triple_macd_scalping:
     slow_macd_slow: 17
     slow_macd_signal: 9
     atr_period: 14
-    tp_atr_mult: 2.0
+    tp_atr_mult: 1.5
     sl_atr_mult: 1.0
     adx_min: 22
     session_start_utc: 8
     session_end_utc: 1
+    mid_m:
+    - 24
+    - 52
+    - 18
+    fast_m:
+    - 12
+    - 26
+    - 9
+    slow_m:
+    - 48
+    - 104
+    - 36
+  lot_size: 0.5
+crypto_rsi_extremes:
+  name: Crypto RSI Extremes
+  category: Mean Reversion
+  status: implemented
+  regime:
+  - RANGING
+  - CHOPPY
+  - ANY
+  enabled: false
+  tier: TIER_3
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  - XAUUSD
+  timeframes:
+  - H1
+  - H2
+  - H4
+  - D1
+  parameters:
+    rsi_period: 14
+    rsi_oversold: 18
+    rsi_overbought: 82
+    bb_period: 20
+    bb_deviation: 1.8
+    adx_max: 28
+    vol_spike_mult: 1.3
+    atr_period: 14
+    tp_atr_mult: 3.5
+    sl_atr_mult: 1.2
+  mode: trade
+  lot_size: 0.2
+  pair_overrides:
+    BTCUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
+supertrend:
+  name: SuperTrend
+  category: Trend Following
+  status: implemented
+  regime:
+  - TRENDING
+  - ANY
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  timeframes:
+  - H1
+  - H4
+  - D1
+  parameters:
+    atr_period: 10
+    multiplier: 2.5
+    adx_min: 28
+    tp_atr_mult: 4.0
+    sl_atr_mult: 1.2
+  pair_overrides:
+    EURUSD:
+      multiplier: 2.0
+      adx_min: 30
+      tp_atr_mult: 4.3
+    XAUUSD:
+      multiplier: 3.0
+      sl_atr_mult: 1.5
+    USDJPY:
+      adx_min: 30
+      tp_atr_mult: 4.3
+    GBPUSD:
+      adx_min: 30
+      tp_atr_mult: 4.3
+  mode: trade
+  lot_size: 0.3
+ttm_squeeze:
+  name: TTM Squeeze
+  category: Breakout
+  status: implemented
+  regime:
+  - ANY
+  - LOW_VOL
+  enabled: true
+  tier: TIER_1
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  - XAUUSD
+  - EURUSD
+  timeframes:
+  - M15
+  - H1
+  - H4
+  - D1
+  parameters:
+    bb_period: 20
+    bb_std: 2.0
+    kc_period: 20
+    kc_mult: 1.5
+    mom_period: 20
+    tp_atr_mult: 3.5
+    sl_atr_mult: 1.2
+    mom_smoothing: 20
+  mode: trade
+  lot_size: 0.2
+  pair_overrides:
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 3.8
+donchian_trend:
+  name: Donchian Trend Channel
+  category: Trend Following
+  enabled: true
+  pairs:
+  - BTCUSD
+  - ETHUSD
+  - XAUUSD
+  timeframes:
+  - H1
+  - H4
+  - D1
+  parameters:
+    lookback: 20
+    atr_period: 14
+    tp_atr_mult: 4.0
+    sl_atr_mult: 1.5
+    adx_min: 25
+    donchian_period: 20
+    use_trailing_stop: true
+  lot_size: 0.5
+  pair_overrides:
+    BTCUSD:
+      adx_min: 30
+      tp_atr_mult: 4.3
+    XAUUSD:
+      adx_min: 30
+      tp_atr_mult: 4.3
+  tier: TIER_1

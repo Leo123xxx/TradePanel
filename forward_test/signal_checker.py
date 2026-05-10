@@ -235,6 +235,14 @@ class SignalChecker:
         
         # Generate signals only if data is fresh
         df_signals = strategy.generate_signals(df)
+
+        # Session-time filter
+        if hasattr(strategy, "filter_by_session"):
+            df_signals = strategy.filter_by_session(df_signals, symbol)
+
+        # Direction filter
+        if hasattr(strategy, "filter_by_direction"):
+            df_signals = strategy.filter_by_direction(df_signals)
         if len(df_signals) < 2:
             return 0, None, False
         

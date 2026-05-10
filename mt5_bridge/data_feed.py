@@ -30,7 +30,7 @@ TF_MAP = {
 
 # Default historical start date for all pairs.
 # Change this to pull more/less history.
-DEFAULT_START_DATE = datetime(2020, 1, 1)
+DEFAULT_START_DATE = datetime(2019, 1, 1)
 
 
 class MT5DataFeed:
@@ -194,7 +194,7 @@ if __name__ == "__main__":
         feed = MT5DataFeed()
 
         # Check existing data
-        for pair in ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD"]:
+        for pair in ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "XAGUSD", "BTCUSD", "ETHUSD", "US500", "USTEC", "USOIL", "AAPL", "AMD", "MSFT", ]:
             info = feed.get_data_range(pair, "M1")
             bars = info.get("total_bars", 0)
             if bars > 0:
