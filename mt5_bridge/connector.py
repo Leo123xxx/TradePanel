@@ -42,8 +42,6 @@ class MT5Connector:
             self.connected = False
 
         if self.connected:
-            # Already connected, just ensure symbols are selected
-            self._select_required_symbols(required_symbols)
             return True
 
         print(f"Attempting to connect to MT5 Server: {self.server} (Login: {self.login})...")

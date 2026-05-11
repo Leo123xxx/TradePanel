@@ -52,6 +52,10 @@ services:
       - ./scheduler:/app/scheduler
       - ./webapp:/app/webapp
       - ./analytics:/app/analytics
+      - ./risk:/app/risk
+      - ./mt5_bridge:/app/mt5_bridge
+      - ./forward_test:/app/forward_test
+      - ./logging_:/app/logging_
       - ./.env:/app/.env
       - ./backups:/app/backups
     depends_on:
@@ -90,6 +94,7 @@ services:
       - DB_PORT=5432
       - MT5_BRIDGE_URL=http://host.docker.internal:8001
       - WAHA_URL=http://waha:3000
+      - RUNNING_IN_DOCKER=1
     volumes:
       - ./config:/app/config
       - ./results:/app/results
@@ -102,6 +107,10 @@ services:
       - ./scheduler:/app/scheduler
       - ./webapp:/app/webapp
       - ./analytics:/app/analytics
+      - ./risk:/app/risk
+      - ./mt5_bridge:/app/mt5_bridge
+      - ./forward_test:/app/forward_test
+      - ./logging_:/app/logging_
       - ./.env:/app/.env
       - ./backups:/app/backups
     depends_on:
@@ -133,6 +142,10 @@ services:
       - ./scheduler:/app/scheduler
       - ./webapp:/app/webapp
       - ./analytics:/app/analytics
+      - ./risk:/app/risk
+      - ./mt5_bridge:/app/mt5_bridge
+      - ./forward_test:/app/forward_test
+      - ./logging_:/app/logging_
       - ./.env:/app/.env
     depends_on:
       db:

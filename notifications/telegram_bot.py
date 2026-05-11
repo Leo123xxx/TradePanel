@@ -52,6 +52,8 @@ from telegram.constants import ParseMode
 from dotenv import load_dotenv
 from notifications import templates
 from notifications.router import CommandRouter
+from notifications.auth_logger import AuthorizationLogger
+from notifications.auth_commands import AuthorizationCommands
 import subprocess
 
 logger = logging.getLogger(__name__)
@@ -63,14 +65,50 @@ def auth_required(func):
     @wraps(func)
     async def wrapper(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = str(update.effective_chat.id)
+        username = update.effective_user.username
+        first_name = update.effective_user.first_name
+        last_name = update.effective_user.last_name
+
         allowed = os.getenv("ALLOWED_CHAT_IDS", "").split(",")
         primary = os.getenv("TELEGRAM_CHAT_ID")
         if primary:
             allowed.append(primary)
+
+        # Extract command name
+        command_text = update.message.text.split()[0] if update.message.text else "unknown"
+        command_name = command_text.lstrip("/")
+
         if chat_id not in [a.strip() for a in allowed if a.strip()]:
-            logger.warning(f"Unauthorized access attempt: {chat_id}")
-            await update.message.reply_text("⛔ Unauthorized. Your Chat ID is not whitelisted.")
+            # Log unauthorized attempt
+            try:
+                self.auth_logger.log_attempt(
+                    chat_id=int(chat_id),
+                    status="unauthorized",
+                    command=command_name,
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+            except Exception as e:
+                logger.error(f"Failed to log unauthorized attempt: {e}")
+
+            logger.warning(f"Unauthorized access attempt: {chat_id} | command: {command_name}")
+            await update.message.reply_html(f"⛔ <b>Unauthorized</b>\n\nYour Chat ID:\n<code>{chat_id}</code>\n\nAdd this to <code>.env</code> file:\n<code>ALLOWED_CHAT_IDS={chat_id}</code>")
             return
+
+        # Log authorized attempt
+        try:
+            self.auth_logger.log_attempt(
+                chat_id=int(chat_id),
+                status="authorized",
+                command=command_name,
+                username=username,
+                first_name=first_name,
+                last_name=last_name
+            )
+        except Exception as e:
+            logger.error(f"Failed to log authorized attempt: {e}")
+
         return await func(self, update, context)
     return wrapper
 
@@ -86,6 +124,10 @@ class TelegramBot:
         self.router = CommandRouter()
         self.app    = None
         self.dashboard_process = None
+
+        # Initialize auth logger and commands with the DB client from the router
+        self.auth_logger = AuthorizationLogger(db_client=self.router.db)
+        self.auth_commands = AuthorizationCommands(db_client=self.router.db)
 
     async def _safe_reply_html(self, update: Update, text: str):
         """Reply with HTML, auto-splitting if text exceeds Telegram's 4096 char limit."""
@@ -142,6 +184,12 @@ class TelegramBot:
             ("trade",           self.trade_command),
             ("close_manual",    self.close_manual_command),
             ("backups",         self.backups_command),
+            # Auth monitoring commands (NEW)
+            ("extract_chat_id", self.extract_chat_id_command), # Public
+            ("auth_log",        self.auth_log_command),        # Restricted
+            ("auth_users",      self.auth_users_command),      # Restricted
+            ("auth_daily",      self.auth_daily_command),      # Restricted
+            ("suspicious",      self.suspicious_command),      # Restricted
         ]
         for name, handler in handlers:
             self.app.add_handler(CommandHandler(name, handler))
@@ -292,6 +340,9 @@ class TelegramBot:
             "/health — system health + heartbeat\n"
             "/dashboard — web dashboard link\n"
             "/backups — show backup status\n"
+            "/extract_chat_id — get your Chat ID\n"
+            "/auth_log — show auth attempts (admin)\n"
+            "/auth_users — show authorized users (admin)\n"
             "/help — this list"
         )
         await update.message.reply_html(msg)
@@ -425,6 +476,32 @@ class TelegramBot:
     @auth_required
     async def backups_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_html(self.router.get_backups())
+
+    # ── Auth Monitoring Wrappers ─────────────────────────────────────────────
+
+    async def extract_chat_id_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Public command to get Chat ID."""
+        await self.auth_commands.extract_chat_id_command(update, context)
+
+    @auth_required
+    async def auth_log_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Restricted command to view auth logs."""
+        await self.auth_commands.auth_log_command(update, context)
+
+    @auth_required
+    async def auth_users_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Restricted command to view authorized users."""
+        await self.auth_commands.auth_users_command(update, context)
+
+    @auth_required
+    async def auth_daily_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Restricted command to view daily auth summary."""
+        await self.auth_commands.auth_daily_command(update, context)
+
+    @auth_required
+    async def suspicious_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Restricted command to view suspicious activity."""
+        await self.auth_commands.suspicious_command(update, context)
 
     # ── Outbound push utilities ───────────────────────────────────────────────
 

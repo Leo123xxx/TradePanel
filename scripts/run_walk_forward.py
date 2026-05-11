@@ -7,8 +7,15 @@ import pandas as pd
 from data.db_client import DBClient
 from backtesting.walk_forward import WalkForwardOptimizer
 
-from strategies.ma_crossover import MACrossoverStrategy
-from strategies.rsi_bounce import RSIBounceStrategy
+try:
+    from strategies.ma_crossover import MACrossoverStrategy
+except ImportError:
+    from strategies.archive.ma_crossover import MACrossoverStrategy
+
+try:
+    from strategies.rsi_bounce import RSIBounceStrategy
+except ImportError:
+    from strategies.archive.rsi_bounce import RSIBounceStrategy
 from strategies.gold_momentum_breakout import GoldMomentumBreakoutStrategy
 from strategies.macd_trend import MACDTrendStrategy
 from strategies.range_breakout import RangeBreakoutStrategy
@@ -17,35 +24,72 @@ from strategies.bb_mean_reversion import BBMeanReversionStrategy
 from strategies.swing_pullback import SwingPullbackStrategy
 from strategies.session_momentum import SessionMomentumStrategy
 from strategies.stoch_divergence import StochDivergenceStrategy
-from strategies.ema_ribbon_trend import EMARibbonTrendStrategy
-from strategies.crypto_rsi_extremes import CryptoRSIExtremesStrategy
+try:
+    from strategies.ema_ribbon_trend import EMARibbonTrendStrategy
+except ImportError:
+    from strategies.archive.ema_ribbon_trend import EMARibbonTrendStrategy
+
+try:
+    from strategies.crypto_rsi_extremes import CryptoRSIExtremesStrategy
+except ImportError:
+    from strategies.archive.crypto_rsi_extremes import CryptoRSIExtremesStrategy
 from strategies.volatility_squeeze_breakout import VolatilitySqueezeBreakoutStrategy
-from strategies.institutional_silver_bullet import InstitutionalSilverBullet
-from strategies.ict_judas_swing import ICTJudasSwing
+try:
+    from strategies.institutional_silver_bullet import InstitutionalSilverBullet
+except ImportError:
+    from strategies.archive.institutional_silver_bullet import InstitutionalSilverBullet
+
+try:
+    from strategies.ict_judas_swing import ICTJudasSwing
+except ImportError:
+    from strategies.archive.ict_judas_swing import ICTJudasSwing
 from strategies.turtle_soup import TurtleSoup
 from strategies.dual_ema_momentum import DualEMAMomentum
 from strategies.triple_macd_scalping import TripleMACDScalping
 from strategies.dual_ema_fractal import DualEMAFractal
 from strategies.rsi_2 import RSITwoStrategy
-from strategies.vwap_momentum import VWAPMomentum
+try:
+    from strategies.vwap_momentum import VWAPMomentum
+except ImportError:
+    from strategies.archive.vwap_momentum import VWAPMomentum
 from strategies.hikkake_trap import HikkakeTrap
 from strategies.orb import ORBStrategy
 from strategies.rvgi_cci_confluence import RVGICCIConfluence
-from strategies.volatility_contraction import VolatilityContraction
+try:
+    from strategies.volatility_contraction import VolatilityContraction
+except ImportError:
+    from strategies.archive.volatility_contraction import VolatilityContraction
 from strategies.stat_arb_gold_silver import StatArbGoldSilver
 from strategies.naked_price_action import NakedPriceAction
-from strategies.cot_sentiment import COTSentimentStrategy
+try:
+    from strategies.cot_sentiment import COTSentimentStrategy
+except ImportError:
+    from strategies.archive.cot_sentiment import COTSentimentStrategy
 from strategies.ensemble import EnsembleStrategy
 from strategies.donchian_trend import DonchianTrendStrategy
 from strategies.supertrend import SuperTrendStrategy
 from strategies.ttm_squeeze import TTMSqueezeStrategy
 from strategies.bb_squeeze_scalp import BBSqueezeScalp
 from strategies.rsi_extremes_scalp import RSIExtremesScalp
-from strategies.multi_ema_crypto_scalper import MultiEmaCryptoScalper
-from strategies.silver_bullet_crypto import SilverBulletCrypto
-from strategies.power_of_3_amd import PowerOf3AMD
+try:
+    from strategies.multi_ema_crypto_scalper import MultiEmaCryptoScalper
+except ImportError:
+    from strategies.archive.multi_ema_crypto_scalper import MultiEmaCryptoScalper
+
+try:
+    from strategies.silver_bullet_crypto import SilverBulletCrypto
+except ImportError:
+    from strategies.archive.silver_bullet_crypto import SilverBulletCrypto
+
+try:
+    from strategies.power_of_3_amd import PowerOf3AMD
+except ImportError:
+    from strategies.archive.power_of_3_amd import PowerOf3AMD
 from strategies.fast_ma_scalper import FastMAScalper
-from strategies.ema_ribbon_scalp import EMARibbonScalp
+try:
+    from strategies.ema_ribbon_scalp import EMARibbonScalp
+except ImportError:
+    from strategies.archive.ema_ribbon_scalp import EMARibbonScalp
 from strategies.macd_zero_scalp import MACDZeroScalp
 from strategies.volatility_breakout_scalp import VolatilityBreakoutScalp
 

@@ -1,0 +1,53 @@
+{
+  "generated": "2026-05-09 09:51:38.462775",
+  "results": [
+    {
+      "strategy": "supertrend",
+      "pair": "BTCUSD",
+      "timeframe": "H1",
+      "tier": 0,
+      "status": "ERROR",
+      "reason": "1"
+    },
+    {
+      "strategy": "supertrend",
+      "pair": "BTCUSD",
+      "timeframe": "H4",
+      "tier": 0,
+      "status": "ERROR",
+      "reason": "1"
+    },
+    {
+      "strategy": "supertrend",
+      "pair": "BTCUSD",
+      "timeframe": "D1",
+      "tier": 0,
+      "status": "ERROR",
+      "reason": "1"
+    },
+    {
+      "strategy": "supertrend",
+      "pair": "ETHUSD",
+      "timeframe": "H1",
+      "tier": 0,
+      "status": "ERROR",
+      "reason": "1"
+    },
+    {
+      "strategy": "supertrend",
+      "pair": "ETHUSD",
+      "timeframe": "H4",
+      "tier": 0,
+      "status": "ERROR",
+      "reason": "1"
+    },
+    {
+      "strategy": "supertrend",
+      "pair": "ETHUSD",
+      "timeframe": "D1",
+      "tier": 0,
+      "status": "ERROR",
+      "reason": "1"
+    }
+  ]
+}

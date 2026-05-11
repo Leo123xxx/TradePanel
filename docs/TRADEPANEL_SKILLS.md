@@ -41,7 +41,8 @@
 ### 2.4 TP/SL Calculation
 - ATR-based: `tp_price = entry + ATR * tp_atr_mult`, `sl_price = entry - ATR * sl_atr_mult` (long).
 - ATR period set by `atr_period` param (default 14).
-- Partial TP at 1:1 then breakeven is controlled by `use_partial_tp` param.
+- **Partial Take Profit**: Automated multi-stage exits based on strategy category.
+- **Breakeven**: Moves SL to entry + buffer once profit reaches `breakeven_trigger_mult * ATR`.
 
 ### 2.5 Commission — No Double-Charge
 - Spread and slippage are embedded in `entry_price` at bar open.
@@ -586,4 +587,63 @@ The strategy class must already be in `STRATEGY_MAP` in `scripts/run_walk_forwar
 
 ---
 
+---
+
+## 19. Trade Management: Partial Take Profits (2026-05-11)
+
+The system now implements a category-aware **Partial Take Profit (PTP)** system in the live/paper engine. This ensures that profit is secured early while allowing "runners" to capture large trends.
+
+### 19.1 PTP Logic by Category
+| Category | Trigger | Close Size | SL Action |
+|----------|---------|------------|-----------|
+| **Trend Following** | 1.2x ATR | 25% | Move to Breakeven |
+| **Breakouts** | 1.5x ATR | 33% | Move to Breakeven |
+| **Mean Reversion** | 1.0x ATR | 60% | Move to Breakeven |
+| **Scalping** | 1.0x ATR | 75% | Move to Breakeven |
+
+### 19.2 Implementation Details
+- **Sync**: The `lot_size` is automatically synchronized in the database when a partial close occurs.
+- **Security**: Stat Arb strategies are excluded from PTP logic to preserve Z-score exit integrity.
+- **Control**: Enable/Disable via `use_partial_tp: true/false` in `strategies.yaml`.
+- **Alerts**: Telegram alerts are sent with the `💰 PARTIAL TP HIT` badge.
+
+---
+
 *End of TRADEPANEL_SKILLS.md*
+
+---
+
+## Section 20: Canonical Job Schedule (as of 2026-05-10)
+
+All jobs live in `scheduler/docker_jobs.py`. Config overrides via `config/config.yaml` scheduler section.
+Times below in UTC with SAST equivalent (UTC+2, no DST).
+
+| Job ID | Trigger | UTC | SAST | Days | Config key |
+|--------|---------|-----|------|------|------------|
+| heartbeat | interval 60s | — | — | always | heartbeat_interval_sec |
+| mt5_conn | interval 60s | — | — | always | — |
+| signal_detect | interval 1m | — | — | always | — |
+| trade_execute | interval 5m | — | — | always | — |
+| position_sync | interval 5m | — | — | always | — |
+| pnl_rollup | interval 1h | — | — | always | — |
+| regime_detect | interval 1h | — | — | always | — |
+| mt5_history_sync | interval 4h | — | — | always | — |
+| data_ingest_6h | cron | 00:05,06:05,12:05,18:05 | 02:05,08:05,14:05,20:05 | daily | data_ingest_hours / data_ingest_minute |
+| signal_outcome_check | cron | 23:00 | 01:00+1 | daily | timezone='UTC' hardcoded |
+| overnight_backtest | cron | 02:00 | 04:00 | Mon–Fri | overnight_backtest_hour / overnight_backtest_minute |
+| wfo_biweekly | cron | 03:00 | 05:00 | Wed+Sun | — |
+| yahoo_history_fill | cron | 01:30 | 03:30 | Sunday | — |
+| db_cleanup | cron | 00:30 | 02:30 | Sunday | db_cleanup_day / db_cleanup_time |
+| daily_summary | cron | 18:00 | 20:00 | daily | notifications.daily_summary_time |
+| weekly_report | cron | 08:00 | 10:00 | Monday | — |
+| correlation_check | cron | 09:00 | 11:00 | Monday | — |
+| cot_refresh | cron | 21:00 | 23:00 | Friday | — |
+| weekly_archive | cron | 23:59 | 01:59+1 | Thursday | — |
+| **daily-tradepanel-automation** (Cowork) | cron | **04:04** | **06:04** | daily | Cowork task cron: `4 6 * * *` SAST |
+
+**Critical alignment rules:**
+- All `CronTrigger` calls in docker_jobs.py run in Docker's UTC timezone. Always specify `timezone='UTC'` explicitly.
+- The Cowork automation runs at 06:04 SAST (04:04 UTC), AFTER the overnight backtest (starting 04:00 SAST, ~60–90 min).
+- Active results window: last 3 days in `results/overnight/`.
+- Disabled strategies live in `strategies/strategies_archive.py` and `strategies/archive/` — not loaded by registry.
+

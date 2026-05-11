@@ -570,6 +570,8 @@ When a strategy generates a signal, it must pass a "Gauntlet" of checks:
 Trades are executed as **Limit or Market Orders** with ATR-based Stop Losses. The system then enters a persistent monitoring loop:
 - **Telegram:** Instant alerts for Entry, Partial TP, Break-Even (BE) adjustments, and Exit.
 - **Dashboard:** Real-time equity curve and performance metrics (Sharpe, Profit Factor, Recovery Factor).
+- **Trade Management:** Automated partial exits (25-75% volume) based on strategy category and ATR targets.
+- **Breakeven:** Dynamic Stop Loss adjustment to entry price once profit targets are met.
 
 ---
 
@@ -694,6 +696,28 @@ function useConnectivity() {
 
 `ConnStatus` component colours the sidebar dot by the real status value returned from the API.
 
+
+---
+
+## Version 3 Roadmap (Next Steps)
+
+With Version 1.1 stable and WFO-verified, the development path for Version 3 focuses on **Model-Based Optimization** and **Autonomous Decision Making**.
+
+### 1. Adaptive Regime Classification
+- **Feature**: Real-time regime switching based on Hidden Markov Models (HMM).
+- **Goal**: Automatically pause Trend strategies during choppy consolidation and resume when a breakout is confirmed.
+
+### 2. Multi-Strategy Voting (Ensemble)
+- **Feature**: A "Committee" approach where 3-5 strategies must agree on a direction before a trade is placed.
+- **Goal**: Reduce false breakouts and improve overall portfolio Sharpe ratio.
+
+### 3. Dynamic Position Sizing (Kelly Criterion)
+- **Feature**: Adjust lot sizes based on the strategy's recent performance (Win Rate and Sharpe) in the current window.
+- **Goal**: Maximize compounding on winning streaks and minimize exposure on drawdown periods.
+
+### 4. Advanced ML Meta-Labeling
+- **Feature**: A second-layer Random Forest model that predicts the probability of a signal being a "Winner" based on 50+ technical features.
+- **Goal**: Filter out statistically low-probability signals before execution.
 
 ---
 

@@ -7,6 +7,35 @@ from here so fixes only need to be made in one place.
 Bridge selection:
   - If MetaTrader5 is importable → native mode (direct MT5 SDK calls)
   - Otherwise              → bridge mode (HTTP calls to mt5_bridge service)
+
+FULL SCHEDULE (all times UTC; SAST = UTC+2):
+  Interval jobs (always running):
+    heartbeat          : every 60s
+    mt5_conn           : every 60s
+    signal_detect      : every 1m
+    trade_execute      : every 5m
+    position_sync      : every 5m
+    pnl_rollup         : every 1h
+    regime_detect      : every 1h
+    mt5_history_sync   : every 4h
+
+  Cron jobs:
+    data_ingest_6h     : 00:05, 06:05, 12:05, 18:05 UTC daily
+    signal_outcome_check: 23:00 UTC daily (01:00 SAST)
+    overnight_backtest : 02:00 UTC Mon–Fri (04:00 SAST) — config: overnight_backtest_hour/minute
+    wfo_biweekly       : 03:00 UTC Wed + Sun (05:00 SAST)
+    yahoo_history_fill : 01:30 UTC Sunday (03:30 SAST)
+    db_cleanup         : 00:30 UTC Sunday (02:30 SAST)
+    daily_summary      : 18:00 UTC daily (20:00 SAST) — config: notifications.daily_summary_time
+    weekly_report      : 08:00 UTC Monday (10:00 SAST)
+    correlation_check  : 09:00 UTC Monday (11:00 SAST)
+    cot_refresh        : 21:00 UTC Friday (23:00 SAST)
+    weekly_archive     : 23:59 UTC Thursday (Fri 01:59 SAST)
+
+  Cowork daily automation (external, reads results):
+    daily-tradepanel-automation: 04:04 UTC daily (06:04 SAST) — runs after overnight backtest
+
+Last updated: 2026-05-10
 """
 
 import sys
@@ -381,6 +410,23 @@ class TradingScheduler:
                 else {p["ticket"] for p in positions}
             )
 
+        # 1. Update floating P&L for open trades
+        acct = self.config.get("account", {})
+        usdzar = float(acct.get("backtesting_usdzar_rate", 18.50))
+        
+        if positions:
+            for p in positions:
+                ticket = p.ticket if MT5_AVAILABLE else p["ticket"]
+                profit = p.profit if MT5_AVAILABLE else p["profit"]
+                volume = p.volume if MT5_AVAILABLE else p["volume"]
+                profit_zar = round(profit * usdzar, 2)
+                
+                self.db.execute_query(
+                    "UPDATE trades SET net_pnl = %s, lot_size = %s WHERE mt5_ticket = %s AND status = 'OPENED'",
+                    (profit_zar, volume, ticket)
+                )
+
+        # 2. Reconcile closed trades
         rows = self.db.execute_query(
             "SELECT mt5_ticket, trade_id FROM trades "
             "WHERE status = 'OPENED' AND mode = 'PAPER'"
@@ -393,10 +439,14 @@ class TradingScheduler:
                         history[-1].price if MT5_AVAILABLE and history
                         else (history[-1]["price"] if history else 0.0)
                     )
+                    # For closed trades, net_pnl should be final profit
+                    final_profit = sum(h.profit for h in history) if MT5_AVAILABLE else sum(h["profit"] for h in history)
+                    final_profit_zar = round(final_profit * usdzar, 2)
+                    
                     self.db.execute_query(
                         "UPDATE trades SET status='CLOSED', close_reason='EXTERNAL_CLOSE', "
-                        "close_time=%s, exit_price=%s WHERE trade_id=%s",
-                        (datetime.now(), exit_price, trade_id),
+                        "close_time=%s, exit_price=%s, net_pnl=%s WHERE trade_id=%s",
+                        (datetime.now(), exit_price, final_profit_zar, trade_id),
                     )
 
     # ──────────────────────────────────────────────────────────────────────────

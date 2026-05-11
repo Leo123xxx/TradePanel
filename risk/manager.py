@@ -333,9 +333,19 @@ class RiskManager:
             return True # Allow if no data yet
         
         current_regime = rows[0][0].upper() # e.g. 'TRENDING_NORMAL_VOL'
-        base_regime = current_regime.split('_')[0] # 'TRENDING'
+        parts = current_regime.split('_')
         
-        return base_regime in allowed
+        # Check if any part of the current regime (base or sub) is allowed
+        # e.g. if allowed=['HIGH_VOL'] and current='NEUTRAL_HIGH_VOL', it matches.
+        for part in parts:
+            if part in allowed:
+                return True
+        
+        # Also check combinations like 'HIGH_VOL'
+        if "HIGH" in parts and "VOL" in parts and "HIGH_VOL" in allowed:
+            return True
+
+        return False
 
     def _check_concurrent_positions(self):
         max_pos = self.config['risk_management']['max_concurrent_positions']
@@ -367,8 +377,8 @@ class RiskManager:
             return False
             
         # spread is in points
-        spread_points = symbol_info.spread
-        point_size = symbol_info.point
+        spread_points = getattr(symbol_info, 'spread', 0)
+        point_size = getattr(symbol_info, 'point', 0.00001)
         
         # Standard pip size: 0.01 for 2-digit pairs (Gold), 0.0001 for 4/5-digit pairs
         pip_size = 0.01 if symbol_info.digits in [2, 3] else 0.0001

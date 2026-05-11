@@ -189,7 +189,9 @@ async def get_paper_signals(
                 sig.pair, sig.direction, sig.timeframe,
                 sig.timestamp, sig.validity_window, sig.indicator_values,
                 (sig.triggered_trade_id IS NOT NULL) AS signal_taken,
-                ap.account_id, ap.account_name, ap.account_type
+                ap.account_id, ap.account_name, ap.account_type,
+                t.status AS trade_status,
+                COALESCE(t.net_pnl, 0.0) AS trade_pnl
             FROM signals sig
             LEFT JOIN strategies s ON sig.strategy_id = s.strategy_id
             LEFT JOIN trades t ON sig.triggered_trade_id = t.trade_id
@@ -219,10 +221,12 @@ async def get_paper_signals(
                 "timestamp":       r[5].isoformat() if r[5] else None,
                 "validity_window": r[6],
                 "price":           float(ind_vals.get("price", 0)) if ind_vals else 0,
-                "signal_taken":    bool(r[8]) if len(r) > 8 else False,
-                "account_id":      r[9] if len(r) > 9 else None,
-                "account_name":    r[10] if (len(r) > 10 and r[10]) else "—",
-                "account_type":    r[11] if len(r) > 11 else None,
+                "signal_taken":    bool(r[8]),
+                "account_id":      r[9],
+                "account_name":    r[10] or "—",
+                "account_type":    r[11],
+                "trade_status":    r[12],
+                "trade_pnl":       float(r[13]) if r[13] is not None else 0.0,
             })
 
         return {

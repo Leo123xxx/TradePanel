@@ -25,6 +25,12 @@ class DBClient:
             "password": os.getenv("DB_PASSWORD", "postgres"),
             "connect_timeout": 5
         }
+        # Pool is created lazily on first use — do NOT connect here.
+        # This prevents startup crashes when the DB isn't reachable yet
+        # (e.g. host-side scripts running before Docker/Postgres is up).
+
+    def _ensure_pool(self):
+        """Create the connection pool on first use (lazy init)."""
         if DBClient._pool is None:
             # Task 1.4: Dynamic pool sizing based on execution mode
             # LIVE needs more concurrent connections for dashboard/bots.
@@ -39,7 +45,7 @@ class DBClient:
             else:
                 maxconn = 20
                 minconn = 5
-            
+
             DBClient._pool = pool.ThreadedConnectionPool(
                 minconn=minconn,
                 maxconn=maxconn,
@@ -52,6 +58,7 @@ class DBClient:
         Retries up to `retries` times on PoolError (pool exhausted).
         Delays: 2s, 4s, 8s before raising.
         """
+        self._ensure_pool()
         last_exc = None
         for attempt in range(retries):
             try:
@@ -67,7 +74,8 @@ class DBClient:
 
     def release_connection(self, conn):
         """Returns a connection to the pool."""
-        DBClient._pool.putconn(conn)
+        if DBClient._pool is not None:
+            DBClient._pool.putconn(conn)
 
     def execute_query(self, query: str, params: tuple = None):
         """

@@ -196,15 +196,21 @@ logs/*.log
 
 # Results — generated output, not for version control
 results/overnight/
-results/daily_validation/*.json
-results/daily_validation/*.csv
-results/daily_validation/opt_results.json
+results/daily_validation/
 results/backtests/
+results/wfo/
+results/optimization/
+results/*.md
+results/*.json
+results/*.txt
+results/*.log
 
-# Temporary Files
+# Temporary & Scratch Files
+scratch/
 *.tmp
 *.temp
 .DS_Store
+.claude-memory/
 
 # Project Data
 backtesting/journals/*.csv

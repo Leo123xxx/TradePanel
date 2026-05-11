@@ -265,7 +265,7 @@ function KpiStrip({ lookbackDays }) {
       label: `Net P&L (${lookbackDays}d)`,
       value: s ? fmtZAR(s.net_profit) : loading ? '...' : '—',
       accent: s ? colorByVal(s.net_profit) : undefined,
-      delta: s ? `ROI ${fmtPct(s.roi_pct / 100)}` : undefined,
+      delta: s ? `ROI ${fmtPct(s.roi_pct)}` : undefined,
       deltaPositive: s?.roi_pct > 0
     },
     {
@@ -752,9 +752,12 @@ function WfoIntelligencePanel() {
       <div className="card" style={{ marginBottom: '1rem', borderLeft: '4px solid var(--accent-primary)' }}>
         <div className="card-head">
           <h3 className="card-h">Master WFO Sweep Status</h3>
-          <div className="status-badge">
-            <div className="pulse" />
-            Active Optimization
+          <div className="status-badge" style={{ 
+            background: status?.is_active ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255,255,255,0.05)',
+            color: status?.is_active ? '#00e676' : 'var(--text-secondary)'
+          }}>
+            {status?.is_active && <div className="pulse" />}
+            {status?.is_active ? 'Active Optimization' : 'Ready / Idle'}
           </div>
         </div>
         
@@ -2102,17 +2105,17 @@ function SignalsTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead>
               <tr style={{ color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                {['Time', 'Account', 'Strategy', 'Pair', 'TF', 'Dir', 'Price', 'Valid', 'Status'].map((h, i) => (
-                  <th key={h} style={{ textAlign: i === 6 ? 'right' : i === 8 ? 'center' : 'left', padding: '0.4rem 0.5rem', fontWeight: 500 }}>{h}</th>
+                {['Time', 'Account', 'Strategy', 'Pair', 'TF', 'Dir', 'Price', 'Valid', 'Profit', 'Status'].map((h, i) => (
+                  <th key={h} style={{ textAlign: (i === 6 || i === 8) ? 'right' : i === 9 ? 'center' : 'left', padding: '0.4rem 0.5rem', fontWeight: 500 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading signals...</td></tr>
+                <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading signals...</td></tr>
               )}
               {!loading && signals.length === 0 && (
-                <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No signals in this window.</td></tr>
+                <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No signals in this window.</td></tr>
               )}
               {signals.map((s, i) => (
                 <tr key={s.signal_id || i}
@@ -2120,7 +2123,9 @@ function SignalsTab() {
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = '' }}
                 >
-                  <td style={{ padding: '0.4rem 0.5rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{toLocalTime(s.timestamp)}</td>
+                  <td style={{ padding: '0.4rem 0.5rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                    {toLocalTime(s.timestamp)?.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </td>
                   <td style={{ padding: '0.4rem 0.5rem' }}>
                     {s.account_name && s.account_name !== '—'
                       ? <span style={{
@@ -2145,9 +2150,21 @@ function SignalsTab() {
                     {s.price > 0 ? s.price.toFixed(5) : '-'}
                   </td>
                   <td style={{ padding: '0.4rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{s.validity_window || '-'}</td>
+                  <td style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontFamily: 'monospace' }}>
+                    {s.signal_taken ? (
+                      <span style={{ color: s.trade_pnl >= 0 ? '#00e676' : '#ff453a', fontWeight: 600 }}>
+                        {s.trade_pnl >= 0 ? '+' : ''}{s.trade_pnl.toFixed(2)}
+                      </span>
+                    ) : '-'}
+                  </td>
                   <td style={{ padding: '0.4rem 0.5rem', textAlign: 'center' }}>
                     {s.signal_taken
-                      ? <span title="Trade opened from this signal" style={{ color: 'var(--success)', fontSize: '0.82rem', fontWeight: 600 }}>Taken</span>
+                      ? <span title="Trade opened from this signal" style={{ 
+                          color: s.trade_status === 'OPENED' ? '#ffb400' : 'var(--success)', 
+                          fontSize: '0.82rem', fontWeight: 600 
+                        }}>
+                          {s.trade_status === 'OPENED' ? 'Running' : 'Closed'}
+                        </span>
                       : <span title="No trade opened yet" style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Pending</span>
                     }
                   </td>

@@ -50,10 +50,21 @@ def get_account_info():
 def get_tick(symbol: str):
     if not connector.connected:
         raise HTTPException(status_code=503, detail="MT5 not connected")
-    tick = mt5.symbol_info_tick(symbol)
-    if tick is None:
-        raise HTTPException(status_code=404, detail="Tick not found")
-    return tick._asdict()
+    info = mt5.symbol_info(symbol)
+    if info is None:
+        raise HTTPException(status_code=404, detail="Symbol not found")
+    
+    # Return as dict, handling potential issues with _asdict()
+    d = info._asdict()
+    
+    # Ensure critical fields for margin calculation are present
+    # These are sometimes missing in the _asdict() depending on MT5 version
+    d['trade_contract_size'] = info.trade_contract_size
+    d['margin_initial'] = getattr(info, 'margin_initial', 0)
+    d['spread'] = info.spread
+    d['digits'] = info.digits
+    
+    return d
 
 @app.get("/rates/{symbol}/{tf}")
 def get_rates(symbol: str, tf: str, n: int = 100):

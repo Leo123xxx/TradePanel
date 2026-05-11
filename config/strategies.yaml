@@ -55,9 +55,13 @@ dual_ema_fractal:
     vol_threshold_mult: 1.5
   pair_overrides:
     XAUUSD:
-      adx_min: 30
-      tp_atr_mult: 3.8
+      adx_min: 25
+      ema_fast: 50
+      ema_slow: 200
       sl_atr_mult: 0.8
+      tp_atr_mult: 3.0
+      rsi_long_min: 55
+      vol_threshold_mult: 1.2
     GBPUSD:
       confirm_timeframe: D1
       adx_min: 30
@@ -138,6 +142,12 @@ rsi_pullback:
     GBPUSD:
       adx_min: 30
       tp_atr_mult: 3.8
+    EURUSD:
+      adx_min: 20
+      rsi_period: 10
+      sl_atr_mult: 1.5
+      tp_atr_mult: 3.0
+      rsi_pullback_lower: 25
 ma_crossover:
   name: Moving Average Crossover
   category: Trend Following
@@ -534,11 +544,13 @@ gold_momentum_breakout:
       adx_min: 30
       tp_atr_mult: 3.8
     XAUUSD:
-      sl_atr_mult: 0.8
-      rsi_buy_min: 62
-      rsi_sell_max: 38
-      adx_min: 30
-      tp_atr_mult: 3.8
+      adx_min: 28
+      bb_length: 14
+      rsi_buy_min: 55
+      sl_atr_mult: 1.0
+      tp_atr_mult: 3.0
+      rsi_sell_max: 45
+      vol_threshold_mult: 1.2
     NVDA:
       adx_min: 30
       tp_atr_mult: 3.8
@@ -1614,24 +1626,6 @@ power_of_3_amd:
     BTCUSD:
       adx_min: 28
       tp_atr_mult: 2.5
-rsi_pullback_legacy:
-  name: RSI Pullback (legacy params - superseded above)
-  category: Mean Reversion
-  status: deprecated
-  enabled: true
-  tier: TIER_2
-  mode: trade
-  pairs:
-  - EURUSD
-  timeframes:
-  - M5
-  - M15
-  - M30
-  - H1
-  - H2
-  - H4
-  - H12
-  - D1
 rsi_2:
   name: Extreme RSI (2-period)
   category: Mean Reversion
@@ -2003,9 +1997,11 @@ supertrend:
     sl_atr_mult: 1.2
   pair_overrides:
     EURUSD:
-      multiplier: 2.0
-      adx_min: 30
-      tp_atr_mult: 4.3
+      multiplier: 3.0
+      adx_min: 25
+      tp_atr_mult: 4.0
+      sl_atr_mult: 1.5
+      atr_period: 10
     XAUUSD:
       multiplier: 3.0
       sl_atr_mult: 1.5
@@ -2054,6 +2050,9 @@ ttm_squeeze:
 donchian_trend:
   name: Donchian Trend Channel
   category: Trend Following
+  status: implemented
+  regime:
+  - TRENDING
   enabled: true
   pairs:
   - BTCUSD

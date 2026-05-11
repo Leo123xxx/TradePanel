@@ -176,6 +176,17 @@ class TradePanel:
         logger.info("TELEGRAM BOT")
         logger.info("=" * 70)
 
+        # Guard: if running inside Docker the 'telegram' container already owns
+        # the bot process. Starting a second instance from the host would cause
+        # a conflict (same token, duplicate polling). Skip gracefully.
+        if os.getenv("RUNNING_IN_DOCKER"):
+            pass  # we ARE inside Docker — proceed normally
+        else:
+            logger.info("SKIP: Telegram bot is managed by the Docker 'telegram' container.")
+            logger.info("      Run 'docker logs telegram' to view bot activity.")
+            logger.info("      To run locally (no Docker): set RUNNING_IN_DOCKER=1 in .env")
+            return True
+
         # Verify token is set
         token = os.getenv("TELEGRAM_BOT_TOKEN")
         if not token:

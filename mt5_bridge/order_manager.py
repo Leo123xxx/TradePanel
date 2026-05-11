@@ -86,7 +86,8 @@ class OrderManager:
         # Required margin = lot * price * contract_size * (margin_required % / leverage)
         # We'll use a conservative 2% margin (50:1) for FX if not specified
         contract_size = getattr(symbol_info, 'trade_contract_size', 100000)
-        margin_pct = (symbol_info.margin_initial / 100) if symbol_info.margin_initial > 0 else 0.02
+        margin_initial = getattr(symbol_info, 'margin_initial', 0)
+        margin_pct = (margin_initial / 100) if margin_initial > 0 else 0.02
         
         margin_required = lot * tick.ask * contract_size * margin_pct
         return margin_required
@@ -148,6 +149,7 @@ class OrderManager:
         
         # Current portfolio leverage = total exposure / equity
         # Get all open positions
+        total_exposure = 0
         positions = mt5.positions_get()
         if positions:
             total_exposure = sum(p.volume * mt5.symbol_info(p.symbol).bid for p in positions)
@@ -289,15 +291,16 @@ class OrderManager:
             
         return result, "SUCCESS"
 
-    def close_position(self, ticket: int, comment: str = ""):
-        """Closes an open position by ticket number."""
+    def close_position(self, ticket: int, volume: Optional[float] = None, comment: str = ""):
+        """Closes an open position (full or partial) by ticket number."""
         positions = mt5.positions_get(ticket=ticket)
         if not positions:
              return None, f"Position {ticket} not found or already closed."
         
         pos = positions[0]
         symbol = pos.symbol
-        lot = pos.volume
+        # Use provided volume or full position volume
+        close_volume = round(volume, 2) if volume is not None else pos.volume
         
         order_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
         tick = mt5.symbol_info_tick(symbol)
@@ -308,7 +311,7 @@ class OrderManager:
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
-            "volume": round(lot, 2),
+            "volume": float(close_volume),
             "type": order_type,
             "position": ticket,
             "price": price,

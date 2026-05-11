@@ -40,12 +40,20 @@ async def get_wfo_status():
                 "timestamp": r[5].isoformat() if r[5] else None
             })
             
+        # Check if active (last update in the last 60 minutes)
+        res_active = db.execute_query("SELECT MAX(created_at) FROM walk_forward_results")
+        last_at = res_active[0][0] if res_active else None
+        is_active = False
+        if last_at:
+            is_active = (datetime.now() - last_at).total_seconds() < 3600 # 1 hour
+            
         return {
             "completed": completed_count,
             "total": total_strategies,
             "progress_pct": round((completed_count / total_strategies) * 100, 1) if total_strategies > 0 else 0,
+            "is_active": is_active,
             "recent_results": recent_list,
-            "last_update": datetime.now().isoformat()
+            "last_update": last_at.isoformat() if last_at else None
         }
     except Exception as e:
         logger.error(f"Error in get_wfo_status: {e}")

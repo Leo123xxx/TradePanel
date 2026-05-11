@@ -20,79 +20,85 @@ from forward_test.signal_checker import SignalChecker
 from data.db_client import DBClient
 from risk.regime_classifier import RegimeClassifier
 from strategies.bb_mean_reversion import BBMeanReversionStrategy
-from strategies.cot_sentiment import COTSentimentStrategy
-from strategies.crypto_rsi_extremes import CryptoRSIExtremesStrategy
+# from strategies.cot_sentiment import COTSentimentStrategy
+# from strategies.crypto_rsi_extremes import CryptoRSIExtremesStrategy
 from strategies.dual_ema_fractal import DualEMAFractal
 from strategies.dual_ema_momentum import DualEMAMomentum
-from strategies.ema_ribbon_trend import EMARibbonTrendStrategy
+from strategies.donchian_trend import DonchianTrendStrategy
+# from strategies.ema_ribbon_trend import EMARibbonTrendStrategy
 from strategies.ensemble import EnsembleStrategy
 from strategies.gold_momentum_breakout import GoldMomentumBreakoutStrategy
 from strategies.hikkake_trap import HikkakeTrap
-from strategies.ict_judas_swing import ICTJudasSwing
-from strategies.institutional_silver_bullet import InstitutionalSilverBullet
-from strategies.ma_crossover import MACrossoverStrategy
+# from strategies.ict_judas_swing import ICTJudasSwing
+# from strategies.institutional_silver_bullet import InstitutionalSilverBullet
+# from strategies.ma_crossover import MACrossoverStrategy
 from strategies.macd_trend import MACDTrendStrategy
 from strategies.naked_price_action import NakedPriceAction
 from strategies.orb import ORBStrategy
 from strategies.range_breakout import RangeBreakoutStrategy
 from strategies.rsi_2 import RSITwoStrategy
-from strategies.rsi_bounce import RSIBounceStrategy
+# from strategies.rsi_bounce import RSIBounceStrategy
 from strategies.rsi_pullback import RSIPullbackStrategy
 from strategies.rvgi_cci_confluence import RVGICCIConfluence
 from strategies.session_momentum import SessionMomentumStrategy
 from strategies.stat_arb_gold_silver import StatArbGoldSilver
 from strategies.stoch_divergence import StochDivergenceStrategy
 from strategies.swing_pullback import SwingPullbackStrategy
+from strategies.supertrend import SuperTrendStrategy
 from strategies.triple_macd_scalping import TripleMACDScalping
 from strategies.turtle_soup import TurtleSoup
-from strategies.volatility_contraction import VolatilityContraction
+# from strategies.volatility_contraction import VolatilityContraction
 from strategies.volatility_squeeze_breakout import VolatilitySqueezeBreakoutStrategy
-from strategies.vwap_momentum import VWAPMomentum
+from strategies.ttm_squeeze import TTMSqueezeStrategy
+# from strategies.vwap_momentum import VWAPMomentum
 # NEW: 1m/5m Scalping Strategies (April 24, 2026)
 from strategies.fast_ma_scalper import FastMAScalper
 from strategies.bb_squeeze_scalp import BBSqueezeScalp
 from strategies.rsi_extremes_scalp import RSIExtremesScalp
 from strategies.macd_zero_scalp import MACDZeroScalp
 from strategies.volatility_breakout_scalp import VolatilityBreakoutScalp
-from strategies.ema_ribbon_scalp import EMARibbonScalp
+# from strategies.ema_ribbon_scalp import EMARibbonScalp
 
 STRATEGY_REGISTRY = {
     "bb_mean_reversion": BBMeanReversionStrategy,
-    "cot_sentiment": COTSentimentStrategy,
-    "crypto_rsi_extremes": CryptoRSIExtremesStrategy,
+    # "cot_sentiment": COTSentimentStrategy,
+    # "crypto_rsi_extremes": CryptoRSIExtremesStrategy,
     "dual_ema_fractal": DualEMAFractal,
     "dual_ema_momentum": DualEMAMomentum,
-    "ema_ribbon_trend": EMARibbonTrendStrategy,
+    "donchian_trend": DonchianTrendStrategy,
+    # "ema_ribbon_trend": EMARibbonTrendStrategy,
     "ensemble": EnsembleStrategy,
     "gold_momentum_breakout": GoldMomentumBreakoutStrategy,
     "hikkake_trap": HikkakeTrap,
-    "ict_judas_swing": ICTJudasSwing,
-    "institutional_silver_bullet": InstitutionalSilverBullet,
-    "ma_crossover": MACrossoverStrategy,
+    # "ict_judas_swing": ICTJudasSwing,
+    # "institutional_silver_bullet": InstitutionalSilverBullet,
+    # "ma_crossover": MACrossoverStrategy,
     "macd_trend": MACDTrendStrategy,
     "naked_price_action": NakedPriceAction,
     "orb": ORBStrategy,
     "range_breakout": RangeBreakoutStrategy,
     "rsi_2": RSITwoStrategy,
-    "rsi_bounce": RSIBounceStrategy,
+    # "rsi_bounce": RSIBounceStrategy,
     "rsi_pullback": RSIPullbackStrategy,
     "rvgi_cci_confluence": RVGICCIConfluence,
     "session_momentum": SessionMomentumStrategy,
     "stat_arb_gold_silver": StatArbGoldSilver,
     "stoch_divergence": StochDivergenceStrategy,
     "swing_pullback": SwingPullbackStrategy,
+    "supertrend": SuperTrendStrategy,
     "triple_macd_scalping": TripleMACDScalping,
     "turtle_soup": TurtleSoup,
-    "volatility_contraction": VolatilityContraction,
+    # "volatility_contraction": VolatilityContraction,
     "volatility_squeeze_breakout": VolatilitySqueezeBreakoutStrategy,
-    "vwap_momentum": VWAPMomentum,
+    "ttm_squeeze": TTMSqueezeStrategy,
+    # "vwap_momentum": VWAPMomentum,
     # NEW: 1m/5m Scalping Strategies
     "fast_ma_scalper": FastMAScalper,
     "bb_squeeze_scalp": BBSqueezeScalp,
     "rsi_extremes_scalp": RSIExtremesScalp,
     "macd_zero_scalp": MACDZeroScalp,
     "volatility_breakout_scalp": VolatilityBreakoutScalp,
-    "ema_ribbon_scalp": EMARibbonScalp,
+    # "ema_ribbon_scalp": EMARibbonScalp,
 }
 from datetime import datetime
 from notifications.telegram_bot import TelegramBot
@@ -118,9 +124,13 @@ class PaperEngine:
         self.signal_validity_bars = max(2, self.config.get('risk_management', {}).get('signal_validity_bars', 2))
         
         # State tracking
-        self.attempted_signals = {}  # {(strat_name, symbol, tf): last_attempted_timestamp}
+        self.logged_signals = {}     # {(strat_name, symbol, tf, dir): last_logged_timestamp}
+        self.attempted_signals = {}  # {(strat_name, symbol, tf, dir): last_attempted_timestamp}
         self.failed_attempts = {}    # {(strat_name, symbol): (count, last_failure_time)}
         self.peak_equity = 0.0       # Track high-water mark for Circuit Breaker
+        
+        # Mode detection (Dynamic from .env or config)
+        self.trading_mode = os.getenv('TRADING_MODE', self.config.get('system', {}).get('mode', 'PAPER')).upper()
         
         # Load active strategies
         self.strategies_cfg = []
@@ -256,7 +266,10 @@ class PaperEngine:
 
             # 3. IF positions exist, manage them (Breakeven & Reversal)
             if positions:
-                # 3.1 Breakeven Management (Phase 3)
+                # 3.1 Partial Take Profit Management (New)
+                self._manage_partial_tp(symbol, strategy, positions, latest_atr)
+
+                # 3.2 Breakeven Management (Phase 3)
                 self._manage_breakeven(symbol, strategy, positions, latest_atr)
                 
                 # 3.2 Check for reversal signal
@@ -282,23 +295,23 @@ class PaperEngine:
             )
 
             if is_stale:
-                print(f"[PaperEngine] [SYNC] Stale data detected for {symbol}. Triggering forced reconnect...")
-                self.connector.connect(force=True)
-                signal, signal_time, is_stale = self.signal_checker.get_signal(
-                    strategy, symbol, mt5_tf, lookback_bars=self.signal_validity_bars
-                )
+                print(f"[PaperEngine] [SKIP] Stale data detected for {symbol}. Skipping.")
+                return
             
-            # 5. Signal Deduplication
+            # 5. Signal Deduplication & Tracking
             signal_key = self._create_signal_key(strat_name, symbol, mt5_tf, signal)
-            if signal != 0 and signal_time is not None:
-                if self._check_signal_duplicate(signal_key, signal_time):
-                    return
             
-            if signal != 0:
-                self._log_signal(strat_name, symbol, signal, mt5_tf, signal_time=signal_time)
-                self._track_processed_signal(signal_key, signal_time)
-
+            if signal != 0 and signal_time is not None:
+                # 5.1 Handle Logging (idempotent)
+                if not self._check_signal_duplicate(signal_key, signal_time, cache_type='LOG'):
+                    self._log_signal(strat_name, symbol, signal, mt5_tf, signal_time=signal_time)
+                    self._track_processed_signal(signal_key, signal_time, cache_type='LOG')
+            
             if mode == 'detect' or signal == 0:
+                return
+
+            # 5.2 Handle Execution (idempotent)
+            if self._check_signal_duplicate(signal_key, signal_time, cache_type='TRADE'):
                 return
 
             # --- PATH B: MULTI-TF CONFIRMATION ---
@@ -346,7 +359,8 @@ class PaperEngine:
                 magic=magic_number
             )
             
-            self._track_processed_signal(signal_key, signal_time)
+            # Mark as attempted BEFORE sending to MT5 to prevent race conditions
+            self._track_processed_signal(signal_key, signal_time, cache_type='TRADE')
 
             if res is not None and res.retcode == mt5.TRADE_RETCODE_DONE:
                 self._log_trade_open(strat_name, symbol, direction, lot_size, res, sl_points, tp_points)
@@ -400,6 +414,119 @@ class PaperEngine:
                         print(f"[BREAKEVEN] Failed to modify {pos.ticket}: {msg}")
         except Exception as e:
             print(f"[PaperEngine] Error in _manage_breakeven: {e}")
+
+    def _manage_partial_tp(self, symbol, strategy, positions, latest_atr):
+        """Checks for partial take profit levels based on strategy category."""
+        try:
+            # Check if partial TP is enabled (default to True for live strategies as requested)
+            use_partial = strategy.params.get('use_partial_tp', True)
+            if not use_partial or latest_atr is None:
+                return
+
+            # Skip Stat Arb specifically as discussed (relies on Z-score exits)
+            if "stat_arb" in strategy.name.lower():
+                return
+
+            category = getattr(strategy, 'category', 'Trend Following').upper()
+            
+            # Logic mapping based on strategy categorization
+            if "TREND" in category:
+                partial_pct = 0.25
+                trigger_mult = 1.2
+            elif "BREAKOUT" in category:
+                partial_pct = 0.33
+                trigger_mult = 1.5
+            elif "REVERSION" in category or "RANGE" in category:
+                partial_pct = 0.60
+                trigger_mult = 1.0
+            elif "SCALP" in category:
+                partial_pct = 0.75
+                trigger_mult = 1.0
+            else:
+                # Default fallback for unknown categories
+                partial_pct = 0.50
+                trigger_mult = 1.5
+
+            symbol_info = mt5.symbol_info(symbol)
+            if not symbol_info: return
+
+            for pos in positions:
+                # 1. Use DB to check if a partial was already taken for this position
+                trade_rows = self.db.execute_query(
+                    "SELECT lot_size FROM trades WHERE mt5_ticket = %s AND status = 'OPENED'",
+                    (pos.ticket,)
+                )
+                if not trade_rows: continue
+                
+                db_lot = float(trade_rows[0][0])
+                current_lot = pos.volume
+                
+                # If current MT5 volume is already less than what we have in DB, assume partial already hit
+                if current_lot < db_lot - 0.001: 
+                    continue
+
+                # 2. Check if profit threshold is reached
+                is_buy = pos.type == mt5.POSITION_TYPE_BUY
+                current_price = symbol_info.bid if is_buy else symbol_info.ask
+                profit_points = (current_price - pos.price_open) if is_buy else (pos.price_open - current_price)
+                profit_points /= symbol_info.point
+                
+                trigger_points = (latest_atr * trigger_mult) / symbol_info.point
+                
+                if profit_points >= trigger_points:
+                    close_vol = round(db_lot * partial_pct, 2)
+                    
+                    # MT5 minimum volume and step check
+                    vol_step = symbol_info.volume_step
+                    close_vol = round(close_vol / vol_step) * vol_step
+                    
+                    if close_vol < symbol_info.volume_min:
+                        close_vol = symbol_info.volume_min
+                    
+                    if close_vol >= current_lot:
+                        # Safety: Don't accidentally close the whole position here
+                        continue
+
+                    print(f"[PARTIAL TP] Triggered for {symbol} ticket {pos.ticket} ({category}). Closing {close_vol} lots.")
+                    res, msg = self.order_manager.close_position(pos.ticket, volume=close_vol, comment=f"PARTIAL_{category[:7]}")
+                    
+                    if res is not None and res.retcode == mt5.TRADE_RETCODE_DONE:
+                        # 3. Update DB lot size to reflect remaining volume
+                        new_lot = round(current_lot - close_vol, 2)
+                        self.db.execute_query(
+                            "UPDATE trades SET lot_size = %s WHERE mt5_ticket = %s AND status = 'OPENED'",
+                            (new_lot, pos.ticket)
+                        )
+                        
+                        # 4. Notify Telegram
+                        notif_msg = (
+                            f"💰 <b>PARTIAL TP HIT</b>\n"
+                            f"━━━━━━━━━━━━━━━\n"
+                            f"🔸 <b>Pair:</b> {symbol}\n"
+                            f"🔸 <b>Strategy:</b> {strategy.name}\n"
+                            f"🔸 <b>Closed:</b> {close_vol} lots\n"
+                            f"🔸 <b>Remaining:</b> {new_lot} lots\n"
+                            f"🔸 <b>Reason:</b> {trigger_mult:.1f}x ATR reached\n"
+                            f"━━━━━━━━━━━━━━━"
+                        )
+                        self.notif_bot.send_sync_message(notif_msg)
+                        
+                        # 5. Move SL to Breakeven immediately upon taking partial
+                        buffer_points = 10 * symbol_info.point
+                        new_sl = pos.price_open + buffer_points if is_buy else pos.price_open - buffer_points
+                        
+                        # Only move if it improves the SL
+                        move_sl = False
+                        if is_buy and (pos.sl < new_sl or pos.sl == 0):
+                            move_sl = True
+                        elif not is_buy and (pos.sl > new_sl or pos.sl == 0):
+                            move_sl = True
+                            
+                        if move_sl:
+                            print(f"[PARTIAL TP] Moving SL to Breakeven for {pos.ticket}")
+                            self.order_manager.modify_position(pos.ticket, sl=new_sl, tp=pos.tp)
+        except Exception as e:
+            print(f"[PaperEngine] Error in _manage_partial_tp: {e}")
 
     def _reconcile_open_positions(self):
         """
@@ -513,7 +640,8 @@ class PaperEngine:
         )
         # account_id=1 is the Demo account profile (MT5 .env credentials are Demo)
         self.db.execute_query(query, (
-            trade_id, strategy_id, 'PAPER', 1, symbol, direction, lot,
+            # Use dynamic trading mode (LIVE/PAPER)
+            trade_id, strategy_id, self.trading_mode, 1, symbol, direction, lot,
             result.price, datetime.now(), 'OPENED', result.order
         ))
 
@@ -813,77 +941,44 @@ class PaperEngine:
         else:
             return 0  # Neutral / Choppy
 
-
-    # ════════════════════════════════════════════════════════════════════════════
-    # PHASE 0 FIX #1: SIGNAL DEDUPLICATION (IMPROVEMENTS)
-    # ════════════════════════════════════════════════════════════════════════════
-    
     def _clean_dedup_cache(self):
-        """
-        PHASE 0 FIX #1: Clean up old signal hashes to prevent memory leaks.
-        Removes entries older than dedup_window (prevents unbounded cache growth).
-
-        FIX (2026-04-30): The cache now stores (signal_time, tracked_at) tuples.
-        Expiry is based on tracked_at (wall clock) so D1/H4 bar timestamps —
-        which are many hours in the past — no longer cause immediate expiry.
-        Window extended to 25h to safely cover a full D1 bar + buffer.
-        """
+        """Clean up old signal hashes to prevent memory leaks."""
         from datetime import datetime, timedelta
 
         current_time = datetime.now()
-        # 25 hours covers D1 bars (24h) plus a buffer so signals aren't re-logged
-        # on the next scheduler cycle after a long-lived bar expires.
         dedup_window = timedelta(hours=25)
 
-        # Remove entries where the wall-clock tracking time is older than the window
-        expired_keys = [
-            key for key, (_, tracked_at) in self.attempted_signals.items()
-            if (current_time - tracked_at).total_seconds() > dedup_window.total_seconds()
-        ]
+        # Clean both caches
+        for cache in [self.logged_signals, self.attempted_signals]:
+            expired_keys = [
+                key for key, (_, tracked_at) in cache.items()
+                if (current_time - tracked_at).total_seconds() > dedup_window.total_seconds()
+            ]
+            for key in expired_keys:
+                del cache[key]
 
-        for key in expired_keys:
-            del self.attempted_signals[key]
-
-        if expired_keys:
-            print(f"[PaperEngine] Cleaned {len(expired_keys)} expired dedup entries")
-
-        return len(self.attempted_signals)
+        return len(self.logged_signals) + len(self.attempted_signals)
 
     def _create_signal_key(self, strat_name: str, symbol: str, timeframe: int, direction: int) -> tuple:
-        """
-        PHASE 0 FIX #1: Create a consistent signal key for deduplication.
-        Key format: (strategy_name, symbol, timeframe, direction)
-        """
+        """Create a consistent signal key for deduplication."""
         return (strat_name, symbol, timeframe, direction)
 
-    def _check_signal_duplicate(self, signal_key: tuple, signal_time) -> bool:
-        """
-        PHASE 0 FIX #1: Check if this signal has been processed recently.
-        Returns: True if duplicate (should skip), False if new (should process)
-
-        FIX (2026-04-30): Cache values are now (signal_time, tracked_at) tuples.
-        Duplicate detection still uses signal_time equality (same bar = same signal),
-        but expiry is driven by tracked_at (wall clock) in _clean_dedup_cache.
-        """
-        if signal_key in self.attempted_signals:
-            stored_signal_time, _ = self.attempted_signals[signal_key]
+    def _check_signal_duplicate(self, signal_key: tuple, signal_time, cache_type='LOG') -> bool:
+        """Checks if a signal has already been processed for LOG or TRADE."""
+        cache = self.logged_signals if cache_type == 'LOG' else self.attempted_signals
+        
+        if signal_key in cache:
+            stored_signal_time, _ = cache[signal_key]
             if stored_signal_time == signal_time:
-                return True  # Duplicate: same bar, already processed
+                return True
+        return False
 
-        return False  # New signal
-
-    def _track_processed_signal(self, signal_key: tuple, signal_time):
-        """
-        PHASE 0 FIX #1: Mark this signal as processed.
-
-        FIX (2026-04-30): Store (signal_time, datetime.now()) so the cache
-        expiry in _clean_dedup_cache is anchored to wall clock, not the bar's
-        open timestamp. D1 bar timestamps are 24h in the past the moment they
-        close, which caused the old single-value cache to expire immediately and
-        re-log the same signal every hour.
-        """
-        self.attempted_signals[signal_key] = (signal_time, datetime.now())
+    def _track_processed_signal(self, signal_key: tuple, signal_time, cache_type='LOG'):
+        """Marks a signal as processed for LOG or TRADE."""
+        cache = self.logged_signals if cache_type == 'LOG' else self.attempted_signals
+        cache[signal_key] = (signal_time, datetime.now())
 
         # Periodically clean cache
-        if len(self.attempted_signals) % 100 == 0:
+        total_len = len(self.logged_signals) + len(self.attempted_signals)
+        if total_len > 0 and total_len % 100 == 0:
             self._clean_dedup_cache()

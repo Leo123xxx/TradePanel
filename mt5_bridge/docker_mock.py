@@ -80,6 +80,11 @@ class MT5MockModule(types.ModuleType):
                         self.point = 0.00001 if "JPY" not in symbol else 0.001
                         self.trade_mode = 4  # mt5.SYMBOL_TRADE_MODE_FULL
                         self.trade_calc_mode = 0  # forex
+                        self.spread = d.get("spread", 10)
+                        self.trade_tick_value = d.get("trade_tick_value", 1.0)
+                        self.trade_tick_size = d.get("trade_tick_size", self.point)
+                        self.trade_contract_size = d.get("trade_contract_size", 100000)
+                        self.margin_initial = d.get("margin_initial", 0.0)
                         self.visible = True
                         self.volume_min = 0.01
                         self.volume_max = 100.0

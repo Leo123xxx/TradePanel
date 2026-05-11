@@ -18,8 +18,8 @@ Conflict strategy: ON CONFLICT DO NOTHING
 
 TYPICAL GAIN
 ------------
-  Stock CFDs H4 bars:  ~200-400 (Exness)  →  700+ after Yahoo fill
-  D1 history:          1-3 years (Exness) →  10+ years after Yahoo fill
+  Stock CFDs H4 bars:  ~200-400 (Exness)  ->  700+ after Yahoo fill
+  D1 history:          1-3 years (Exness) ->  10+ years after Yahoo fill
 
 USAGE
 -----
@@ -52,7 +52,7 @@ from data.db_client import DBClient
 
 
 # ---------------------------------------------------------------------------
-# Symbol map: Exness CFD symbol  →  Yahoo Finance ticker
+# Symbol map: Exness CFD symbol  ->  Yahoo Finance ticker
 # ---------------------------------------------------------------------------
 YAHOO_SYMBOL_MAP = {
     "NVDA":  "NVDA",   # NVIDIA stock CFD
@@ -148,7 +148,7 @@ def download_h1(yahoo_ticker: str) -> pd.DataFrame | None:
     try:
         import yfinance as yf
     except ImportError:
-        print("  ✗ yfinance not installed.  Run: pip install yfinance --break-system-packages")
+        print("  ! yfinance not installed.  Run: pip install yfinance --break-system-packages")
         return None
 
     start = (datetime.now() - timedelta(days=729)).strftime("%Y-%m-%d")
@@ -156,7 +156,7 @@ def download_h1(yahoo_ticker: str) -> pd.DataFrame | None:
         ticker = yf.Ticker(yahoo_ticker)
         df = ticker.history(start=start, interval="1h", auto_adjust=True)
         if df is None or df.empty:
-            print(f"  ✗ No H1 data returned for {yahoo_ticker}")
+            print(f"  ! No H1 data returned for {yahoo_ticker}")
             return None
 
         df = _normalise_columns(df)
@@ -167,7 +167,7 @@ def download_h1(yahoo_ticker: str) -> pd.DataFrame | None:
         return df
 
     except Exception as exc:
-        print(f"  ✗ H1 download error [{yahoo_ticker}]: {exc}")
+        print(f"  ! H1 download error [{yahoo_ticker}]: {exc}")
         return None
 
 
@@ -188,7 +188,7 @@ def download_d1(yahoo_ticker: str, years: int = 10) -> pd.DataFrame | None:
         ticker = yf.Ticker(yahoo_ticker)
         df = ticker.history(start=start, interval="1d", auto_adjust=True)
         if df is None or df.empty:
-            print(f"  ✗ No D1 data returned for {yahoo_ticker}")
+            print(f"  ! No D1 data returned for {yahoo_ticker}")
             return None
 
         df = _normalise_columns(df)
@@ -203,7 +203,7 @@ def download_d1(yahoo_ticker: str, years: int = 10) -> pd.DataFrame | None:
         return df
 
     except Exception as exc:
-        print(f"  ✗ D1 download error [{yahoo_ticker}]: {exc}")
+        print(f"  ! D1 download error [{yahoo_ticker}]: {exc}")
         return None
 
 
@@ -234,15 +234,15 @@ def print_coverage(coverage: dict, label: str = ""):
         print(f"\n  {label}")
     header = f"  {'Pair':<10} {'TF':<6} {'Bars':>7}  {'From':<12}  {'To':<12}  Note"
     print(header)
-    print("  " + "─" * 68)
+    print("  " + "-" * 68)
     for pair in sorted(coverage):
         for tf, info in coverage[pair].items():
             count  = info["count"]
-            min_ts = info["min"].strftime("%Y-%m-%d") if info["min"] else "—"
-            max_ts = info["max"].strftime("%Y-%m-%d") if info["max"] else "—"
+            min_ts = info["min"].strftime("%Y-%m-%d") if info["min"] else "-"
+            max_ts = info["max"].strftime("%Y-%m-%d") if info["max"] else "-"
             note   = ""
             if tf == "H4":
-                note = "✓ GOOD" if count >= MIN_H4_BARS_TARGET else "⚠ LOW (target ≥500)"
+                note = "[OK] GOOD" if count >= MIN_H4_BARS_TARGET else "[!] LOW (target >=500)"
             print(f"  {pair:<10} {tf:<6} {count:>7}  {min_ts:<12}  {max_ts:<12}  {note}")
     print()
 
@@ -263,11 +263,11 @@ def process_pair(pair: str, yahoo_ticker: str, db: DBClient, d1_years: int) -> d
         "errors":        [],
     }
 
-    print(f"\n  {'─' * 57}")
-    print(f"  {pair}  ←  {yahoo_ticker}")
-    print(f"  {'─' * 57}")
+    print(f"\n  {'-' * 57}")
+    print(f"  {pair}  <-  {yahoo_ticker}")
+    print(f"  {'-' * 57}")
 
-    # ── H1  →  H1, H2, H4  ───────────────────────────────────────────────
+    # -- H1  ->  H1, H2, H4  -----------------------------------------------
     print(f"  Downloading H1 (729 days)... ", end="", flush=True)
     h1_df = download_h1(yahoo_ticker)
 
@@ -282,25 +282,25 @@ def process_pair(pair: str, yahoo_ticker: str, db: DBClient, d1_years: int) -> d
                 tf_df = _resample_ohlcv(h1_df, RESAMPLE_RULES[tf])
 
             if tf_df.empty:
-                print(f"  – {tf}: no complete bars to insert")
+                print(f"  - {tf}: no complete bars to insert")
                 continue
 
             tuples = _to_insert_tuples(tf_df, pair, tf)
             try:
                 db.insert_market_data(tuples)
                 summary["bars_inserted"][tf] = len(tuples)
-                print(f"  ✓ {tf}: {len(tuples):,} bars upserted  "
-                      f"({tf_df.index[0].strftime('%Y-%m-%d')} → "
+                print(f"  [OK] {tf}: {len(tuples):,} bars upserted  "
+                      f"({tf_df.index[0].strftime('%Y-%m-%d')} -> "
                       f"{tf_df.index[-1].strftime('%Y-%m-%d')})")
             except Exception as exc:
                 msg = f"{tf}: {exc}"
                 summary["errors"].append(msg)
-                print(f"  ✗ {msg}")
+                print(f"  ! {msg}")
     else:
         print("FAILED — skipping H1/H2/H4")
         summary["errors"].append("H1 download failed")
 
-    # ── D1  →  stored directly  ──────────────────────────────────────────
+    # -- D1  ->  stored directly  ------------------------------------------
     print(f"  Downloading D1 ({d1_years} years)... ", end="", flush=True)
     d1_df = download_d1(yahoo_ticker, years=d1_years)
 
@@ -310,13 +310,13 @@ def process_pair(pair: str, yahoo_ticker: str, db: DBClient, d1_years: int) -> d
         try:
             db.insert_market_data(tuples)
             summary["bars_inserted"]["D1"] = len(tuples)
-            print(f"  ✓ D1: {len(tuples):,} bars upserted  "
-                  f"({d1_df.index[0].strftime('%Y-%m-%d')} → "
+            print(f"  [OK] D1: {len(tuples):,} bars upserted  "
+                  f"({d1_df.index[0].strftime('%Y-%m-%d')} -> "
                   f"{d1_df.index[-1].strftime('%Y-%m-%d')})")
         except Exception as exc:
             msg = f"D1: {exc}"
             summary["errors"].append(msg)
-            print(f"  ✗ {msg}")
+            print(f"  ! {msg}")
     else:
         print("FAILED")
         summary["errors"].append("D1 download failed")
@@ -345,7 +345,7 @@ def run(pairs_filter: list = None, d1_years: int = 10, check_only: bool = False)
     print("  TradePanel — Yahoo Finance Historical Data Fill")
     print(f"  Started : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"  Pairs   : {', '.join(target_pairs.keys())}")
-    print(f"  H1      : up to 729 days  →  resampled to H1 / H2 / H4")
+    print(f"  H1      : up to 729 days  ->  resampled to H1 / H2 / H4")
     print(f"  D1      : {d1_years} years of daily bars")
     print(f"  Conflict: ON CONFLICT DO NOTHING  (MT5 bars always win)")
     print("=" * 62)
@@ -383,13 +383,13 @@ def run(pairs_filter: list = None, d1_years: int = 10, check_only: bool = False)
     # Insert totals table
     print("  Bars inserted this run:")
     print(f"  {'Pair':<10} {'H1':>7}  {'H2':>7}  {'H4':>7}  {'D1':>8}  Errors")
-    print("  " + "─" * 60)
+    print("  " + "-" * 60)
     total_inserted = 0
     for s in all_summaries:
         ins = s["bars_inserted"]
         run_total = sum(ins.values())
         total_inserted += run_total
-        errs = " | ".join(s["errors"]) if s["errors"] else "—"
+        errs = " | ".join(s["errors"]) if s["errors"] else "-"
         print(
             f"  {s['pair']:<10}"
             f" {ins.get('H1', 0):>7,}"

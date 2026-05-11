@@ -47,7 +47,8 @@ class MyStrategy(BaseStrategy):
 - **Input**: OHLCV DataFrame for symbol/timeframe
 - **Output**: DataFrame with 'signal' column
 - **Timing**: Entry on next bar open after signal close
-- **Exit**: Via take profit (TP) or stop loss (SL)
+- **Exit**: Via take profit (TP), stop loss (SL), or **Automated Trade Management** (Partial TP + Breakeven).
+- **Trade Management**: Live bots use ATR-based partial exits (Stage 1) before hitting the final TP target.
 
 ### Parameters
 All strategies use `{param: [min, max]}` bounds to prevent overfitting:
@@ -62,127 +63,40 @@ parameters:
 
 ---
 
-## Top 5 Performers
+## Top 5 Performers (WFO Verified - May 2026)
 
-### 1. Dual EMA Fractal (55.62% Win Rate) ⭐ BEST
+### 1. RSI Pullback (80% WFO Pass Rate) ⭐ STABLE
+**Type**: Trend + Reversion Hybrid  
+**Assets**: EURUSD  
+**Timeframes**: H4  
+**Verdict**: Most stable performer across all windows.
 
+### 2. SuperTrend (60% WFO Pass Rate) ⭐ AGGRESSIVE
 **Type**: Trend Following  
 **Assets**: EURUSD  
-**Timeframes**: H1  
-**Regime**: TRENDING
+**Timeframes**: H4  
+**Verdict**: Massive Sharpe ratio (26.2) in recent windows.
 
-**How It Works**:
-- Uses 200-period EMA as trend filter
-- Identifies fractal support/resistance levels
-- Enters on fractal breakout in trend direction
-- TP/SL based on ATR
-
-**Parameters**:
-```yaml
-ema_period: [150, 250]        # Default: 200
-tp_atr_mult: [1.5, 3.0]       # Default: 2.0
-sl_atr_mult: [1.0, 2.0]       # Default: 1.5
-```
-
-**Best For**: Trending markets, EURUSD during London/NY overlap
-
----
-
-### 2. COT Sentiment (52.55% Win Rate)
-
-**Type**: Advanced / Sentiment  
-**Assets**: XAUUSD, EURUSD, GBPUSD  
-**Timeframes**: D1, W1  
-**Regime**: TRENDING
-
-**How It Works**:
-- Reads COT (Commitments of Traders) sentiment
-- Long entries when large traders are bullish
-- Short entries when sentiment is bearish
-- Filters with EMA for trend confirmation
-
-**Parameters**:
-```yaml
-sentiment_threshold: [70, 90]  # Conviction level
-ema_filter: [40, 60]           # Trend confirmation
-```
-
-**Best For**: Longer-term trades, fundamental analysis
-
----
-
-### 3. RSI Bounce (52.16% Win Rate)
-
-**Type**: Mean Reversion  
-**Assets**: EURUSD  
-**Timeframes**: H1  
-**Regime**: RANGING
-
-**How It Works**:
-- Enters when RSI oversold/overbought
-- Waits for bounce confirmation
-- Exits on RSI mean reversion completion
-- Works best in choppy markets
-
-**Parameters**:
-```yaml
-rsi_period: [10, 20]           # Default: 14
-oversold: [20, 35]             # Default: 30
-overbought: [65, 80]           # Default: 70
-tp_atr_mult: [1.0, 2.0]        # Default: 1.5
-```
-
-**Best For**: Ranging markets, intraday trading
-
----
-
-### 4. VWAP Momentum (51.05% Win Rate)
-
-**Type**: Mean Reversion  
-**Assets**: GBPUSD  
-**Timeframes**: M15, M30  
-**Regime**: RANGING / HIGH_VOL
-
-**How It Works**:
-- Uses Volume Weighted Average Price
-- Enters when price deviates >2 std devs from VWAP
-- Expects mean reversion to VWAP
-- Tight stops, quick exits
-
-**Parameters**:
-```yaml
-std_dev_mult: [1.5, 3.0]       # Deviation threshold
-atr_period: [10, 20]           # Volatility measure
-tp_atr_mult: [1.0, 2.0]        # Default: 1.5
-```
-
-**Best For**: Scalping, volatile pairs
-
----
-
-### 5. Session Momentum (50.70% Win Rate)
-
-**Type**: Session-Based  
+### 3. Dual EMA Fractal (60% WFO Pass Rate)
+**Type**: Trend Following  
 **Assets**: XAUUSD  
-**Timeframes**: H1  
-**Regime**: TRENDING / ANY
+**Timeframes**: H4  
+**Verdict**: Consistent high-Sharpe performance in current market regime.
 
-**How It Works**:
-- Trades London/NY session overlaps
-- Identifies high/low of previous session
-- Enters on breakout confirmation
-- Uses momentum confirmation
+### 4. Gold Momentum Breakout (60% WFO Pass Rate)
+**Type**: Breakout  
+**Assets**: XAUUSD  
+**Timeframes**: H4  
+**Verdict**: Optimized for recent gold volatility.
 
-**Parameters**:
-```yaml
-session_start_utc: [13, 14]    # London 13:00 UTC
-session_end_utc: [17, 18]      # End time
-high_low_buffer_pips: [20, 50] # Default: 20
-```
-
-**Best For**: Gold trading, session-based entries
+### 5. Session Momentum (60% WFO Pass Rate)
+**Type**: Session-Based  
+**Assets**: EURUSD  
+**Timeframes**: H4  
+**Verdict**: Solid performance during London/NY overlaps.
 
 ---
+
 
 ## All 23+ Strategies
 

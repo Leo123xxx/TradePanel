@@ -23,6 +23,7 @@ REM ── COMMANDS ────────────────────
 
 if /i "%CMD%"=="start"   goto START
 if /i "%CMD%"=="stop"    goto STOP
+if /i "%CMD%"=="restart" goto RESTART
 if /i "%CMD%"=="status"  goto STATUS
 if /i "%CMD%"=="logs"    goto LOGS
 if /i "%CMD%"=="rebuild" goto REBUILD
@@ -43,6 +44,13 @@ goto END
 echo Stopping all TradePanel services...
 call "%~dp0scripts\stop_services.bat"
 call "%~dp0scripts\START_DOCKER.bat" /stop
+goto END
+
+:RESTART
+echo Restarting all TradePanel services...
+call "%~dp0scripts\stop_services.bat"
+call "%~dp0scripts\START_DOCKER.bat" /stop
+call "%~dp0scripts\START_DOCKER.bat"
 goto END
 
 :STATUS
@@ -96,6 +104,7 @@ echo.
 echo Commands:
 echo   start     Start all services (Docker + MT5 Bridge)
 echo   stop      Stop all services
+echo   restart   Restart all services
 echo   status    Show container status
 echo   logs      Tail all service logs
 echo   rebuild   Force rebuild and restart containers

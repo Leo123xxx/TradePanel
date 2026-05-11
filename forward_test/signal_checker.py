@@ -67,6 +67,12 @@ class SignalChecker:
         older than they actually are.
         """
         current_time = pd.Timestamp.utcnow().tz_localize(None)
+        
+        # Check if we are in the weekend (Fri 22:00 to Sun 22:00 UTC)
+        # and the data is from Friday.
+        if self._is_weekend_gap(latest_bar_time, current_time):
+            return True, f"Data is from weekend (last bar: {latest_bar_time})"
+
         time_diff = current_time - latest_bar_time
         age_hours = time_diff.total_seconds() / 3600
         

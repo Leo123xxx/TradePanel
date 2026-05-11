@@ -1,0 +1,284 @@
+---
+name: TradePanel Daily Automation (v2)
+description: Complete validation, backtesting, and Telegram reporting for TradePanel
+tags: [trading, automation, backtesting, reporting, telegram]
+---
+
+# TradePanel Daily Automation Suite — v2
+
+**Purpose:** Validate all strategies, run overnight backtests, generate recommendations, and post comprehensive summary to Telegram.
+
+---
+
+## EXECUTION STEPS
+
+### STEP 0: ENVIRONMENT DETECTION
+
+```bash
+REPO=$(find /sessions -maxdepth 3 -name "leo123xxx--TradePanel" -type d 2>/dev/null | head -1)
+TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+LOG_FILE="$REPO/results/validation_daily.log"
+
+if [ -z "$REPO" ]; then
+  echo "❌ TradePanel repo not found"
+  exit 1
+fi
+
+echo "[${TIMESTAMP}] Starting daily automation..."
+```
+
+---
+
+### STEP 1: VALIDATE CORE COMPONENTS
+
+```bash
+VALIDATION_CHECKS=(
+  "docker|Docker containers"
+  "config/config.yaml|Main config"
+  "config/strategies.yaml|Strategy config"
+  "strategies/|Strategy files"
+  "results/overnight/|Backtest results"
+)
+
+PASS_CHECKS=0
+FAIL_CHECKS=0
+
+for check in "${VALIDATION_CHECKS[@]}"; do
+  path="${check%|*}"
+  name="${check#*|}"
+  
+  if [ -f "$REPO/$path" ] || [ -d "$REPO/$path" ]; then
+    echo "✅ $name"
+    ((PASS_CHECKS++))
+  else
+    echo "❌ $name (MISSING)"
+    ((FAIL_CHECKS++))
+  fi
+done
+```
+
+---
+
+### STEP 2: CHECK DOCKER STATUS
+
+```bash
+DOCKER_STATUS="UNKNOWN"
+CONTAINERS_UP=()
+
+if docker ps > /dev/null 2>&1; then
+  CONTAINERS_UP=($(docker ps --format "{{.Names}}" | grep tradepanel))
+  if [ ${#CONTAINERS_UP[@]} -gt 0 ]; then
+    DOCKER_STATUS="UP (${#CONTAINERS_UP[@]} containers)"
+  else
+    DOCKER_STATUS="OFFLINE (no containers running)"
+  fi
+else
+  DOCKER_STATUS="UNREACHABLE"
+fi
+```
+
+---
+
+### STEP 3: RUN OVERNIGHT BACKTEST (Docker mode)
+
+```bash
+if [[ "$DOCKER_STATUS" == "UP"* ]]; then
+  echo "Running overnight backtest (Docker mode)..."
+  
+  docker exec tradepanel-backend python scripts/overnight_backtest.py --full 2>&1 | tee "$LOG_FILE.backtest"
+  
+  # Extract results
+  LATEST_BT=$(ls -t "$REPO/results/overnight/"*_backtest_report.md 2>/dev/null | head -1)
+  if [ -n "$LATEST_BT" ]; then
+    PASS_COUNT=$(grep "^| ✅ PASS" "$LATEST_BT" | head -1 | grep -o "[0-9]*" | head -1)
+    REVIEW_COUNT=$(grep "^| ⚠️ REVIEW" "$LATEST_BT" | head -1 | grep -o "[0-9]*" | head -1)
+    TOTAL=$(grep -o "Total combos.*[0-9]*" "$LATEST_BT" | grep -o "[0-9]*$")
+    
+    if [ -n "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+      PASS_RATE=$(echo "scale=1; $PASS_COUNT * 100 / $TOTAL" | bc)
+    else
+      PASS_RATE=0
+    fi
+  fi
+else
+  echo "Docker offline — reading last results file"
+  LATEST_BT=$(ls -t "$REPO/results/overnight/"*_backtest_report.md 2>/dev/null | head -1)
+fi
+```
+
+---
+
+### STEP 4: RUN WFO VALIDATION (if Docker up)
+
+```bash
+if [[ "$DOCKER_STATUS" == "UP"* ]]; then
+  echo "Running WFO validation..."
+  
+  docker exec tradepanel-backend python scripts/run_wfo_all.py \
+    --n_windows 3 --is_pct 0.70 --oos_pct 0.20 2>&1 | tee -a "$LOG_FILE.wfo"
+  
+  # Extract WFO results
+  WFO_SUMMARY="$REPO/results/wfo_master_summary.md"
+  if [ -f "$WFO_SUMMARY" ]; then
+    WFO_PASS=$(grep "PASS\|FAIL" "$WFO_SUMMARY" | grep -c "PASS")
+    WFO_FAIL=$(grep "PASS\|FAIL" "$WFO_SUMMARY" | grep -c "FAIL")
+  fi
+fi
+```
+
+---
+
+### STEP 5: GENERATE RECOMMENDATIONS
+
+```bash
+if [[ "$DOCKER_STATUS" == "UP"* ]]; then
+  echo "Generating recommendations..."
+  
+  docker exec tradepanel-backend python scripts/generate_recommendations.py 2>&1 | tee -a "$LOG_FILE.reco"
+  
+  # Extract summary
+  LATEST_RECO=$(ls -t "$REPO/results/recommendations/"*_recommendations.md 2>/dev/null | head -1)
+  if [ -n "$LATEST_RECO" ]; then
+    REGRESSIONS=$(grep -c "Regressions\|→ REVIEW" "$LATEST_RECO" || echo 0)
+    NEAR_PASS=$(grep -c "Near-PASS\|blocker" "$LATEST_RECO" || echo 0)
+    P1_CRITICAL=$(grep -c "P1\|CRITICAL\|Sharpe < 0" "$LATEST_RECO" || echo 0)
+  fi
+fi
+```
+
+---
+
+### STEP 6: CHECK SYSTEM HEALTH
+
+```bash
+# Error log analysis
+ERRORS_24H=$(grep -c "ERROR\|CRITICAL" "$REPO/logs/main.log" 2>/dev/null || echo 0)
+
+# Telegram bot health
+TELEGRAM_LAST=$(stat -c %Y "$REPO/logs/telegram_bot.log" 2>/dev/null || echo 0)
+TELEGRAM_AGE=$(( ($(date +%s) - TELEGRAM_LAST) / 3600 ))
+
+if [ $TELEGRAM_AGE -lt 24 ]; then
+  TELEGRAM_STATUS="✅ Active (${TELEGRAM_AGE}h ago)"
+else
+  TELEGRAM_STATUS="❌ Stale (${TELEGRAM_AGE}h ago)"
+fi
+
+# Database connectivity
+if [[ "$DOCKER_STATUS" == "UP"* ]]; then
+  DB_STATUS=$(docker exec tradepanel-db pg_isready -h localhost 2>/dev/null && echo "✅ Connected" || echo "❌ Down")
+else
+  DB_STATUS="⚠️ Unknown (Docker offline)"
+fi
+```
+
+---
+
+### STEP 7: BUILD TELEGRAM MESSAGE
+
+```bash
+# Build markdown summary for Telegram
+TELEGRAM_MSG="
+🤖 **TradePanel Daily Report — $TIMESTAMP**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 **BACKTEST RESULTS (Overnight)**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ PASS: $PASS_COUNT / $TOTAL (${PASS_RATE}%)
+⚠️  REVIEW: $REVIEW_COUNT
+❌ ERROR/SKIP: $(( TOTAL - PASS_COUNT - REVIEW_COUNT ))
+"
+
+if [ -n "$WFO_PASS" ]; then
+  TELEGRAM_MSG="${TELEGRAM_MSG}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏆 **WFO VALIDATION**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ PASS: $WFO_PASS
+❌ FAIL: $WFO_FAIL
+"
+fi
+
+TELEGRAM_MSG="${TELEGRAM_MSG}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ **RECOMMENDATIONS**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 Regressions: $REGRESSIONS
+📈 Near-Pass candidates: $NEAR_PASS
+🔴 P1 Critical: $P1_CRITICAL
+"
+
+TELEGRAM_MSG="${TELEGRAM_MSG}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔧 **SYSTEM HEALTH**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🐳 Docker: $DOCKER_STATUS
+🗄️  Database: $DB_STATUS
+📢 Telegram Bot: $TELEGRAM_STATUS
+📋 Errors (24h): $ERRORS_24H
+"
+```
+
+---
+
+### STEP 8: POST TO TELEGRAM
+
+```bash
+# Get Telegram bot token and chat ID from environment or config
+TELEGRAM_TOKEN=$(grep "telegram_token" "$REPO/config/config.yaml" | awk '{print $2}' | tr -d '"')
+TELEGRAM_CHAT_ID=$(grep "telegram_chat_id" "$REPO/config/config.yaml" | awk '{print $2}' | tr -d '"')
+
+if [ -n "$TELEGRAM_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+  curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+    -d "chat_id=${TELEGRAM_CHAT_ID}" \
+    -d "text=${TELEGRAM_MSG}" \
+    -d "parse_mode=Markdown" > /dev/null
+    
+  echo "✅ Telegram message sent"
+else
+  echo "⚠️  Telegram credentials not found in config"
+fi
+```
+
+---
+
+### STEP 9: WRITE SUMMARY LOG ENTRY
+
+```bash
+cat >> "$LOG_FILE" << LOGENTRY
+[${TIMESTAMP}] MODE=daily-v2 | PASS=${PASS_COUNT}/${TOTAL} (${PASS_RATE}%) | WFO_PASS=${WFO_PASS} | REGRESSIONS=${REGRESSIONS} | P1_CRITICAL=${P1_CRITICAL} | DOCKER=${DOCKER_STATUS} | DB=${DB_STATUS} | TELEGRAM=${TELEGRAM_STATUS} | ERRORS_24H=${ERRORS_24H} | STATUS=$([ $PASS_RATE -ge 70 ] && echo "OK" || echo "WARN")
+LOGENTRY
+
+echo "✅ Log entry written"
+```
+
+---
+
+## DEPLOYMENT
+
+**Recommended Schedule:** Daily at 00:00 UTC (after overnight backtests complete)
+
+```bash
+# In docker_jobs.py or APScheduler config:
+scheduler.add_job(
+    func=run_daily_automation,
+    trigger="cron",
+    hour=0,
+    minute=0,
+    timezone="UTC",
+    id="daily_tradepanel_automation_v2"
+)
+```
+
+---
+
+## SUCCESS CRITERIA
+
+- ✅ All components validated
+- ✅ Backtest executed (if Docker up)
+- ✅ WFO validation run (if Docker up)
+- ✅ Recommendations generated
+- ✅ Telegram message posted
+- ✅ Summary log entry written
+- ✅ Report file saved
+
