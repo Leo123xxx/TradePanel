@@ -424,9 +424,16 @@ void ProcessManagement() {
 
 ENUM_STRAT_PROFILE GetProfileFromComment(string comment) {
     string low = comment; StringToLower(low);
-    if(StringFind(low, "scalp") >= 0 || StringFind(low, "mql") >= 0 || StringFind(low, "inkcake") >= 0) return PROFILE_SCALP;
-    if(StringFind(low, "swing") >= 0 || StringFind(low, "trend") >= 0 || StringFind(low, "fractal") >= 0 || StringFind(low, "pull") >= 0) return PROFILE_SWING;
-    if(StringFind(low, "breakout") >= 0 || StringFind(low, "squeeze") >= 0 || StringFind(low, "denchian") >= 0) return PROFILE_BREAKOUT;
+    // Scalp Profiles
+    if(StringFind(low, "scalp") >= 0 || StringFind(low, "mql") >= 0 || StringFind(low, "orb") >= 0) return PROFILE_SCALP;
+    // Swing & Trend Profiles
+    if(StringFind(low, "swing") >= 0 || StringFind(low, "trend") >= 0 || StringFind(low, "fractal") >= 0 || 
+       StringFind(low, "pull") >= 0 || StringFind(low, "div") >= 0 || StringFind(low, "confluence") >= 0 ||
+       StringFind(low, "rsi") >= 0 || StringFind(low, "macd") >= 0 || StringFind(low, "ma") >= 0) return PROFILE_SWING;
+    // Breakout & Momentum Profiles
+    if(StringFind(low, "breakout") >= 0 || StringFind(low, "squeeze") >= 0 || StringFind(low, "donchian") >= 0 || 
+       StringFind(low, "momentum") >= 0 || StringFind(low, "turtle") >= 0) return PROFILE_BREAKOUT;
+    
     return PROFILE_DEFAULT;
 }
 
