@@ -60,6 +60,8 @@ class SwingPullbackStrategy(BaseStrategy):
             (df['close'] < df['open']) & 
             (df['adx'] > adx_min)
         )
+        # Layer 2 — Body Ratio
+        long_cond, short_cond = self.apply_body_ratio_filter(df, long_cond, short_cond)
 
         df.loc[long_cond, 'signal'] = 1
         df.loc[short_cond, 'signal'] = -1

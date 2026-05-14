@@ -22,9 +22,9 @@
 
 ---
 
-## ✨ Status: 🚀 v1.1 — Dashboard Modernization
-**Version**: 1.1.0 "Visual Intelligence"  
-**Release Date**: May 11, 2026  
+## ✨ Status: 🚀 v3.0 — Entry Logic Hardening
+**Version**: 3.0.0 "Execution Precision"  
+**Release Date**: May 14, 2026  
 **Consolidation**: [Tier 1 & 2 Fleet](results/STRATEGY_TIER_CONSOLIDATION.md)  
 **WFO Mastery**: 5-Window Validation Complete  
 
@@ -36,12 +36,16 @@
 - **Caching**: SWR-enabled (TanStack) for high efficiency
 - **Notifications**: Telegram (Active)
 
-### Release Milestones (v1.1)
+### Release Milestones (v3.0)
+- ✅ **Directional Close Confirmation**: Enforced mandatory `close > open` (Buy) and `close < open` (Sell) filters on all active strategies to prevent whipsaws.
+- ✅ **Candle Body Ratio Gate**: Integrated Layer 2 "Conviction" filter; trades now require a minimum 50% body-to-range ratio to ignore weak dojis and wicks.
+- ✅ **Hardened Strategy Baseline**: Generated a [Gold Standard Baseline](docs/guides/STRATEGY_BASELINE_SUMMARY.md) for all active pairs to protect against future over-optimization.
+- ✅ **Observability 2.0**: Enhanced execution logging to report candle characteristics (Body%, Color, OHLC) directly in the bot logs and Telegram alerts.
+- ✅ **Bulk Configuration Synchronization**: Unified the `strategies.yaml` configuration across the fleet with hardened parameter defaults.
+
+### Previous Milestones (v1.1)
 - ✅ **Dashboard Modernization**: Unified high-level overview of active strategy settings and configurations.
 - ✅ **Efficiency Boost**: Integrated SWR caching to reduce redundant API requests and improve UI responsiveness.
-- ✅ **Advanced Filtering**: Added server-side filtering for backtests (Win Rate, Sharpe, Profit Factor, Drawdown).
-- ✅ **Intelligence Expansion**: Real-time cross-referencing between live config and performance metrics.
-- ✅ **Fleet Consolidation**: 12 Tier 1 strategies promoted to production.
 
 ---
 

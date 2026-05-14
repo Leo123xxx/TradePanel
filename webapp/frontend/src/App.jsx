@@ -1809,6 +1809,7 @@ function useWhatsAppStatus() {
 function WhatsAppStatusCard() {
   const wa = useWhatsAppStatus()
   const [qrUrl, setQrUrl] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const statusColor = s => ({
     WORKING: 'var(--success)',
@@ -1820,12 +1821,18 @@ function WhatsAppStatusCard() {
   }[s] || 'var(--text-secondary)')
 
   async function handleRefreshQR() {
+    setLoading(true)
     try {
       const res = await fetch(`${API}/api/whatsapp/qr`, { method: 'POST' })
       const data = await res.json()
-      if (data.qr_url) setQrUrl(data.qr_url)
+      if (data.qr_image_url) {
+        // Append timestamp to avoid caching
+        setQrUrl(`${API}${data.qr_image_url}?t=${Date.now()}`)
+      }
     } catch (e) {
       console.error(e)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -1849,10 +1856,36 @@ function WhatsAppStatusCard() {
               {wa.phone}
             </span>
           </div>
-          {!wa.connected && (
-            <div style={{ marginTop: '0.5rem', fontSize: '0.72rem' }}>
-              <button className="bt-apply" onClick={handleRefreshQR} style={{width:'100%', marginBottom:4}}>Setup Session</button>
-              {qrUrl && <div style={{marginTop:4, textAlign:'center'}}><a href={qrUrl} target="_blank" rel="noreferrer" style={{color:'var(--accent-primary)'}}>Open WAHA Dashboard</a></div>}
+          
+          {wa.status === 'STARTING' && (
+            <div style={{ marginTop: '0.5rem', fontSize: '0.7rem', color: 'var(--warning)', textAlign: 'center' }}>
+              Initializing browser... Please wait.
+            </div>
+          )}
+
+          {wa.status === 'SCAN_QR_CODE' && !qrUrl && (
+            <button className="bt-apply" onClick={handleRefreshQR} style={{width:'100%', marginTop: '0.5rem'}}>Show QR Code</button>
+          )}
+
+          {wa.status === 'SCAN_QR_CODE' && qrUrl && (
+            <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
+              <div style={{ background: '#fff', padding: '8px', borderRadius: '8px', display: 'inline-block' }}>
+                <img src={qrUrl} alt="WhatsApp QR" style={{ width: '150px', height: '150px', display: 'block' }} />
+              </div>
+              <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Scan with WhatsApp</p>
+              <button className="bt-btn secondary" onClick={handleRefreshQR} style={{ fontSize: '0.65rem', padding: '2px 8px' }}>Refresh QR</button>
+            </div>
+          )}
+
+          {!wa.connected && wa.status !== 'SCAN_QR_CODE' && wa.status !== 'STARTING' && (
+            <button className="bt-apply" onClick={handleRefreshQR} disabled={loading} style={{width:'100%', marginTop: '0.5rem'}}>
+              {loading ? 'Starting...' : 'Setup Session'}
+            </button>
+          )}
+          
+          {wa.connected && (
+            <div style={{ marginTop: '0.5rem', fontSize: '0.7rem', color: 'var(--success)', textAlign: 'center' }}>
+              ✓ Notifications Active
             </div>
           )}
         </div>
@@ -1860,6 +1893,7 @@ function WhatsAppStatusCard() {
     </div>
   )
 }
+
 
 function useConnectivity() {
   const [health, setHealth] = React.useState(null)

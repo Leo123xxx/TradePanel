@@ -51,8 +51,19 @@ class DonchianTrendStrategy(BaseStrategy):
         df["adx"] = adx_df["ADX_14"]
 
         # Signals
-        long_cond = (df["close"] > df["donchian_high"]) & (df["adx"] > p["adx_min"])
-        short_cond = (df["close"] < df["donchian_low"]) & (df["adx"] > p["adx_min"])
+        long_cond = (
+            (df["close"] > df["donchian_high"]) & 
+            (df["adx"] > p["adx_min"]) &
+            (df["close"] > df["open"])  # NEW: Directional Close
+        )
+        short_cond = (
+            (df["close"] < df["donchian_low"]) & 
+            (df["adx"] > p["adx_min"]) &
+            (df["close"] < df["open"])  # NEW: Directional Close
+        )
+
+        # Layer 2 — Body Ratio
+        long_cond, short_cond = self.apply_body_ratio_filter(df, long_cond, short_cond)
 
         df.loc[long_cond, "signal"] = 1
         df.loc[short_cond, "signal"] = -1

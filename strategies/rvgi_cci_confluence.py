@@ -88,23 +88,29 @@ class RVGICCIConfluence(BaseStrategy):
         # 6. Signals
         df['signal'] = 0
 
-        df.loc[
+        long_cond = (
             (df['rvgi_val'] > df['rvgi_sig']) &
             (df['rvgi_val'].shift(1) <= df['rvgi_sig'].shift(1)) &
             (df['cci'] > cci_buy_min) &
             (df['close'] > df['ema100']) &
-            macro_up & trend_ok & rsi_ok_long,
-            'signal'
-        ] = 1
+            (df['close'] > df['open']) &  # NEW: Directional Close
+            macro_up & trend_ok & rsi_ok_long
+        )
 
-        df.loc[
+        short_cond = (
             (df['rvgi_val'] < df['rvgi_sig']) &
             (df['rvgi_val'].shift(1) >= df['rvgi_sig'].shift(1)) &
             (df['cci'] < cci_sell_max) &
             (df['close'] < df['ema100']) &
-            macro_down & trend_ok & rsi_ok_short,
-            'signal'
-        ] = -1
+            (df['close'] < df['open']) &  # NEW: Directional Close
+            macro_down & trend_ok & rsi_ok_short
+        )
+
+        # Layer 2 — Body Ratio (ensure conviction)
+        long_cond, short_cond = self.apply_body_ratio_filter(df, long_cond, short_cond)
+
+        df.loc[long_cond,  'signal'] = 1
+        df.loc[short_cond, 'signal'] = -1
 
         # Cooldown filter
         signal_arr = df['signal'].values.copy()

@@ -194,6 +194,7 @@ class StochDivergenceStrategy(BaseStrategy):
         long_cond = (
             entry["cross_up"] & 
             entry["bull_div"] & 
+            (df['close'] > df['open']) & # NEW: Directional Close
             h4_ok_long & 
             d1_trend_long & 
             ranging
@@ -203,10 +204,14 @@ class StochDivergenceStrategy(BaseStrategy):
         short_cond = (
             entry["cross_down"] & 
             entry["bear_div"] & 
+            (df['close'] < df['open']) & # NEW: Directional Close
             h4_ok_short & 
             d1_trend_short & 
             ranging
         )
+
+        # Layer 2 — Body Ratio
+        long_cond, short_cond = self.apply_body_ratio_filter(df, long_cond, short_cond)
 
         df.loc[long_cond,  'signal'] =  1
         df.loc[short_cond, 'signal'] = -1

@@ -57,8 +57,9 @@ class WhatsAppBot:
         # Convert HTML formatting to WhatsApp-native formatting
         clean_text = self._html_to_whatsapp(text)
 
-        # WAHA expects the phone number with @c.us suffix
-        chat_id = f"{phone}@c.us" if not phone.endswith("@c.us") else phone
+        # WAHA expects the phone number with @c.us suffix, no '+' prefix
+        phone_digits = re.sub(r"\D", "", phone)
+        chat_id = f"{phone_digits}@c.us"
 
         payload = {
             "session": self.session_name,
@@ -67,24 +68,27 @@ class WhatsAppBot:
         }
 
         try:
+            self.logger.debug(f"Attempting to send WhatsApp message to {chat_id}")
             # Try primary endpoint
             url = f"{self.waha_url}/api/sendText"
             response = requests.post(url, json=payload, headers=self._get_headers(), timeout=10)
             
             # Fallback for different WAHA versions if 404
             if response.status_code == 404:
+                self.logger.debug("Primary endpoint 404, trying fallback /api/messages/sendText")
                 url = f"{self.waha_url}/api/messages/sendText"
                 response = requests.post(url, json=payload, headers=self._get_headers(), timeout=10)
 
             if response.status_code in (200, 201):
-                self.logger.info(f"WhatsApp message sent to {phone}")
+                self.logger.info(f"WhatsApp message successfully sent to {chat_id}")
                 return True
             else:
-                self.logger.error(f"Failed to send WhatsApp message: {response.status_code} - {response.text}")
+                self.logger.error(f"Failed to send WhatsApp message to {chat_id}: {response.status_code} - {response.text}")
                 return False
         except Exception as e:
-            self.logger.error(f"Error sending WhatsApp message: {e}")
+            self.logger.error(f"Exception while sending WhatsApp message to {chat_id}: {e}")
             return False
+
 
     def send_alert(self, text: str) -> bool:
         """Send an alert to the default configured phone number."""

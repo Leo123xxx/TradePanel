@@ -263,7 +263,16 @@ class SignalChecker:
             if bar_signal != 0:
                 direction = "BUY" if bar_signal == 1 else "SELL"
                 bar_label = f"bar -{i - 1}" if i > 2 else "latest bar"
+                
+                # Extract candle details for logging
+                row = df_signals.iloc[-i]
+                body_abs = abs(row['close'] - row['open'])
+                full_range = max(row['high'] - row['low'], 1e-9)
+                ratio = (body_abs / full_range) * 100
+                color = "GREEN" if row['close'] > row['open'] else "RED" if row['close'] < row['open'] else "DOJI"
+                
                 print(f"SIGNAL DETECTED: {direction} for {symbol} on {bar_time} ({bar_label})")
+                print(f"  > Candle Detail: {color} | Body: {ratio:.1f}% of range | O:{row['open']} C:{row['close']}")
                 return bar_signal, bar_time, False
 
         return 0, None, False

@@ -76,8 +76,19 @@ class TTMSqueezeStrategy(BaseStrategy):
         squeeze_release = (~df["in_squeeze"]) & (df["in_squeeze"].shift(1))
         
         df["signal"] = 0
-        long_cond = squeeze_release & (df["mom"] > 0)
-        short_cond = squeeze_release & (df["mom"] < 0)
+        long_cond = (
+            squeeze_release & 
+            (df["mom"] > 0) & 
+            (df["close"] > df["open"])  # NEW: Directional Close
+        )
+        short_cond = (
+            squeeze_release & 
+            (df["mom"] < 0) & 
+            (df["close"] < df["open"])  # NEW: Directional Close
+        )
+
+        # Layer 2 — Body Ratio
+        long_cond, short_cond = self.apply_body_ratio_filter(df, long_cond, short_cond)
 
         df.loc[long_cond, "signal"] = 1
         df.loc[short_cond, "signal"] = -1
