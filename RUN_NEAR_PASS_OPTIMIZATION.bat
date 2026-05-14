@@ -1,56 +1,37 @@
 @echo off
-REM
+REM ============================================================================
 REM RUN_NEAR_PASS_OPTIMIZATION.bat
-REM
-REM Batch runner for near-pass candidate optimization suite.
-REM This runs comprehensive parameter tuning on 8 strategies that are one metric away from PASS status.
-REM
-
+REM V3 Batch runner for near-pass candidate optimization suite.
+REM ============================================================================
 setlocal enabledelayedexpansion
 
 echo ====================================================================
-echo  NEAR-PASS STRATEGY OPTIMIZATION SUITE
+echo  NEAR-PASS STRATEGY OPTIMIZATION SUITE (V3 Modular)
 echo ====================================================================
 echo.
 
 REM Activate virtual environment
-call "%~dp0venv\Scripts\activate.bat"
-
-if errorlevel 1 (
-    echo ERROR: Failed to activate virtual environment
-    exit /b 1
+if exist "%~dp0venv\Scripts\activate.bat" (
+    call "%~dp0venv\Scripts\activate.bat"
+) else if exist "%~dp0.venv\Scripts\activate.bat" (
+    call "%~dp0.venv\Scripts\activate.bat"
 )
-
-echo [*] Virtual environment activated
-echo.
 
 REM Parse arguments
 set "MODE=normal"
-set "STRATEGY_FILTER="
+if "%1"=="--quick" set "MODE=quick"
+if "%1"=="--extended" set "MODE=extended"
 
-if "%1"=="--quick" (
-    set "MODE=quick"
-    echo [*] Running in QUICK mode (fewer grid points)
-) else if "%1"=="--extended" (
-    set "MODE=extended"
-    echo [*] Running in EXTENDED mode (comprehensive search)
-) else if "%1"=="" (
-    echo [*] Running in NORMAL mode
-)
-
-echo.
-echo ====================================================================
-echo  OPTIMIZATION STARTING
-echo ====================================================================
+echo [*] Mode: %MODE%
 echo.
 
 REM Run the suite
 if "%MODE%"=="quick" (
-    python scripts\run_near_pass_suite.py --quick
+    python scripts\backtest\run_near_pass_suite.py --quick
 ) else if "%MODE%"=="extended" (
-    python scripts\run_near_pass_suite.py --extended
+    python scripts\backtest\run_near_pass_suite.py --extended
 ) else (
-    python scripts\run_near_pass_suite.py
+    python scripts\backtest\run_near_pass_suite.py
 )
 
 if errorlevel 1 (
@@ -65,7 +46,7 @@ echo  OPTIMIZATION COMPLETE
 echo ====================================================================
 echo.
 echo Results available in:
-echo   - results\optimization\near_pass_optimization.json (raw data)
-echo   - results\optimization\near_pass_report.md (summary report)
+echo   - results\data\near_pass_optimization.json
+echo   - results\reports\near_pass_report.md
 echo.
 pause

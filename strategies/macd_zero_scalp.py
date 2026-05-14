@@ -16,9 +16,12 @@ class MACDZeroScalp(BaseStrategy):
             "macd_slow":    17,
             "macd_signal":  9,
             "atr_period":   14,
-            "tp_atr_mult":  2.0,
-            "sl_atr_mult":  1.0,
             "volume_filter": 1.0,
+            "adx_min":       25,
+            "trend_period":  200,
+            "stoch_k":       14,
+            "stoch_d":       3,
+            "atr_avg_p":     20,
         }
         super().__init__(
             name="macd_zero_scalp",
@@ -42,8 +45,21 @@ class MACDZeroScalp(BaseStrategy):
         df['macd']       = macd_result.iloc[:, 0]
         df['macd_hist']  = macd_result.iloc[:, 1]
         df['macd_signal'] = macd_result.iloc[:, 2]
+        
+        # ADX gate
+        adx_df = ta.adx(df['high'], df['low'], df['close'], length=14)
+        df['adx'] = adx_df["ADX_14"]
+        
+        # Trend filter
+        df['trend_ma'] = ta.sma(df['close'], length=self.params.get("trend_period", 200))
 
         df['atr'] = ta.atr(df['high'], df['low'], df['close'], self.params["atr_period"])
+        df['atr_avg'] = df['atr'].rolling(self.params.get("atr_avg_p", 20)).mean()
+        
+        # Stochastic confirmation
+        stoch = ta.stoch(df['high'], df['low'], df['close'], k=self.params.get("stoch_k", 14), d=self.params.get("stoch_d", 3))
+        df['stoch_k'] = stoch.iloc[:, 0]
+        df['stoch_d'] = stoch.iloc[:, 1]
 
         # Use tick_volume if 'volume' column not present
         vol_col = 'volume' if 'volume' in df.columns else 'tick_volume'
@@ -54,17 +70,42 @@ class MACDZeroScalp(BaseStrategy):
         buy_signal = (
             (df['macd'] > 0) &
             (df['macd'].shift(1) <= 0) &
-            (df[vol_col] > (df['volume_avg'] * self.params["volume_filter"]))
+            (df[vol_col] > (df['volume_avg'] * self.params["volume_filter"])) &
+            (df['adx'] >= self.params.get("adx_min", 25)) &
+            (df['close'] > df['trend_ma']) &
+            (df['stoch_k'] > df['stoch_d']) &
+            (df['atr'] > df['atr_avg'])
         )
         df.loc[buy_signal, 'signal'] = 1
 
         sell_signal = (
             (df['macd'] < 0) &
             (df['macd'].shift(1) >= 0) &
-            (df[vol_col] > (df['volume_avg'] * self.params["volume_filter"]))
+            (df[vol_col] > (df['volume_avg'] * self.params["volume_filter"])) &
+            (df['adx'] >= self.params.get("adx_min", 25)) &
+            (df['close'] < df['trend_ma']) &
+            (df['stoch_k'] < df['stoch_d']) &
+            (df['atr'] > df['atr_avg'])
         )
         df.loc[sell_signal, 'signal'] = -1
 
+        # Re-derive as Series for helper calls (already assigned above, re-extract for layers)
+        buy_s = df['signal'] == 1
+        sell_s = df['signal'] == -1
+        df['signal'] = 0
+
+        # Layer 1 — VWAP gate
+        buy_s, sell_s = self.apply_vwap_gate(df, buy_s, sell_s)
+        # Layer 2 — Candle body ratio
+        buy_s, sell_s = self.apply_body_ratio_filter(df, buy_s, sell_s)
+        # Layer 3 — ATR ceiling (news-spike guard)
+        buy_s, sell_s = self.apply_atr_ceiling(df, buy_s, sell_s)
+
+        df.loc[buy_s,  'signal'] = 1
+        df.loc[sell_s, 'signal'] = -1
+
+        # Layer 4 — Cooldown suppression
+        df = self.apply_cooldown(df)
         return df
 
     def validate_params(self) -> bool:

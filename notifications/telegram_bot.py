@@ -207,8 +207,8 @@ class TelegramBot:
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
 
-        # ── Start morning push background task ───────────────────────────────
-        asyncio.create_task(self._morning_push_loop())
+        # ── Start morning push background task (Now handled by docker_jobs.py) ──
+        # asyncio.create_task(self._morning_push_loop())
 
         logger.info("Telegram bot polling. Dashboard: http://tradepanel.mraskwhy.local")
 
@@ -349,7 +349,7 @@ class TelegramBot:
 
     @auth_required
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_html(self.router.get_status())
+        await update.message.reply_html(self.router.get_status(context.args))
 
     @auth_required
     async def balance_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):

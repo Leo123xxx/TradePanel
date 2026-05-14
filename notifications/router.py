@@ -60,18 +60,18 @@ class CommandRouter:
     def get_health(self):
         from datetime import datetime, timedelta
         try:
-            # Last heartbeat
+            # Get full alerts checklist
+            alerts, icon = self.get_system_alerts()
+            
+            # Additional detail for health
             rows = self.db.execute_query(
                 "SELECT timestamp, status FROM bot_health WHERE event_type = 'HEARTBEAT' ORDER BY timestamp DESC LIMIT 1"
             )
             if rows:
                 last_hb = rows[0][0].strftime("%Y-%m-%d %H:%M:%S")
-                hb_status = rows[0][1]
             else:
                 last_hb = "No heartbeat recorded"
-                hb_status = "UNKNOWN"
 
-            # Count warnings/criticals in last 24h
             cutoff = datetime.now() - timedelta(hours=24)
             warn_rows = self.db.execute_query(
                 "SELECT COUNT(*) FROM bot_health WHERE status IN ('WARNING','CRITICAL') AND timestamp >= %s",
@@ -79,12 +79,16 @@ class CommandRouter:
             )
             warn_count = int(warn_rows[0][0]) if warn_rows else 0
 
-            icon = "🟢" if hb_status == "SUCCESS" else "🔴"
-            return (
-                f"🏥 <b>System Health</b>\n"
-                f"{icon} Last heartbeat: {last_hb}\n"
-                f"⚠️ Alerts (24h): {warn_count}"
+            response = (
+                f"🏥 <b>System Health Dashboard</b>\n"
+                f"━━━━━━━━━━━━━━━\n"
+                f"Last heartbeat: {last_hb}\n"
+                f"Alerts (24h): {warn_count}\n\n"
+                f"🔍 <b>Health Checklist:</b>\n"
             )
+            response += "\n".join([f"• {a}" for a in alerts])
+            
+            return response
         except Exception as e:
             return f"❌ Health check error: {e}"
 
@@ -119,21 +123,26 @@ class CommandRouter:
         except Exception as e:
             return f"❌ Mode check error: {e}"
 
-    def get_status(self):
+    def get_status(self, args=None):
         import yaml
         from collections import defaultdict
+        
+        # Parse flags
+        is_brief = args and "--brief" in args
+        is_full  = args and "--full" in args
+        if not is_brief and not is_full:
+            is_full = True # Default to full
+        
         if not mt5.initialize():
             return "❌ Error: Could not connect to MT5."
 
         info = self.account.get_info()
-
-        # Open positions — query MT5 directly (ground truth, not the DB)
         positions = mt5.positions_get() or []
         open_positions = len(positions)
 
         # Build a per-symbol breakdown
         pos_lines = ""
-        if positions:
+        if is_full and positions:
             by_symbol = defaultdict(list)
             for p in positions:
                 by_symbol[p.symbol].append(p)
@@ -168,7 +177,6 @@ class CommandRouter:
                 "SELECT timestamp FROM bot_health WHERE event_type = 'HEARTBEAT' ORDER BY timestamp DESC LIMIT 1"
             )
             
-            # Check for circuit breaker or manual pause
             pause_rows = self.db.execute_query(
                 "SELECT event_type, status, message, meta_data FROM bot_health "
                 "WHERE event_type IN ('CIRCUIT_BREAKER', 'MANUAL_PAUSE') "
@@ -199,18 +207,166 @@ class CommandRouter:
         except Exception:
             bot_status = "🔴 Bot Status: ERROR"
 
+        # Calculate Total Running P&L
+        try:
+            today = datetime.now().date()
+            realized_rows = self.db.execute_query(
+                "SELECT total_pnl FROM daily_summary WHERE date = %s", (today,)
+            )
+            realized_today = float(realized_rows[0][0] or 0) if realized_rows else 0.0
+            floating_pnl = sum(p.profit for p in (positions or []))
+            currency = info.get("currency", "USD")
+            total_pnl = realized_today + floating_pnl
+        except Exception:
+            total_pnl = 0.0
+            currency = "???"
+
+        # Get System Alert Flags
+        alerts, overall_icon = self.get_system_alerts()
+
         status = (
-            f"💹 <b>System Status</b>\n"
+            f"{overall_icon} <b>System Status</b>\n"
             f"👤 Account: {info['login']}\n"
             f"💰 Equity: {info['equity']} {info['currency']}\n"
+            f"💵 <b>Total P&L Today:</b> {total_pnl:+.2f} {currency}\n"
             f"{bot_status}\n"
             f"🛠 Mode: {mode}\n"
             f"📊 Open Positions: {open_positions}"
         )
-        if pos_lines:
+        if is_full and pos_lines:
             status += pos_lines
-        status += f"\n📋 Active Strategies: {strat_count}"
+        
+        if is_full:
+            status += f"\n📋 Active Strategies: {strat_count}"
+        
+        # Add quick alerts summary if any WARNING/CRITICAL
+        active_alerts = [a for a in alerts if "🟢" not in a]
+        if active_alerts:
+            status += "\n\n⚠️ <b>Alerts:</b>\n" + "\n".join(active_alerts[:3])
+            
         return status
+
+    def get_system_alerts(self):
+        """
+        Evaluates system health based on thresholds from agent_schedule.md.
+        Returns (list of alert strings, overall status icon).
+        """
+        alerts = []
+        severity = 0 # 0=Green, 1=Yellow, 2=Red
+        
+        # 1. Bot Heartbeat & MT5 Connection
+        try:
+            hb_rows = self.db.execute_query(
+                "SELECT timestamp FROM bot_health WHERE event_type = 'HEARTBEAT' ORDER BY timestamp DESC LIMIT 1"
+            )
+            if hb_rows:
+                diff = (datetime.now() - hb_rows[0][0]).total_seconds() / 60
+                if diff > 10:
+                    alerts.append(f"🔴 Heartbeat: {diff:.0f}m stale")
+                    severity = max(severity, 2)
+                elif diff > 5:
+                    alerts.append(f"🟡 Heartbeat: {diff:.0f}m stale")
+                    severity = max(severity, 1)
+                else:
+                    alerts.append("🟢 Heartbeat: ACTIVE")
+            else:
+                alerts.append("🔴 Heartbeat: NO DATA")
+                severity = max(severity, 2)
+        except Exception:
+            alerts.append("🔴 Heartbeat: ERROR")
+            severity = max(severity, 2)
+
+        # 2. Drawdown
+        try:
+            if not mt5.initialize():
+                alerts.append("🔴 MT5: DISCONNECTED")
+                severity = max(severity, 2)
+            else:
+                info = mt5.account_info()
+                dd = ((info.balance - info.equity) / info.balance * 100) if info.balance > 0 else 0
+                if dd > 15:
+                    alerts.append(f"🔴 Drawdown: {dd:.1f}% (CRITICAL)")
+                    severity = max(severity, 2)
+                elif dd > 10:
+                    alerts.append(f"🟡 Drawdown: {dd:.1f}% (WARN)")
+                    severity = max(severity, 1)
+                else:
+                    alerts.append(f"🟢 Drawdown: {dd:.1f}%")
+        except Exception:
+            alerts.append("🔴 Risk check: ERROR")
+
+        # 3. Signal Take Rate (last 24h)
+        try:
+            take_rows = self.db.execute_query("""
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN triggered_trade_id IS NOT NULL THEN 1 ELSE 0 END) as taken
+                FROM signals
+                WHERE timestamp >= NOW() - INTERVAL '24 hours'
+            """)
+            if take_rows and take_rows[0][0] > 0:
+                total, taken = take_rows[0]
+                rate = (taken / total) * 100
+                if rate < 20:
+                    alerts.append(f"🟡 Take Rate: {rate:.1f}% (<20%)")
+                    severity = max(severity, 1)
+                else:
+                    alerts.append(f"🟢 Take Rate: {rate:.1f}%")
+            else:
+                alerts.append("🟡 Take Rate: NO SIGNALS (24h)")
+        except Exception:
+            alerts.append("🟡 Take Rate: ERROR")
+
+        # 4. COT Data Freshness
+        try:
+            cot_rows = self.db.execute_query("SELECT MAX(report_date) FROM cot_data")
+            if cot_rows and cot_rows[0][0]:
+                cot_date = cot_rows[0][0]
+                age = (datetime.now().date() - cot_date).days
+                if age > 8:
+                    alerts.append(f"🟡 COT Data: {age}d stale")
+                    severity = max(severity, 1)
+                else:
+                    alerts.append(f"🟢 COT Data: {age}d old")
+            else:
+                alerts.append("🟡 COT Data: MISSING")
+        except Exception:
+            alerts.append("🟡 COT Data: ERROR")
+
+        # 5. Overnight Backtest PASS Count
+        try:
+            bt_data = self._load_latest_backtest()
+            if bt_data:
+                results = bt_data.get("results", [])
+                passed = sum(1 for r in results if r.get("status") == "PASS")
+                if passed < 15:
+                    alerts.append(f"🟡 Backtest: {passed} PASS (<15)")
+                    severity = max(severity, 1)
+                else:
+                    alerts.append(f"🟢 Backtest: {passed} PASS")
+            else:
+                alerts.append("🟡 Backtest: NO REPORT")
+        except Exception:
+            alerts.append("🟡 Backtest: ERROR")
+
+        icon = "🟢" if severity == 0 else ("🟡" if severity == 1 else "🔴")
+        return alerts, icon
+
+    def _load_latest_backtest(self):
+        """Loads the most recent overnight backtest JSON report."""
+        import json
+        import glob
+        try:
+            project_root = Path(__file__).parent.parent
+            path = project_root / "results" / "overnight" / "dashboard_*.json"
+            files = glob.glob(str(path))
+            if not files:
+                return None
+            latest_file = max(files, key=os.path.getmtime)
+            with open(latest_file) as f:
+                return json.load(f)
+        except Exception:
+            return None
 
     def get_balance(self):
         if not mt5.initialize():
@@ -438,10 +594,20 @@ class CommandRouter:
             margin_level = info.margin_level
             drawdown = round(((balance - equity) / balance * 100), 2) if balance > 0 else 0
             
-            # Fetch Daily/Weekly P&L from DB
-            today = datetime.now().date()
-            pnl_rows = self.db.execute_query("SELECT total_pnl FROM daily_summary WHERE date = %s", (today,))
-            daily_pnl = round(float(pnl_rows[0][0]), 2) if pnl_rows else 0.0
+            # Fetch latest snapshot if possible for more context
+            snapshot = self.db.execute_query(
+                "SELECT floating_pnl, realized_pnl_today FROM account_metrics ORDER BY timestamp DESC LIMIT 1"
+            )
+            
+            if snapshot:
+                floating_pnl = float(snapshot[0][0])
+                realized_today = float(snapshot[0][1])
+                daily_pnl = realized_today + floating_pnl
+            else:
+                # Fallback to daily_summary
+                today = datetime.now().date()
+                pnl_rows = self.db.execute_query("SELECT total_pnl FROM daily_summary WHERE date = %s", (today,))
+                daily_pnl = round(float(pnl_rows[0][0]), 2) if pnl_rows else 0.0
             
             from notifications import templates
             data = {
@@ -1001,3 +1167,59 @@ class CommandRouter:
             return msg
         except Exception as e:
             return f"❌ Backups check error: {e}"
+
+    def get_morning_brief(self):
+        """
+        Generates the 'Readiness Report' summarizing overnight results and system health.
+        Called automatically at 06:04 SAST.
+        """
+        try:
+            # 1. Account Summary
+            status_brief = self.get_status(["--brief"])
+            
+            # 2. Backtest Summary
+            bt_report = self._load_latest_backtest()
+            bt_summary = "❌ No overnight backtest found."
+            regressions = []
+            
+            if bt_report:
+                results = bt_report.get("results", [])
+                passed = sum(1 for r in results if r.get("status") == "PASS")
+                review = sum(1 for r in results if r.get("status") == "REVIEW")
+                fails  = sum(1 for r in results if r.get("status") == "FAIL")
+                
+                bt_summary = (
+                    f"📊 <b>Overnight Results:</b>\n"
+                    f"  ✅ PASS: {passed}\n"
+                    f"  🔍 REVIEW: {review}\n"
+                    f"  ❌ FAIL: {fails}"
+                )
+                
+                # Regressions (FAIL now, PASS before)
+                for r in results:
+                    if r.get("status") == "FAIL" and r.get("prev_status") == "PASS":
+                        regressions.append(f"  ⚠️ {r.get('strategy')} ({r.get('pair')})")
+
+            # 3. Health Checklist
+            alerts, icon = self.get_system_alerts()
+            health_summary = "\n".join([f"• {a}" for a in alerts[:5]])
+
+            report = (
+                f"🌅 <b>MORNING READINESS REPORT</b>\n"
+                f"━━━━━━━━━━━━━━━\n\n"
+                f"{status_brief}\n\n"
+                f"{bt_summary}\n"
+            )
+            
+            if regressions:
+                report += f"\n📉 <b>REGRESSIONS:</b>\n" + "\n".join(regressions[:5]) + "\n"
+                
+            report += (
+                f"\n🔍 <b>Health Check:</b>\n"
+                f"{health_summary}\n\n"
+                f"🚀 <i>System is ready for today's session.</i>"
+            )
+            
+            return report
+        except Exception as e:
+            return f"❌ Morning Brief Error: {e}"

@@ -23,6 +23,7 @@ from webapp.api.router_papertrades import router as papertrades_router
 from webapp.api.router_health import router as health_router
 from webapp.api.router_wfo import router as wfo_router
 from webapp.api.router_intelligence import router as intelligence_router
+from webapp.api.router_metrics import router as metrics_router
 
 from webapp.bus import bus
 import os
@@ -50,6 +51,7 @@ app.include_router(papertrades_router, prefix="/api")
 app.include_router(health_router, prefix="/api")
 app.include_router(wfo_router, prefix="/api")
 app.include_router(intelligence_router, prefix="/api")
+app.include_router(metrics_router, prefix="/api")
 
 
 # Mount Static Files (Production Build)

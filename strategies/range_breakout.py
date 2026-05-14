@@ -76,28 +76,36 @@ class RangeBreakoutStrategy(BaseStrategy):
         # RSI — band filter to avoid overbought longs and oversold shorts
         df['rsi'] = ta.rsi(df['close'], length=rsi_p)
 
+        # ATR (for Layer 3 ATR ceiling)
+        df['atr']     = ta.atr(df['high'], df['low'], df['close'], length=14)
+        df['atr_avg'] = df['atr'].rolling(20).mean()
+
         # Signal
         df['signal'] = 0
 
         long_cond = (
             (df['close'] > df['highest_high']) &
             (df['close'] > df['ema']) &
-            df['vol_spike'] &                        # AND (was OR) — both confirmations required
-            (df['adx'] > adx_min) &                  # AND (was OR)
-            (df['rsi'] >= rsi_lo_min) &              # RSI band: not oversold (avoid weak bounces)
-            (df['rsi'] <= rsi_lo_max)                # RSI band: not overbought (avoid exhaustion entries)
+            df['vol_spike'] &
+            (df['adx'] > adx_min) &
+            (df['rsi'] >= rsi_lo_min) &
+            (df['rsi'] <= rsi_lo_max)
         )
-
         short_cond = (
             (df['close'] < df['lowest_low']) &
             (df['close'] < df['ema']) &
-            df['vol_spike'] &                        # AND (was OR)
-            (df['adx'] > adx_min) &                  # AND (was OR)
-            (df['rsi'] >= rsi_sh_min) &              # RSI band: not already oversold
-            (df['rsi'] <= rsi_sh_max)                # RSI band: bearish momentum zone
+            df['vol_spike'] &
+            (df['adx'] > adx_min) &
+            (df['rsi'] >= rsi_sh_min) &
+            (df['rsi'] <= rsi_sh_max)
         )
 
-        df.loc[long_cond, 'signal'] = 1
+        # Layer 2 — Candle body ratio (breakout must be body-driven, not a wick pierce)
+        long_cond, short_cond = self.apply_body_ratio_filter(df, long_cond, short_cond)
+        # Layer 3 — ATR ceiling (skip news gaps that false-break ranges)
+        long_cond, short_cond = self.apply_atr_ceiling(df, long_cond, short_cond)
+
+        df.loc[long_cond,  'signal'] = 1
         df.loc[short_cond, 'signal'] = -1
 
         # Crossover only

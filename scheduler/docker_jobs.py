@@ -206,14 +206,9 @@ class TradingScheduler:
             id="position_sync", name="Position Sync MT5→DB",
         )
         self.scheduler.add_job(
-            self.circuit_breaker_guard(self.engine.run_detect),
-            IntervalTrigger(minutes=1),
-            id="signal_detect", name="Signal Detection (1m)",
-        )
-        self.scheduler.add_job(
             self.circuit_breaker_guard(self.engine.run_execute),
-            IntervalTrigger(minutes=5),
-            id="trade_execute", name="Trade Execution (5m)",
+            IntervalTrigger(minutes=1),
+            id="trade_execute", name="Trade Execution (1m)",
         )
         self.scheduler.add_job(
             self._rollup_pnl,
@@ -224,6 +219,11 @@ class TradingScheduler:
             self._run_regime_detection,
             IntervalTrigger(hours=1),
             id="regime_detect", name="Market Regime Detector (1h)",
+        )
+        self.scheduler.add_job(
+            self._snapshot_account,
+            IntervalTrigger(minutes=15),
+            id="account_snapshot", name="Account Metrics Snapshot (15m)",
         )
 
         # ── Cron jobs ─────────────────────────────────────────────────────────
@@ -247,6 +247,11 @@ class TradingScheduler:
             self._send_weekly_report,
             CronTrigger(day_of_week="mon", hour=8, minute=0),
             id="weekly_report", name="Weekly Performance Report",
+        )
+        self.scheduler.add_job(
+            self._send_readiness_report,
+            CronTrigger(hour=4, minute=4),
+            id="readiness_report", name="Morning Readiness Report (06:04 SAST)",
         )
 
         bt_hour = sched_cfg.get("overnight_backtest_hour", 2)
@@ -414,12 +419,16 @@ class TradingScheduler:
         acct = self.config.get("account", {})
         usdzar = float(acct.get("backtesting_usdzar_rate", 18.50))
         
+        # BUGFIX: Only multiply by usdzar if the account is NOT already in ZAR
+        account_currency = acct.get("currency", "ZAR")
+        multiplier = 1.0 if account_currency == "ZAR" else usdzar
+        
         if positions:
             for p in positions:
                 ticket = p.ticket if MT5_AVAILABLE else p["ticket"]
                 profit = p.profit if MT5_AVAILABLE else p["profit"]
                 volume = p.volume if MT5_AVAILABLE else p["volume"]
-                profit_zar = round(profit * usdzar, 2)
+                profit_zar = round(profit * multiplier, 2)
                 
                 self.db.execute_query(
                     "UPDATE trades SET net_pnl = %s, lot_size = %s WHERE mt5_ticket = %s AND status = 'OPENED'",
@@ -441,7 +450,7 @@ class TradingScheduler:
                     )
                     # For closed trades, net_pnl should be final profit
                     final_profit = sum(h.profit for h in history) if MT5_AVAILABLE else sum(h["profit"] for h in history)
-                    final_profit_zar = round(final_profit * usdzar, 2)
+                    final_profit_zar = round(final_profit * multiplier, 2)
                     
                     self.db.execute_query(
                         "UPDATE trades SET status='CLOSED', close_reason='EXTERNAL_CLOSE', "
@@ -455,8 +464,9 @@ class TradingScheduler:
 
     def _rollup_pnl(self):
         acct = self.config.get("account", {})
-        usdzar      = float(acct.get("backtesting_usdzar_rate", 18.50))
-        balance_zar = float(acct.get("backtesting_balance_zar", 180_000.0))
+        usdzar = float(acct.get("backtesting_usdzar_rate", 18.50))
+        account_currency = acct.get("currency", "ZAR")
+        multiplier = 1.0 if account_currency == "ZAR" else usdzar
 
         cutoff = datetime.now() - timedelta(hours=1)
         rows = self.db.execute_query(
@@ -471,8 +481,12 @@ class TradingScheduler:
         if not rows or rows[0][0] is None:
             return
 
-        hourly_pnl_usd, trade_count = float(rows[0][0]), int(rows[0][1])
-        hourly_pnl_zar = round(hourly_pnl_usd * usdzar, 2)
+        hourly_pnl_raw, trade_count = float(rows[0][0]), int(rows[0][1])
+        # Note: net_pnl in DB is already converted to ZAR by _sync_positions or _log_trade_close
+        # But we use COALESCE/SUM which might pull raw values.
+        # However, _sync_positions and PaperEngine both store ZAR.
+        # Let's ensure consistency.
+        hourly_pnl_zar = round(hourly_pnl_raw, 2) # It's already in ZAR if stored correctly
         today = datetime.now().date()
 
         self.db.execute_query(
@@ -595,17 +609,38 @@ class TradingScheduler:
     # ──────────────────────────────────────────────────────────────────────────
 
     def _send_daily_summary(self):
+        # 1. Trigger latest sync first
+        logger.info("Triggering pre-summary sync...")
+        self._sync_positions()
+        
         today = datetime.now().date()
         acct = self.config.get("account", {})
         usdzar      = float(acct.get("backtesting_usdzar_rate", 18.50))
         balance_zar = float(acct.get("backtesting_balance_zar", 180_000.0))
 
+        # 2. Get Realized Stats
         rows = self.db.execute_query(
             "SELECT total_pnl, trade_count FROM daily_summary WHERE date = %s", (today,)
         )
-        total_pnl_zar = float(rows[0][0] or 0) if rows else 0.0
-        total_trades  = int(rows[0][1] or 0) if rows else 0
+        realized_pnl_zar = float(rows[0][0] or 0) if rows else 0.0
+        total_trades     = int(rows[0][1] or 0) if rows else 0
 
+        # 3. Get Floating Profit (for open trades)
+        floating_pnl_raw = 0.0
+        positions = self._get_positions()
+        if positions:
+            for p in positions:
+                profit = p.profit if MT5_AVAILABLE else p.get("profit", 0.0)
+                magic  = p.magic if MT5_AVAILABLE else p.get("magic", 0)
+                if magic != 0: # Only count bot trades
+                    floating_pnl_raw += profit
+        
+        account_currency = acct.get("currency", "ZAR")
+        multiplier = 1.0 if account_currency == "ZAR" else usdzar
+        floating_pnl_zar = round(floating_pnl_raw * multiplier, 2)
+        total_running_pnl_zar = realized_pnl_zar + floating_pnl_zar
+
+        # 4. Win Rate (Today's closed trades)
         win_rows = self.db.execute_query(
             """SELECT COUNT(*) FROM trades
                WHERE status='CLOSED' AND mode='PAPER' AND DATE(close_time)=%s
@@ -614,18 +649,66 @@ class TradingScheduler:
         )
         wins = int(win_rows[0][0]) if win_rows else 0
         win_rate = round(wins / total_trades * 100, 1) if total_trades > 0 else 0.0
-        max_dd_pct = round(abs(min(total_pnl_zar, 0)) / balance_zar * 100, 2)
+        
+        # 5. Drawdown
+        max_dd_pct = round(abs(min(total_running_pnl_zar, 0)) / balance_zar * 100, 2)
 
         self.notif_bot.send_sync_message(
             self.notif_router.format_daily_summary({
                 "date": str(today),
-                "total_pnl": f"R {total_pnl_zar:,.2f}",
+                "total_pnl": f"R {total_running_pnl_zar:,.2f} (Realized: R {realized_pnl_zar:,.2f})",
                 "win_rate": win_rate,
                 "total_trades": total_trades,
                 "max_dd": max_dd_pct,
                 "currency": "ZAR",
             })
         )
+
+    def _snapshot_account(self):
+        """Captures a snapshot of account status for Grafana/Prometheus."""
+        try:
+            if MT5_AVAILABLE:
+                info = mt5.account_info()
+            else:
+                r = requests.get(f"{self.mt5_bridge_url}/account", timeout=5)
+                info = r.json() if r.status_code == 200 else None
+            
+            if not info:
+                logger.error("Failed to fetch account info for snapshot.")
+                return
+
+            equity = info.equity if MT5_AVAILABLE else info.get("equity", 0)
+            balance = info.balance if MT5_AVAILABLE else info.get("balance", 0)
+            margin_level = info.margin_level if MT5_AVAILABLE else info.get("margin_level", 0)
+            
+            # Floating PnL from MT5
+            # In some cases equity - balance is the floating PnL
+            floating_pnl = equity - balance
+            
+            # Realized PnL Today (sum of closed trades since midnight)
+            today = datetime.now().date()
+            pnl_rows = self.db.execute_query(
+                "SELECT SUM(net_pnl) FROM trades WHERE status='CLOSED' AND DATE(close_time)=%s AND mode='PAPER'",
+                (today,)
+            )
+            realized_pnl_today = float(pnl_rows[0][0] or 0) if pnl_rows else 0.0
+            
+            # Active positions count
+            positions = self._get_positions()
+            pos_count = len(positions) if positions else 0
+            
+            # Max Drawdown % (current equity relative to balance)
+            drawdown_pct = round(((balance - equity) / balance * 100), 2) if balance > 0 and equity < balance else 0.0
+
+            self.db.execute_query(
+                """INSERT INTO account_metrics 
+                   (equity, balance, margin_level, floating_pnl, realized_pnl_today, drawdown_pct, active_positions)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (equity, balance, margin_level, floating_pnl, realized_pnl_today, drawdown_pct, pos_count)
+            )
+            logger.info(f"Account snapshot saved: Equity={equity}, Pos={pos_count}")
+        except Exception as e:
+            logger.error(f"_snapshot_account error: {e}")
 
     def _send_weekly_report(self):
         week_start = datetime.now() - timedelta(days=7)
@@ -966,6 +1049,16 @@ class TradingScheduler:
                 logger.info("4-hour account history sync completed.")
         except Exception as e:
             logger.error(f"Error in _sync_mt5_history: {e}")
+
+    def _send_readiness_report(self):
+        """Sends the daily readiness report summarized by the notification router."""
+        try:
+            logger.info("Generating Morning Readiness Report...")
+            msg = self.notif_router.get_morning_brief()
+            self.notif_bot.send_sync_message(msg)
+            logger.info("Morning Readiness Report sent.")
+        except Exception as e:
+            logger.error(f"Error sending readiness report: {e}")
 
 
 # ──────────────────────────────────────────────────────────────────────────────

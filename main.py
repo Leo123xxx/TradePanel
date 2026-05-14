@@ -105,7 +105,7 @@ class TradePanel:
         """Validate configuration files."""
         logger.info("Validating configuration files...")
         try:
-            from scripts.config_validator import validate_config
+            from scripts.core.config_validator import validate_config
             config_file = self.project_root / "config" / "strategies.yaml"
             result = validate_config(config_file)
             if result:
@@ -124,7 +124,7 @@ class TradePanel:
         logger.info("PAPER TRADING CYCLE")
         logger.info("=" * 70)
         try:
-            from scripts.daily_paper_trading_cycle import run_cycle
+            from scripts.core.daily_paper_trading_cycle import run_cycle
             logger.info("Starting paper trading cycle...")
             run_cycle()
             logger.info("OK: Paper trading cycle complete")
@@ -141,7 +141,7 @@ class TradePanel:
         logger.info("VALIDATION SUITE")
         logger.info("=" * 70)
         try:
-            from scripts.daily_validation_suite import DailyValidationSuite
+            from scripts.core.daily_validation_suite import DailyValidationSuite
             logger.info("Running validation suite...")
             suite = DailyValidationSuite(quick_mode=True)
             results = suite.run_all_validations()
@@ -159,7 +159,7 @@ class TradePanel:
         logger.info(f"BACKTEST: {strategy} on {pair} {timeframe}")
         logger.info("=" * 70)
         try:
-            from scripts.run_backtest import run_backtest
+            from scripts.backtest.run_backtest import run_backtest
             logger.info(f"Starting backtest: {strategy} on {pair} {timeframe}")
             run_backtest(strategy, pair, timeframe)
             logger.info("OK: Backtest complete")

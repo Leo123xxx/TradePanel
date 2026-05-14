@@ -1,51 +1,70 @@
 {
   "hikkake_trap": {
     "status": "OK",
-    "total_combos": 96,
+    "total_combos": 192,
     "top_5": [
       {
         "params": {
           "cooldown_bars": 2,
           "tp_atr_mult": 1.5,
           "sl_atr_mult": 0.6,
-          "atr_period": 14
+          "atr_period": 16
         },
         "metrics": {
           "win_rate": 60.0,
           "trades": 10,
-          "profit_factor": 1.461,
-          "max_dd": 0.92,
-          "sharpe": 2.669,
-          "pnl_zar": 1461.34
+          "profit_factor": 1.466,
+          "max_dd": 0.9,
+          "sharpe": 2.692,
+          "pnl_zar": 1456.89
         },
         "pair": "GBPUSD",
         "tf": "H4",
-        "score": 1.4276
+        "score": 1.4368000000000003
       },
       {
         "params": {
           "cooldown_bars": 3,
           "tp_atr_mult": 1.5,
           "sl_atr_mult": 0.6,
-          "atr_period": 14
+          "atr_period": 16
         },
         "metrics": {
           "win_rate": 60.0,
           "trades": 10,
-          "profit_factor": 1.461,
-          "max_dd": 0.92,
-          "sharpe": 2.669,
-          "pnl_zar": 1461.34
+          "profit_factor": 1.466,
+          "max_dd": 0.9,
+          "sharpe": 2.692,
+          "pnl_zar": 1456.89
         },
         "pair": "GBPUSD",
         "tf": "H4",
-        "score": 1.4276
+        "score": 1.4368000000000003
       },
       {
         "params": {
           "cooldown_bars": 4,
           "tp_atr_mult": 1.5,
           "sl_atr_mult": 0.6,
+          "atr_period": 16
+        },
+        "metrics": {
+          "win_rate": 60.0,
+          "trades": 10,
+          "profit_factor": 1.466,
+          "max_dd": 0.9,
+          "sharpe": 2.692,
+          "pnl_zar": 1456.89
+        },
+        "pair": "GBPUSD",
+        "tf": "H4",
+        "score": 1.4368000000000003
+      },
+      {
+        "params": {
+          "cooldown_bars": 2,
+          "tp_atr_mult": 1.5,
+          "sl_atr_mult": 0.6,
           "atr_period": 14
         },
         "metrics": {
@@ -62,41 +81,22 @@
       },
       {
         "params": {
-          "cooldown_bars": 2,
-          "tp_atr_mult": 1.5,
-          "sl_atr_mult": 0.6,
-          "atr_period": 10
-        },
-        "metrics": {
-          "win_rate": 60.0,
-          "trades": 10,
-          "profit_factor": 1.457,
-          "max_dd": 0.95,
-          "sharpe": 2.639,
-          "pnl_zar": 1484.58
-        },
-        "pair": "GBPUSD",
-        "tf": "H4",
-        "score": 1.4156
-      },
-      {
-        "params": {
           "cooldown_bars": 3,
           "tp_atr_mult": 1.5,
           "sl_atr_mult": 0.6,
-          "atr_period": 10
+          "atr_period": 14
         },
         "metrics": {
           "win_rate": 60.0,
           "trades": 10,
-          "profit_factor": 1.457,
-          "max_dd": 0.95,
-          "sharpe": 2.639,
-          "pnl_zar": 1484.58
+          "profit_factor": 1.461,
+          "max_dd": 0.92,
+          "sharpe": 2.669,
+          "pnl_zar": 1461.34
         },
         "pair": "GBPUSD",
         "tf": "H4",
-        "score": 1.4156
+        "score": 1.4276
       }
     ]
   },
@@ -118,99 +118,15 @@
   },
   "rsi_extremes_scalp": {
     "status": "OK",
-    "total_combos": 12,
+    "total_combos": 24,
     "top_5": [
-      {
-        "params": {
-          "rsi_period": 7,
-          "oversold": 30,
-          "overbought": 80,
-          "tp_atr_mult": 2.0,
-          "sl_atr_mult": 0.8,
-          "atr_period": 14
-        },
-        "metrics": {
-          "win_rate": 0.0,
-          "trades": 40,
-          "profit_factor": 0.0,
-          "max_dd": 2.29,
-          "sharpe": -929.19,
-          "pnl_zar": -4228.3
-        },
-        "pair": "USOIL",
-        "tf": "M15",
-        "score": -371.67600000000004
-      },
-      {
-        "params": {
-          "rsi_period": 7,
-          "oversold": 30,
-          "overbought": 70,
-          "tp_atr_mult": 2.0,
-          "sl_atr_mult": 0.8,
-          "atr_period": 14
-        },
-        "metrics": {
-          "win_rate": 0.0,
-          "trades": 59,
-          "profit_factor": 0.0,
-          "max_dd": 3.41,
-          "sharpe": -933.368,
-          "pnl_zar": -6247.36
-        },
-        "pair": "USOIL",
-        "tf": "M15",
-        "score": -373.34720000000004
-      },
-      {
-        "params": {
-          "rsi_period": 7,
-          "oversold": 25,
-          "overbought": 70,
-          "tp_atr_mult": 2.0,
-          "sl_atr_mult": 0.8,
-          "atr_period": 14
-        },
-        "metrics": {
-          "win_rate": 0.0,
-          "trades": 53,
-          "profit_factor": 0.0,
-          "max_dd": 3.06,
-          "sharpe": -951.616,
-          "pnl_zar": -5611.54
-        },
-        "pair": "USOIL",
-        "tf": "M15",
-        "score": -380.6464
-      },
-      {
-        "params": {
-          "rsi_period": 7,
-          "oversold": 30,
-          "overbought": 75,
-          "tp_atr_mult": 2.0,
-          "sl_atr_mult": 0.8,
-          "atr_period": 14
-        },
-        "metrics": {
-          "win_rate": 0.0,
-          "trades": 47,
-          "profit_factor": 0.0,
-          "max_dd": 2.71,
-          "sharpe": -969.38,
-          "pnl_zar": -4981.64
-        },
-        "pair": "USOIL",
-        "tf": "M15",
-        "score": -387.752
-      },
       {
         "params": {
           "rsi_period": 14,
           "oversold": 25,
           "overbought": 70,
           "tp_atr_mult": 2.0,
-          "sl_atr_mult": 0.8,
+          "sl_atr_mult": 1.0,
           "atr_period": 14
         },
         "metrics": {
@@ -218,12 +134,96 @@
           "trades": 11,
           "profit_factor": 0.0,
           "max_dd": 0.59,
-          "sharpe": -998.464,
-          "pnl_zar": -1168.24
+          "sharpe": -717.734,
+          "pnl_zar": -1166.02
         },
         "pair": "USOIL",
         "tf": "M15",
-        "score": -399.38560000000007
+        "score": -287.09360000000004
+      },
+      {
+        "params": {
+          "rsi_period": 7,
+          "oversold": 30,
+          "overbought": 80,
+          "tp_atr_mult": 2.0,
+          "sl_atr_mult": 1.0,
+          "atr_period": 14
+        },
+        "metrics": {
+          "win_rate": 0.0,
+          "trades": 39,
+          "profit_factor": 0.0,
+          "max_dd": 2.24,
+          "sharpe": -765.6,
+          "pnl_zar": -4128.07
+        },
+        "pair": "USOIL",
+        "tf": "M15",
+        "score": -306.24
+      },
+      {
+        "params": {
+          "rsi_period": 7,
+          "oversold": 30,
+          "overbought": 70,
+          "tp_atr_mult": 2.0,
+          "sl_atr_mult": 1.0,
+          "atr_period": 14
+        },
+        "metrics": {
+          "win_rate": 0.0,
+          "trades": 58,
+          "profit_factor": 0.0,
+          "max_dd": 3.36,
+          "sharpe": -767.117,
+          "pnl_zar": -6148.51
+        },
+        "pair": "USOIL",
+        "tf": "M15",
+        "score": -306.8468
+      },
+      {
+        "params": {
+          "rsi_period": 7,
+          "oversold": 30,
+          "overbought": 75,
+          "tp_atr_mult": 2.0,
+          "sl_atr_mult": 1.0,
+          "atr_period": 14
+        },
+        "metrics": {
+          "win_rate": 0.0,
+          "trades": 45,
+          "profit_factor": 0.0,
+          "max_dd": 2.6,
+          "sharpe": -787.448,
+          "pnl_zar": -4774.95
+        },
+        "pair": "USOIL",
+        "tf": "M15",
+        "score": -314.9792
+      },
+      {
+        "params": {
+          "rsi_period": 7,
+          "oversold": 25,
+          "overbought": 70,
+          "tp_atr_mult": 2.0,
+          "sl_atr_mult": 1.0,
+          "atr_period": 14
+        },
+        "metrics": {
+          "win_rate": 0.0,
+          "trades": 52,
+          "profit_factor": 0.0,
+          "max_dd": 3.01,
+          "sharpe": -808.81,
+          "pnl_zar": -5513.18
+        },
+        "pair": "USOIL",
+        "tf": "M15",
+        "score": -323.524
       }
     ]
   },

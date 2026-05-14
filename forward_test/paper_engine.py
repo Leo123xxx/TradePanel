@@ -121,6 +121,7 @@ class PaperEngine:
         self.regime_classifier = RegimeClassifier()
         self.use_regime_filter = self.config.get('risk_management', {}).get('use_macro_regime_filter', False)
         self.use_confirm_tf = self.config.get('risk_management', {}).get('use_multi_tf_confirmation', False)
+        self.delegate_management = self.config.get('risk_management', {}).get('delegate_management_to_mt5_ea', False)
         self.signal_validity_bars = max(2, self.config.get('risk_management', {}).get('signal_validity_bars', 2))
         
         # State tracking
@@ -266,11 +267,15 @@ class PaperEngine:
 
             # 3. IF positions exist, manage them (Breakeven & Reversal)
             if positions:
-                # 3.1 Partial Take Profit Management (New)
-                self._manage_partial_tp(symbol, strategy, positions, latest_atr)
+                if not self.delegate_management:
+                    # 3.1 Partial Take Profit Management (New)
+                    self._manage_partial_tp(symbol, strategy, positions, latest_atr)
 
-                # 3.2 Breakeven Management (Phase 3)
-                self._manage_breakeven(symbol, strategy, positions, latest_atr)
+                    # 3.2 Breakeven Management (Phase 3)
+                    self._manage_breakeven(symbol, strategy, positions, latest_atr)
+                else:
+                    if int(time.time()) % 300 == 0:
+                        print(f"[PaperEngine] Management for {symbol} delegated to MT5 EA.")
                 
                 # 3.2 Check for reversal signal
                 signal, signal_time, is_stale = self.signal_checker.get_signal(
@@ -352,6 +357,12 @@ class PaperEngine:
 
             magic_number = zlib.adler32(strat_name.encode()) % 1000000
             print(f"EXECUTING: {direction} {lot_size} lots on {symbol} (Magic: {magic_number})")
+            
+            tick = mt5.symbol_info_tick(symbol)
+            expected_entry = None
+            if tick:
+                expected_entry = tick.ask if direction == "BUY" else tick.bid
+                
             res, msg = self.order_manager.open_position(
                 symbol, direction, lot_size, 
                 sl_points=sl_points, tp_points=tp_points, 
@@ -363,7 +374,7 @@ class PaperEngine:
             self._track_processed_signal(signal_key, signal_time, cache_type='TRADE')
 
             if res is not None and res.retcode == mt5.TRADE_RETCODE_DONE:
-                self._log_trade_open(strat_name, symbol, direction, lot_size, res, sl_points, tp_points)
+                self._log_trade_open(strat_name, symbol, direction, lot_size, res, sl_points, tp_points, expected_entry=expected_entry)
                 if key in self.failed_attempts: del self.failed_attempts[key]
             else:
                 print(f"FAILED to open trade: {msg}")
@@ -447,6 +458,9 @@ class PaperEngine:
                 partial_pct = 0.50
                 trigger_mult = 1.5
 
+            if 'partial_pct_override' in strategy.params:
+                partial_pct = float(strategy.params['partial_pct_override'])
+
             symbol_info = mt5.symbol_info(symbol)
             if not symbol_info: return
 
@@ -471,7 +485,11 @@ class PaperEngine:
                 profit_points = (current_price - pos.price_open) if is_buy else (pos.price_open - current_price)
                 profit_points /= symbol_info.point
                 
-                trigger_points = (latest_atr * trigger_mult) / symbol_info.point
+                if 'partial_trigger_pips' in strategy.params:
+                    # Assume 1 standard pip = 10 MT5 points for 5-digit / 3-digit symbols
+                    trigger_points = strategy.params['partial_trigger_pips'] * 10
+                else:
+                    trigger_points = (latest_atr * trigger_mult) / symbol_info.point
                 
                 if profit_points >= trigger_points:
                     close_vol = round(db_lot * partial_pct, 2)
@@ -619,7 +637,7 @@ class PaperEngine:
         return bot_positions
 
     def _log_trade_open(self, strat_name, symbol, direction, lot, result,
-                        sl_points=0, tp_points=0):
+                        sl_points=0, tp_points=0, expected_entry=None):
         """Logs the trade to DB and pushes a Telegram notification with full strategy context."""
         import uuid
         trade_id = str(uuid.uuid4())
@@ -633,16 +651,26 @@ class PaperEngine:
             )
         strategy_id = strat_info[0][0] if strat_info else None
 
+        slippage_pips = None
+        if expected_entry is not None:
+            try:
+                from utils.pip_sizes import get_pip_size
+                pip_size = get_pip_size(symbol)
+                diff = (result.price - expected_entry) if direction == "BUY" else (expected_entry - result.price)
+                slippage_pips = round(diff / pip_size, 2)
+            except Exception as e:
+                print(f"[PaperEngine] Failed to calculate slippage: {e}")
+
         query = (
             "INSERT INTO trades "
-            "(trade_id, strategy_id, mode, account_id, pair, direction, lot_size, entry_price, open_time, status, mt5_ticket) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            "(trade_id, strategy_id, mode, account_id, pair, direction, lot_size, entry_price, expected_entry, slippage_pips, open_time, status, mt5_ticket) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         )
         # account_id=1 is the Demo account profile (MT5 .env credentials are Demo)
         self.db.execute_query(query, (
             # Use dynamic trading mode (LIVE/PAPER)
             trade_id, strategy_id, self.trading_mode, 1, symbol, direction, lot,
-            result.price, datetime.now(), 'OPENED', result.order
+            result.price, expected_entry, slippage_pips, datetime.now(), 'OPENED', result.order
         ))
 
         # Link the most recent un-claimed signal for this strategy+pair to this trade.
@@ -768,11 +796,11 @@ class PaperEngine:
         close_data = {
             "symbol": symbol,
             "direction": direction,
-            "pnl": round(pnl, 2),
+            "pnl": round(net_pnl, 2),
             "exit_price": result.price,
             "reason": "SIGNAL_REVERSAL",
             "duration": duration,
-            "currency": self.config.get('currency', 'USD'),
+            "currency": self.config.get('account', {}).get('currency', 'ZAR'),
         }
         msg = self.notif_router.format_trade_close(close_data)
         self.notif_bot.send_sync_message(msg)

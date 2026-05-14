@@ -41,6 +41,7 @@ class PerformanceMetrics:
     recovery_factor: float
     consecutive_wins: int
     consecutive_losses: int
+    avg_duration_seconds: float
 
 class PerformanceCalculator:
     """Comprehensive performance analytics for trading system."""
@@ -129,7 +130,7 @@ class PerformanceCalculator:
         query = """
             SELECT t.trade_id, t.strategy_id, s.name as strategy_name, t.pair,
                    t.entry_price, t.exit_price, t.mode, t.created_at,
-                   t.net_pnl, t.gross_pnl, t.lot_size
+                   t.net_pnl, t.gross_pnl, t.lot_size, t.duration_seconds
             FROM trades t
             LEFT JOIN strategies s ON t.strategy_id = s.strategy_id
             WHERE t.created_at >= %s::timestamp AND t.created_at <= %s::timestamp
@@ -144,7 +145,7 @@ class PerformanceCalculator:
         columns = [
             'trade_id', 'strategy_id', 'strategy_name', 'pair',
             'entry_price', 'exit_price', 'mode', 'created_at',
-            'net_pnl', 'gross_pnl', 'lot_size'
+            'net_pnl', 'gross_pnl', 'lot_size', 'duration_seconds'
         ]
 
         df = pd.DataFrame(rows, columns=columns)
@@ -200,6 +201,8 @@ class PerformanceCalculator:
         pnl_sign = (trades_df['pnl'] > 0).astype(int)
         consecutive_wins = self._max_consecutive(pnl_sign.values, 1)
         consecutive_losses = self._max_consecutive(pnl_sign.values, 0)
+        
+        avg_duration = trades_df['duration_seconds'].mean() if 'duration_seconds' in trades_df else 0
 
         return PerformanceMetrics(
             win_rate=round(win_rate / 100, 4),
@@ -219,7 +222,8 @@ class PerformanceCalculator:
             roi_pct=round(roi / 100, 4),
             recovery_factor=round(recovery_factor, 2),
             consecutive_wins=consecutive_wins,
-            consecutive_losses=consecutive_losses
+            consecutive_losses=consecutive_losses,
+            avg_duration_seconds=round(float(avg_duration or 0), 0)
         )
 
     def _calculate_by_strategy(self, trades_df: pd.DataFrame) -> Dict[str, PerformanceMetrics]:

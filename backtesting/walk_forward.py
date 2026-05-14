@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.db_client import DBClient
 from backtesting.engine import BacktestEngine
 from backtesting.metrics import BacktestMetrics
-from scripts.run_backtest import STRATEGY_MAP
+# from scripts.backtest.run_walk_forward import STRATEGY_MAP # Removed to avoid circular import
 from logging_.event_logger import EventLogger
 
 PARAM_GRIDS = {
@@ -213,6 +213,27 @@ PARAM_GRIDS = {
     "cot_sentiment": {
         "sentiment_threshold": [80, 85],
         "sell_threshold":      [25, 30]   # Added based on v2 updates
+    },
+    "fast_ma_scalper": {
+        "fast_period": [5, 7, 9],
+        "slow_period": [12, 15, 21],
+        "min_adx": [25, 30, 35],
+        "tp_atr_mult": [2.0, 3.0],
+        "sl_atr_mult": [1.0, 1.5]
+    },
+    "macd_zero_scalp": {
+        "fast_period": [8, 12],
+        "slow_period": [21, 26],
+        "adx_min": [25, 30],
+        "tp_atr_mult": [2.0, 3.0],
+        "sl_atr_mult": [1.0, 1.5]
+    },
+    "volatility_breakout_scalp": {
+        "atr_multiplier": [1.1, 1.2, 1.3],
+        "momentum_period": [3, 5, 7],
+        "adx_min": [25, 30],
+        "tp_atr_mult": [2.0, 3.0],
+        "sl_atr_mult": [1.0, 1.5]
     }
 }
 
@@ -230,6 +251,8 @@ class WalkForwardOptimizer:
         self.logger = EventLogger()
 
     def run(self, strategy_key: str, symbol: str, timeframe: str, df: pd.DataFrame, is_pct: float, oos_pct: float, n_windows: int):
+        from scripts.backtest.run_walk_forward import STRATEGY_MAP
+        
         if strategy_key not in STRATEGY_MAP:
             print(f"Unknown strategy: {strategy_key}")
             return []

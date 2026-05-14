@@ -3,7 +3,7 @@
 services:
   db:
     # Pin to minor version — update intentionally after testing (see OPTIMIZATION_SCHEDULE.md quarterly tech review)
-    image: postgres:16.6
+    image: postgres:16-alpine
     container_name: tradepanel-db
     restart: unless-stopped
     env_file: .env
@@ -22,6 +22,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.python
+    image: mraskwhy/tradepanel-backend:latest
     container_name: tradepanel-backend
     restart: unless-stopped
     env_file: .env
@@ -56,6 +57,7 @@ services:
       - ./mt5_bridge:/app/mt5_bridge
       - ./forward_test:/app/forward_test
       - ./logging_:/app/logging_
+      - ./backtesting:/app/backtesting
       - ./.env:/app/.env
       - ./backups:/app/backups
     depends_on:
@@ -67,6 +69,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.frontend
+    image: mraskwhy/tradepanel-frontend:latest
     container_name: tradepanel-frontend
     restart: unless-stopped
     networks:
@@ -86,6 +89,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.python
+    image: mraskwhy/tradepanel-telegram:latest
     container_name: tradepanel-telegram
     restart: unless-stopped
     env_file: .env
@@ -111,6 +115,7 @@ services:
       - ./mt5_bridge:/app/mt5_bridge
       - ./forward_test:/app/forward_test
       - ./logging_:/app/logging_
+      - ./backtesting:/app/backtesting
       - ./.env:/app/.env
       - ./backups:/app/backups
     depends_on:
@@ -122,6 +127,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.python
+    image: mraskwhy/tradepanel-scheduler:latest
     container_name: tradepanel-scheduler
     restart: unless-stopped
     env_file: .env
@@ -146,6 +152,7 @@ services:
       - ./mt5_bridge:/app/mt5_bridge
       - ./forward_test:/app/forward_test
       - ./logging_:/app/logging_
+      - ./backtesting:/app/backtesting
       - ./.env:/app/.env
     depends_on:
       db:
@@ -180,6 +187,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.backup
+    image: mraskwhy/tradepanel-db-backup:latest
     container_name: tradepanel-db-backup
     restart: unless-stopped
     env_file: .env
@@ -200,7 +208,7 @@ services:
         condition: service_healthy
 
   adminer:
-    image: adminer:4.8.1
+    image: adminer:latest
     container_name: tradepanel-adminer
 
     restart: unless-stopped

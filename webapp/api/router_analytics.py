@@ -54,7 +54,8 @@ async def get_analytics_summary(lookback_days: int = 30):
                 "avg_win": m.get('avg_win_usd', 0),
                 "avg_loss": m.get('avg_loss_usd', 0),
                 "consecutive_wins": m['consecutive_wins'],
-                "consecutive_losses": m['consecutive_losses']
+                "consecutive_losses": m['consecutive_losses'],
+                "avg_duration_seconds": m.get('avg_duration_seconds', 0)
             }
         }
     except Exception as e:

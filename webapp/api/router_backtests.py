@@ -103,10 +103,15 @@ def _evaluate_status(win_rate, sharpe_ratio, max_drawdown_pct, profit_factor) ->
 async def list_backtest_runs(
     strategy: Optional[str] = Query(None, description="Filter by strategy name"),
     status: Optional[str] = Query(None, description="Filter by status: PASS, FAIL, REVIEW"),
+    win_rate_min: Optional[float] = Query(None, description="Minimum win rate (0.0 to 1.0)"),
+    sharpe_min: Optional[float] = Query(None, description="Minimum Sharpe ratio"),
+    pf_min: Optional[float] = Query(None, description="Minimum Profit Factor"),
+    profit_min: Optional[float] = Query(None, description="Minimum Net Profit (ZAR)"),
+    dd_max: Optional[float] = Query(None, description="Maximum Drawdown % (0.0 to 1.0)"),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0)
 ):
-    """List backtest runs, newest first. Supports filtering by strategy and status."""
+    """List backtest runs, newest first. Supports extensive filtering."""
     try:
         db = DBClient()
 
@@ -119,9 +124,29 @@ async def list_backtest_runs(
         if status:
             conditions.append("status = %s")
             params.append(status.upper())
+        if win_rate_min is not None:
+            conditions.append("win_rate >= %s")
+            params.append(win_rate_min)
+        if sharpe_min is not None:
+            conditions.append("sharpe_ratio >= %s")
+            params.append(sharpe_min)
+        if pf_min is not None:
+            conditions.append("profit_factor >= %s")
+            params.append(pf_min)
+        if profit_min is not None:
+            conditions.append("net_profit_zar >= %s")
+            params.append(profit_min)
+        if dd_max is not None:
+            # max_drawdown_pct is usually negative in some systems, but here we treat it as magnitude if positive
+            # Let's assume the user sends a positive % magnitude like 0.12 for 12%
+            conditions.append("ABS(max_drawdown_pct) <= %s")
+            params.append(dd_max)
 
         where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-        params += [limit, offset]
+        
+        # Build final params for the main query
+        query_params = list(params)
+        query_params += [limit, offset]
 
         rows = db.execute_query(
             f"""
@@ -132,16 +157,16 @@ async def list_backtest_runs(
                    wfo_fold, wfo_total_folds, created_at
             FROM backtest_runs
             {where}
-            ORDER BY run_date DESC
+            ORDER BY run_date DESC, created_at DESC
             LIMIT %s OFFSET %s
             """,
-            tuple(params)
+            tuple(query_params)
         ) or []
 
         # Count total for pagination
         count_row = db.execute_query(
             f"SELECT COUNT(*) FROM backtest_runs {where}",
-            tuple(params[:-2]) if params[:-2] else None
+            tuple(params) if params else None
         )
         total = count_row[0][0] if count_row else 0
 

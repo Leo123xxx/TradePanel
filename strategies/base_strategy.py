@@ -172,3 +172,84 @@ class BaseStrategy(ABC):
         df.loc[(df['signal'] == -1) & ((rsi >= r_short) | (~vol_ok)), 'signal'] = 0
         
         return df
+
+    # ── Confluence Helpers (Layers 1-5) ──────────────────────────────────────
+
+    def apply_vwap_gate(self, df: pd.DataFrame, buy_cond, sell_cond):
+        """
+        Layer 1 — VWAP Gate.
+        Only allow longs when price is above session VWAP;
+        only allow shorts when price is below session VWAP.
+        Skipped silently if tick_volume column is absent.
+        """
+        if 'tick_volume' not in df.columns:
+            return buy_cond, sell_cond
+        cum_tp_vol = (df['close'] * df['tick_volume']).cumsum()
+        cum_vol    = df['tick_volume'].cumsum().replace(0, float('nan'))
+        df['_vwap'] = cum_tp_vol / cum_vol
+        above_vwap  = df['close'] > df['_vwap']
+        below_vwap  = df['close'] < df['_vwap']
+        return buy_cond & above_vwap, sell_cond & below_vwap
+
+    def apply_body_ratio_filter(self, df: pd.DataFrame, buy_cond, sell_cond, min_ratio: float = None):
+        """
+        Layer 2 — Candle Body Ratio Filter.
+        Rejects entries driven by wicks rather than a genuine directional close.
+        body / (high - low) must be >= min_ratio (default from params or 0.50).
+        """
+        ratio = min_ratio or self.params.get('body_ratio_min', 0.50)
+        body      = (df['close'] - df['open']).abs()
+        bar_range = (df['high'] - df['low']).replace(0, float('nan'))
+        strong    = (body / bar_range) >= ratio
+        return buy_cond & strong, sell_cond & strong
+
+    def apply_atr_ceiling(self, df: pd.DataFrame, buy_cond, sell_cond,
+                          atr_col: str = 'atr', avg_col: str = 'atr_avg'):
+        """
+        Layer 3 — ATR Ceiling Gate.
+        Suppresses entries when current ATR is above atr_ceil_mult × rolling average
+        (typically a news spike or gap open). Also enforces a floor so the market
+        has enough volatility to justify an entry.
+        Requires df to already contain the atr and atr_avg columns.
+        """
+        ceil_mult  = self.params.get('atr_ceil_mult',  2.5)
+        floor_mult = self.params.get('atr_floor_mult', 0.8)
+        if atr_col not in df.columns or avg_col not in df.columns:
+            return buy_cond, sell_cond
+        atr_ok = (
+            (df[atr_col] < df[avg_col] * ceil_mult) &
+            (df[atr_col] > df[avg_col] * floor_mult)
+        )
+        return buy_cond & atr_ok, sell_cond & atr_ok
+
+    def apply_cooldown(self, df: pd.DataFrame, cooldown_bars: int = None) -> pd.DataFrame:
+        """
+        Layer 4 — Cooldown Bar Suppression.
+        After any signal fires, suppress new signals for cooldown_bars bars.
+        Prevents rapid re-entries in choppy whipsaw conditions.
+        """
+        bars = cooldown_bars or self.params.get('cooldown_bars', 0)
+        if bars <= 0:
+            return df
+        arr = df['signal'].values.copy()
+        last_bar = -bars - 1
+        for i in range(len(arr)):
+            if arr[i] != 0:
+                if i - last_bar <= bars:
+                    arr[i] = 0
+                else:
+                    last_bar = i
+        df = df.copy()
+        df['signal'] = arr
+        return df
+
+    def apply_prev_bar_momentum(self, df: pd.DataFrame, buy_cond, sell_cond):
+        """
+        Layer 5 — Previous-Bar Momentum Confirmation.
+        The bar immediately before the signal must close in the trade direction
+        (bullish close for longs, bearish close for shorts).
+        Eliminates Doji/inside-bar crossovers that frequently fail.
+        """
+        prev_bull = df['close'].shift(1) > df['open'].shift(1)
+        prev_bear = df['close'].shift(1) < df['open'].shift(1)
+        return buy_cond & prev_bull, sell_cond & prev_bear

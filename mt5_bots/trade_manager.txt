@@ -1,0 +1,216 @@
+//+------------------------------------------------------------------+
+//|                                   MAW_TradeVault_Manager.mq5     |
+//|                        Developed for: Webzflow.com Infrastructure|
+//|                                     Copyright 2026, MrAskWhy.com |
+//|                                         https://www.mraskwhy.com |
+//+------------------------------------------------------------------+
+#property copyright "MrAskWhy (Pty) Ltd"
+#property link      "https://www.mraskwhy.com"
+#property version   "1.00"
+#property strict
+
+/* FAIS COMPLIANCE NOTE: 
+   This software is a Trade Management Utility. It does not generate 
+   buy/sell signals and does not constitute financial advice under the 
+   South African FAIS Act 37 of 2002. 
+*/
+
+#include <Trade\Trade.mqh>
+
+//--- 1. INPUT PARAMETERS ---
+input group "=== General Settings ==="
+input long   InpTargetMagic       = 0;          // Magic Number to Manage (0 = Manual Trades)
+input bool   InpDetailedLogs      = true;       // Enable Detailed Audit Logging
+
+input group "=== Auto SL / TP Assignment ==="
+input bool   InpAutoAssignSLTP    = true;       // Auto-assign SL/TP if missing
+input int    InpATRPeriod         = 14;         // ATR Period for Volatility Calc
+input double InpATRMultiplierSL   = 2.0;        // SL Distance (ATR Multiplier)
+input double InpRewardRatio       = 2.0;        // TP Multiplier (e.g., 2.0 = 1:2 R:R)
+
+input group "=== Break Even Logic ==="
+input bool   InpEnableAutoBE      = true;       // Move SL to Break Even
+input double InpBETriggerR        = 1.0;        // Trigger BE at this Risk multiple (1.0 = 1:1)
+input int    InpBEOffsetPoints    = 20;         // Points to lock in above BE
+
+input group "=== Partial Close Logic ==="
+input bool   InpEnablePartials    = true;       // Enable Partial Closing
+input double InpPartialTriggerR   = 1.5;        // Trigger Partial at this Risk multiple
+input double InpPartialPercent    = 50.0;       // Percentage of Volume to Close
+
+//--- 2. GLOBAL VARIABLES ---
+CTrade       m_trade;
+int          m_hATR;
+double       m_atrBuffer[];
+
+// Optimization: Throttle logging
+datetime     m_lastLogTime = 0;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit() {
+    m_trade.SetExpertMagicNumber(198510); // Manager's own magic, though it mostly modifies
+    m_trade.SetDeviationInPoints(30);
+    
+    m_hATR = iATR(_Symbol, PERIOD_CURRENT, InpATRPeriod);
+    if(m_hATR == INVALID_HANDLE) {
+        Print("[CRITICAL ERROR] Failed to load ATR indicator.");
+        return(INIT_FAILED);
+    }
+    
+    ArraySetAsSeries(m_atrBuffer, true);
+    
+    Print("==================================================");
+    Print(" MAW TradeVault Manager Initialized");
+    Print(" Infrastructure: Webzflow.com (AWS Serverless)");
+    Print(" Support: MrAskWhy.com");
+    Print("==================================================");
+    
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason) {
+    IndicatorRelease(m_hATR);
+    Print("MAW TradeVault Manager De-initialized.");
+}
+
+//+------------------------------------------------------------------+
+//| Helper: Check if Partial Close is already registered in History  |
+//+------------------------------------------------------------------+
+bool IsPartialTaken(long positionID) {
+    if(HistorySelectByPosition(positionID)) {
+        int totalDeals = HistoryDealsTotal();
+        for(int i = 0; i < totalDeals; i++) {
+            ulong ticket = HistoryDealGetTicket(i);
+            // If there is an OUT deal that is not the final close, a partial occurred
+            if(HistoryDealGetInteger(ticket, DEAL_ENTRY) == DEAL_ENTRY_OUT) {
+                return true; 
+            }
+        }
+    }
+    return false;
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick() {
+    // Refresh ATR Data
+    if(CopyBuffer(m_hATR, 0, 0, 1, m_atrBuffer) <= 0) return;
+    
+    double currentATR = m_atrBuffer;
+    double pt = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+    if(pt == 0) pt = 0.00001; // Division by zero safety
+    
+    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    int stopsLevel = (int)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL);
+
+    // Core Loop: Backwards iteration for safety
+    for(int i = PositionsTotal() - 1; i >= 0; i--) {
+        ulong ticket = PositionGetTicket(i);
+        if(!PositionSelectByTicket(ticket)) continue;
+        
+        // Filter by Symbol and Magic Number
+        if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+        long magic = PositionGetInteger(POSITION_MAGIC);
+        if(magic != InpTargetMagic && InpTargetMagic != -1) continue; // -1 could mean 'all' if you prefer
+        
+        long   type   = PositionGetInteger(POSITION_TYPE);
+        double open   = PositionGetDouble(POSITION_PRICE_OPEN);
+        double current= PositionGetDouble(POSITION_PRICE_CURRENT);
+        double sl     = PositionGetDouble(POSITION_SL);
+        double tp     = PositionGetDouble(POSITION_TP);
+        double vol    = PositionGetDouble(POSITION_VOLUME);
+        long   posID  = PositionGetInteger(POSITION_IDENTIFIER);
+        
+        // ---------------------------------------------------------
+        // 1. AUTO ASSIGN SL/TP
+        // ---------------------------------------------------------
+        if(InpAutoAssignSLTP && (sl == 0 || tp == 0)) {
+            double newSL = sl;
+            double newTP = tp;
+            double spreadDist = ask - bid;
+            double riskDist = (currentATR * InpATRMultiplierSL) + spreadDist;
+            
+            if(type == POSITION_TYPE_BUY) {
+                if(newSL == 0) newSL = open - riskDist;
+                if(newTP == 0) newTP = open + (riskDist * InpRewardRatio);
+            } else {
+                if(newSL == 0) newSL = open + riskDist;
+                if(newTP == 0) newTP = open - (riskDist * InpRewardRatio);
+            }
+            
+            // Validate minimum stop levels
+            bool isValid = true;
+            if(type == POSITION_TYPE_BUY) {
+                if(bid - newSL < stopsLevel * pt) isValid = false;
+            } else {
+                if(newSL - ask < stopsLevel * pt) isValid = false;
+            }
+            
+            if(isValid && m_trade.PositionModify(ticket, NormalizeDouble(newSL, _Digits), NormalizeDouble(newTP, _Digits))) {
+                if(InpDetailedLogs) PrintFormat("[MAW Vault] Auto-Assigned SL/TP to Ticket #%I64u", ticket);
+            }
+            continue; // Wait for next tick to process management
+        }
+        
+        // Ensure we have a valid risk baseline for management
+        if(sl == 0) continue; 
+        
+        double baseRisk = MathAbs(open - sl);
+        if(baseRisk < pt) continue; 
+        
+        double currentProfitDist = (type == POSITION_TYPE_BUY) ? (current - open) : (open - current);
+        double currentR = currentProfitDist / baseRisk;
+
+        // ---------------------------------------------------------
+        // 2. BREAK EVEN LOGIC
+        // ---------------------------------------------------------
+        if(InpEnableAutoBE) {
+            bool requiresBE = false;
+            double newBE = open;
+            
+            if(type == POSITION_TYPE_BUY && currentR >= InpBETriggerR) {
+                newBE = open + (InpBEOffsetPoints * pt);
+                // Check if SL is currently below the new BE target
+                if(sl < newBE && (bid - newBE) > stopsLevel * pt) requiresBE = true;
+            }
+            else if(type == POSITION_TYPE_SELL && currentR >= InpBETriggerR) {
+                newBE = open - (InpBEOffsetPoints * pt);
+                // Check if SL is currently above the new BE target
+                if((sl > newBE || sl == 0) && (newBE - ask) > stopsLevel * pt) requiresBE = true;
+            }
+            
+            if(requiresBE && m_trade.PositionModify(ticket, NormalizeDouble(newBE, _Digits), tp)) {
+                if(InpDetailedLogs) PrintFormat("[MAW Vault] Break Even Secured on Ticket #%I64u at %.5f", ticket, newBE);
+            }
+        }
+
+        // ---------------------------------------------------------
+        // 3. PARTIAL CLOSE LOGIC
+        // ---------------------------------------------------------
+        if(InpEnablePartials && currentR >= InpPartialTriggerR) {
+            // Check History Deals to prevent closing multiple partials on the same trade
+            if(!IsPartialTaken(posID)) {
+                double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+                double stepLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+                
+                double closeVol = vol * (InpPartialPercent / 100.0);
+                closeVol = MathFloor(closeVol / stepLot) * stepLot; // Normalize volume
+                
+                if(closeVol >= minLot) {
+                    if(m_trade.PositionClosePartial(ticket, closeVol)) {
+                        if(InpDetailedLogs) PrintFormat("[MAW Vault] Partial %.2f Lots closed on Ticket #%I64u", closeVol, ticket);
+                    } else {
+                        if(InpDetailedLogs) PrintFormat("[MAW Vault Error] Failed Partial Close: %d", GetLastError());
+                    }
+                }
+            }
+        }
+    }
+}

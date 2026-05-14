@@ -22,9 +22,9 @@
 
 ---
 
-## ✨ Status: 🚀 v1.0 — Bot Live
-**Version**: 1.0.0 "Bot Live"  
-**Release Date**: May 10, 2026  
+## ✨ Status: 🚀 v1.1 — Dashboard Modernization
+**Version**: 1.1.0 "Visual Intelligence"  
+**Release Date**: May 11, 2026  
 **Consolidation**: [Tier 1 & 2 Fleet](results/STRATEGY_TIER_CONSOLIDATION.md)  
 **WFO Mastery**: 5-Window Validation Complete  
 
@@ -32,14 +32,16 @@
 - **Platform**: MetaTrader 5 (MT5)
 - **Execution Mode**: `trade` (Tier 1) | `paper` (Tier 2/3)
 - **Risk Profile**: 2% per trade | 20% Account Circuit Breaker
-- **Dashboard**: http://localhost:3000 (Live Activity & Signals)
+- **Dashboard**: http://tradepanel.mraskwhy.local/ (Modernized v1.1 Hub)
+- **Caching**: SWR-enabled (TanStack) for high efficiency
 - **Notifications**: Telegram (Active)
 
-### Release Milestones (v1.0)
+### Release Milestones (v1.1)
+- ✅ **Dashboard Modernization**: Unified high-level overview of active strategy settings and configurations.
+- ✅ **Efficiency Boost**: Integrated SWR caching to reduce redundant API requests and improve UI responsiveness.
+- ✅ **Advanced Filtering**: Added server-side filtering for backtests (Win Rate, Sharpe, Profit Factor, Drawdown).
+- ✅ **Intelligence Expansion**: Real-time cross-referencing between live config and performance metrics.
 - ✅ **Fleet Consolidation**: 12 Tier 1 strategies promoted to production.
-- ✅ **Parameter Mastery**: Hikkake Trap and others updated with optimized WFO parameters.
-- ✅ **Dashboard Visibility**: Live activity feed for scheduled runs + signal monitor.
-- ✅ **Infrastructure Hardening**: Stable container architecture with automated daily data sync.
 
 ---
 
@@ -62,7 +64,7 @@ Baseline WFO Validation: [wfo_master_summary.md](results/wfo_master_summary.md)
 - **Multi-Timeframe** — M15, H1, H4, D1
 - **18 Pairs** — Gold, Silver, FX, Crypto, Indices, US Stock CFDs
 - **Paper + Live Mode** — Full paper engine with MT5 execution
-- **Dashboard** — Real-time P&L, connectivity, Signals tab (per-account signal monitor), Accounts tab
+- **Dashboard** — Real-time P&L, http://tradepanel.mraskwhy.local/, Signals tab (per-account signal monitor), Accounts tab
 - **Telegram Bot** — Trade open/close alerts, signal digests (✅ TAKEN / ⏳ Not taken)
 - **Scheduler** — Overnight backtests, daily data sync, recommendations engine
 

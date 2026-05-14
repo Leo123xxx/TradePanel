@@ -89,3 +89,36 @@ async def get_dashboard_data():
         },
         "optimization_pipeline": { "queue": [] }
     }
+@router.get("/config/active")
+async def get_active_config_summary():
+    """Returns a high-level summary of all enabled strategies and their primary settings."""
+    try:
+        config = get_config()
+        active_list = config.get("active", [])
+        
+        summary = []
+        for slug in active_list:
+            s_cfg = config.get(slug)
+            if not s_cfg:
+                continue
+            
+            # Extract high-level overview
+            summary.append({
+                "slug": slug,
+                "name": s_cfg.get("name", slug),
+                "enabled": s_cfg.get("enabled", False),
+                "tier": s_cfg.get("tier", "N/A"),
+                "category": s_cfg.get("category", "N/A"),
+                "pairs": s_cfg.get("pairs", []),
+                "timeframes": s_cfg.get("timeframes", []),
+                "parameters": s_cfg.get("parameters", {}),
+                "mode": s_cfg.get("mode", "paper"),
+                "lot_size": s_cfg.get("lot_size", 0.01)
+            })
+            
+        return {
+            "total_active": len(summary),
+            "strategies": summary
+        }
+    except Exception as e:
+        return {"error": str(e)}

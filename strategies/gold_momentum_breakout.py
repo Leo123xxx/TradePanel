@@ -88,6 +88,10 @@ class GoldMomentumBreakoutStrategy(BaseStrategy):
         else:
             vol_ok = True
 
+        # ATR rolling average (for Layer 3)
+        df['atr']     = __import__('ta_compat').atr(df['high'], df['low'], df['close'], length=14)
+        df['atr_avg'] = df['atr'].rolling(20).mean()
+
         df['signal'] = 0
 
         # Sustained squeeze: bb_width must be < threshold for N consecutive bars
@@ -103,8 +107,6 @@ class GoldMomentumBreakoutStrategy(BaseStrategy):
             trend_strength &
             vol_ok
         )
-
-        # Sell: breakout below lower band + squeeze + RSI momentum + macro trend + ADX + volume
         sell_cond = (
             (df['close'] < df[bb_lower_col]) &
             sustained_squeeze &
@@ -114,7 +116,12 @@ class GoldMomentumBreakoutStrategy(BaseStrategy):
             vol_ok
         )
 
-        df.loc[buy_cond, 'signal'] = 1
+        # Layer 2 — Candle body ratio (genuine breakout bar, not a wick)
+        buy_cond, sell_cond = self.apply_body_ratio_filter(df, buy_cond, sell_cond)
+        # Layer 3 — ATR ceiling (skip news explosions that reverse immediately)
+        buy_cond, sell_cond = self.apply_atr_ceiling(df, buy_cond, sell_cond)
+
+        df.loc[buy_cond,  'signal'] = 1
         df.loc[sell_cond, 'signal'] = -1
 
         # Cooldown filter — suppress signals within N bars of last signal

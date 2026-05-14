@@ -33,6 +33,9 @@ class BBSqueezeScalp(BaseStrategy):
             "vol_threshold_mult": 1.5,  # loosened 2.0→1.5
             "session_start_utc":  7,
             "session_end_utc":   17,
+            "stoch_k": 14,
+            "stoch_d": 3,
+            "atr_avg_p": 20,
         }
         super().__init__(
             name="bb_squeeze_scalp",
@@ -84,6 +87,15 @@ class BBSqueezeScalp(BaseStrategy):
         df['adx'] = adx_df["ADX_14"]
         trend_ok  = df['adx'] >= adx_min
 
+        # ATR Expansion
+        df['atr'] = ta.atr(df['high'], df['low'], df['close'], length=14)
+        df['atr_avg'] = df['atr'].rolling(self.params.get("atr_avg_p", 20)).mean()
+        
+        # Stochastic confirmation
+        stoch = ta.stoch(df['high'], df['low'], df['close'], k=self.params.get("stoch_k", 14), d=self.params.get("stoch_d", 3))
+        df['stoch_k'] = stoch.iloc[:, 0]
+        df['stoch_d'] = stoch.iloc[:, 1]
+
         # RSI gate
         df['rsi']  = ta.rsi(df['close'], length=rsi_p)
         rsi_ok_l   = df['rsi'] >= rsi_long
@@ -110,6 +122,7 @@ class BBSqueezeScalp(BaseStrategy):
             & (df['close'] > df['bb_upper'])
             & (df['close'].shift(1) <= df['bb_upper'].shift(1))
             & above_ema & trend_ok & rsi_ok_l & vol_spike & in_session
+            & (df['stoch_k'] > df['stoch_d']) & (df['atr'] > df['atr_avg'])
         )
         df.loc[buy_signal, 'signal'] = 1
 
@@ -118,6 +131,7 @@ class BBSqueezeScalp(BaseStrategy):
             & (df['close'] < df['bb_lower'])
             & (df['close'].shift(1) >= df['bb_lower'].shift(1))
             & below_ema & trend_ok & rsi_ok_s & vol_spike & in_session
+            & (df['stoch_k'] < df['stoch_d']) & (df['atr'] > df['atr_avg'])
         )
         df.loc[sell_signal, 'signal'] = -1
 

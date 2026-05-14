@@ -108,25 +108,33 @@ class DualEMAMomentum(BaseStrategy):
             (df['open'].shift(1) < df['close'].shift(1))
         )
 
+        df['atr']     = ta.atr(df['high'], df['low'], df['close'], length=14)
+        df['atr_avg'] = df['atr'].rolling(20).mean()
+
         df['signal'] = 0
 
-        df.loc[
+        buy_cond = (
             ribbon_up &
             adx_ok &
             (df['rsi'] > rsi_long_min) &
             vol_ok &
-            df['is_bull_engulfing'],
-            'signal'
-        ] = 1
-
-        df.loc[
+            df['is_bull_engulfing']
+        )
+        sell_cond = (
             ribbon_down &
             adx_ok &
             (df['rsi'] < rsi_short_max) &
             vol_ok &
-            df['is_bear_engulfing'],
-            'signal'
-        ] = -1
+            df['is_bear_engulfing']
+        )
+
+        # Layer 3 — ATR ceiling (ribbon flips on news gaps are unreliable)
+        buy_cond, sell_cond = self.apply_atr_ceiling(df, buy_cond, sell_cond)
+        # Layer 5 — Previous-bar momentum (confirm the bar before the engulf is directional)
+        buy_cond, sell_cond = self.apply_prev_bar_momentum(df, buy_cond, sell_cond)
+
+        df.loc[buy_cond,  'signal'] = 1
+        df.loc[sell_cond, 'signal'] = -1
 
         return df
 

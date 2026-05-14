@@ -1,5 +1,5 @@
 # TradePanel Docker requirements — synchronized with root requirements
-# Last resolved: 2026-04-30
+# Last resolved: 2026-05-12
 
 # Web framework
 fastapi==0.115.5
@@ -29,6 +29,7 @@ python-telegram-bot==22.0
 pandas==2.3.3
 numpy==2.4.4
 scipy==1.16.1
+pyarrow==16.1.0
 
 # Market data feeds
 requests==2.32.3

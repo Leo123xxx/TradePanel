@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import useSWR, { mutate } from 'swr'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend
@@ -10,6 +11,18 @@ const API = ''  // Use relative URLs — nginx proxies /api/ to backend, works f
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const fetcher = url => fetch(url).then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+
+function useFetch(url, deps = []) {
+  // We use the URL as the SWR key. SWR handles the caching and deps implicitly by the key.
+  const { data, error, isValidating } = useSWR(url ? url : null, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 2000,
+    revalidateIfStale: true
+  })
+  return { data, loading: isValidating && !data, error, mutate }
+}
 
 function fmt(val, decimals = 2) {
   if (val === null || val === undefined) return '—'
@@ -52,6 +65,14 @@ function winRateColor(wr) {
   return 'var(--critical)'
 }
 
+function fmtDuration(seconds) {
+  if (!seconds) return '—'
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
 // Parse a naive timestamp string from the API (stored as UTC in Docker) as UTC,
 // so the browser displays it in local SAST time.
 function toLocalTime(ts) {
@@ -59,24 +80,6 @@ function toLocalTime(ts) {
   const s = String(ts)
   const hastz = s.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(s)
   return new Date(hastz ? s : s.replace(' ', 'T') + 'Z')
-}
-
-function useFetch(url, deps = []) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    setLoading(true)
-    setError(null)
-    fetch(url)
-      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
-      .then(d => { setData(d); setLoading(false) })
-      .catch(e => { setError(String(e)); setLoading(false) })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
-
-  return { data, loading, error }
 }
 
 // ---------------------------------------------------------------------------
@@ -318,13 +321,24 @@ function KpiStrip({ lookbackDays }) {
 
 function StrategyTable({ lookbackDays }) {
   const { data, loading, error } = useFetch(`${API}/api/analytics/by-strategy?lookback_days=${lookbackDays}`, [lookbackDays])
+  const { data: configData } = useFetch(`${API}/api/config/active`, [])
+  
   const [sortKey, setSortKey] = useState('net_profit')
   const [sortDir, setSortDir] = useState('desc')
 
+  const activeSlugs = React.useMemo(() => {
+    if (!configData?.strategies) return new Set()
+    return new Set(configData.strategies.map(s => s.name.toLowerCase().replace(/ /g, '_')))
+  }, [configData])
+
   const rows = React.useMemo(() => {
     if (!data?.strategies) return []
-    return Object.entries(data.strategies).map(([name, m]) => ({ name, ...m }))
-  }, [data])
+    return Object.entries(data.strategies).map(([name, m]) => ({ 
+      name, 
+      isActive: activeSlugs.has(name.toLowerCase().replace(/ /g, '_')),
+      ...m 
+    }))
+  }, [data, activeSlugs])
 
   const sorted = React.useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -348,7 +362,7 @@ function StrategyTable({ lookbackDays }) {
     )
   }
 
-  if (loading) return <div className="table-placeholder">Loading strategy metrics...</div>
+  if (loading && !data) return <div className="table-placeholder">Loading strategy metrics...</div>
   if (error) return <div className="table-placeholder error">Analytics API unavailable — start the backend server</div>
   if (!sorted.length) return <div className="table-placeholder">No trade data for this period. Trades will appear as the bot runs.</div>
 
@@ -375,7 +389,12 @@ function StrategyTable({ lookbackDays }) {
 
             return (
               <tr key={s.name} className="data-row">
-                <td className="strat-name">{s.name.replace(/_/g, ' ')}</td>
+                <td className="strat-name">
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {s.name.replace(/_/g, ' ')}
+                      {s.isActive && <span className="status-badge" style={{ fontSize: '0.6rem', padding: '2px 4px', background: 'rgba(0,230,118,0.1)', color: '#00e676', borderColor: 'rgba(0,230,118,0.2)' }}>ACTIVE</span>}
+                   </div>
+                </td>
                 <td>{s.total_trades ?? '—'}</td>
                 <td style={{ color: winRateColor(s.win_rate), fontWeight: 600 }}>
                   {s.win_rate != null ? fmt(s.win_rate * 100, 1) + '%' : '—'}
@@ -411,13 +430,34 @@ function StrategyTable({ lookbackDays }) {
 // ---------------------------------------------------------------------------
 
 function BacktestTable() {
-  const [filter, setFilter] = useState({ strategy: '', status: '' })
-  const [applied, setApplied] = useState({ strategy: '', status: '' })
+  const [filter, setFilter] = useState({ 
+    strategy: '', 
+    status: '',
+    winRateMin: '',
+    sharpeMin: '',
+    pfMin: '',
+    profitMin: '',
+    ddMax: ''
+  })
+  const [applied, setApplied] = useState({ 
+    strategy: '', 
+    status: '',
+    winRateMin: '',
+    sharpeMin: '',
+    pfMin: '',
+    profitMin: '',
+    ddMax: ''
+  })
 
   const url = React.useMemo(() => {
     const p = new URLSearchParams({ limit: '100' })
     if (applied.strategy) p.set('strategy', applied.strategy)
     if (applied.status) p.set('status', applied.status)
+    if (applied.winRateMin) p.set('win_rate_min', Number(applied.winRateMin) / 100)
+    if (applied.sharpeMin) p.set('sharpe_min', applied.sharpeMin)
+    if (applied.pfMin) p.set('pf_min', applied.pfMin)
+    if (applied.profitMin) p.set('profit_min', applied.profitMin)
+    if (applied.ddMax) p.set('dd_max', Number(applied.ddMax) / 100)
     return `${API}/api/backtests?${p}`
   }, [applied])
 
@@ -487,22 +527,57 @@ function BacktestTable() {
       )}
 
       {/* Filters */}
-      <div className="bt-filters">
+      <div className="bt-filters" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
         <input
           className="bt-input"
-          placeholder="Filter strategy..."
+          placeholder="Strategy..."
           value={filter.strategy}
           onChange={e => setFilter(f => ({ ...f, strategy: e.target.value }))}
           onKeyDown={e => e.key === 'Enter' && setApplied(filter)}
+          style={{ width: 140 }}
         />
-        <select className="bt-select" value={filter.status} onChange={e => { setFilter(f => ({ ...f, status: e.target.value })); setApplied(f => ({ ...f, status: e.target.value })) }}>
+        <select className="bt-select" value={filter.status} onChange={e => { 
+          const newF = { ...filter, status: e.target.value };
+          setFilter(newF); 
+          setApplied(newF);
+        }}>
           <option value="">All statuses</option>
           <option value="PASS">PASS</option>
           <option value="REVIEW">REVIEW</option>
           <option value="FAIL">FAIL</option>
         </select>
+        
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>WR% {'>'}</span>
+          <input className="bt-input" type="number" placeholder="0" value={filter.winRateMin} 
+            onChange={e => setFilter(f => ({...f, winRateMin: e.target.value}))} style={{ width: 50 }} />
+        </div>
+        
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Sharpe {'>'}</span>
+          <input className="bt-input" type="number" step="0.1" placeholder="0" value={filter.sharpeMin} 
+            onChange={e => setFilter(f => ({...f, sharpeMin: e.target.value}))} style={{ width: 50 }} />
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>PF {'>'}</span>
+          <input className="bt-input" type="number" step="0.1" placeholder="0" value={filter.pfMin} 
+            onChange={e => setFilter(f => ({...f, pfMin: e.target.value}))} style={{ width: 50 }} />
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>DD% {'<'}</span>
+          <input className="bt-input" type="number" step="1" placeholder="100" value={filter.ddMax} 
+            onChange={e => setFilter(f => ({...f, ddMax: e.target.value}))} style={{ width: 50 }} />
+        </div>
+
         <button className="bt-btn" onClick={() => setApplied(filter)}>Apply</button>
-        <button className="bt-btn secondary" onClick={() => { setFilter({ strategy: '', status: '' }); setApplied({ strategy: '', status: '' }) }}>Clear</button>
+        <button className="bt-btn secondary" onClick={() => { 
+          const empty = { strategy: '', status: '', winRateMin: '', sharpeMin: '', pfMin: '', profitMin: '', ddMax: '' };
+          setFilter(empty); 
+          setApplied(empty); 
+        }}>Clear</button>
+        
         <span style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
           {data?.total ?? 0} runs
           {btLastSync && <span style={{ marginLeft: 12, opacity: 0.7 }}>&middot; synced {btLastSync.toLocaleTimeString()}</span>}
@@ -741,6 +816,110 @@ function SignalsMonitor() {
   )
 }
 
+function PerformanceDashboard({ lookbackDays }) {
+  const { data, loading } = useFetch(`${API}/api/analytics/daily?lookback_days=${lookbackDays}`, [lookbackDays])
+  const { data: summaryData } = useFetch(`${API}/api/analytics/summary?lookback_days=${lookbackDays}`, [lookbackDays])
+  
+  const days = React.useMemo(() => {
+    if (!data?.daily) return []
+    return [...data.daily].sort((a, b) => new Date(a.date) - new Date(b.date))
+  }, [data])
+
+  const s = summaryData?.account_summary
+
+  if (loading) return <div className="table-placeholder">Loading performance data...</div>
+
+  return (
+    <div className="performance-view" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      
+      {/* 1. Header Stats Grid */}
+      <div className="stat-summary-grid">
+         <div className="stat-item">
+            <div className="stat-label">Total Net Profit</div>
+            <div className="stat-value" style={{ color: colorByVal(s?.net_profit) }}>{fmtZAR(s?.net_profit)}</div>
+         </div>
+         <div className="stat-item">
+            <div className="stat-label">Profit Factor</div>
+            <div className="stat-value" style={{ color: (s?.profit_factor >= 2 ? 'var(--success)' : 'var(--text-primary)') }}>{fmt(s?.profit_factor)}</div>
+         </div>
+         <div className="stat-item">
+            <div className="stat-label">Win Rate</div>
+            <div className="stat-value" style={{ color: winRateColor(s?.win_rate) }}>{fmt(s?.win_rate * 100, 1)}%</div>
+         </div>
+         <div className="stat-item">
+            <div className="stat-label">Recovery Factor</div>
+            <div className="stat-value" style={{ color: 'var(--accent-primary)' }}>{fmt(s?.recovery_factor)}</div>
+         </div>
+         <div className="stat-item">
+            <div className="stat-label">Avg Trade Duration</div>
+            <div className="stat-value">{fmtDuration(s?.avg_duration_seconds)}</div>
+         </div>
+      </div>
+
+      <div className="two-col" style={{ gridTemplateColumns: '2fr 1fr' }}>
+        {/* 2. Trading Calendar */}
+        <div className="card">
+          <div className="calendar-header">
+            <h3 className="card-h">Trading Calendar</h3>
+            <div className="calendar-month-nav">
+               <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+            </div>
+          </div>
+          <div className="calendar-grid">
+            {days.slice(-28).map(d => (
+              <div key={d.date} className="calendar-day">
+                <div className="calendar-date">{d.date.slice(8, 10)}</div>
+                <div className="calendar-pnl" style={{ color: colorByVal(d.pnl) }}>
+                  {d.pnl === 0 ? '—' : fmtZAR(d.pnl)}
+                </div>
+                <div className="calendar-pct" style={{ color: 'var(--text-secondary)' }}>
+                  {d.trades > 0 ? `${d.trades} tr` : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. Win Rate Radial / Breakdown */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <h3 className="card-h" style={{ alignSelf: 'flex-start', marginBottom: '2rem' }}>Win Probability</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Wins', value: s?.winning_trades || 1, fill: 'var(--success)' },
+                  { name: 'Losses', value: s?.losing_trades || 1, fill: 'var(--critical)' }
+                ]}
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                <Cell key="win" fill="var(--success)" />
+                <Cell key="loss" fill="var(--critical)" />
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>{fmt(s?.win_rate * 100, 1)}%</div>
+             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Weighted Win Rate</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Detailed Strategy Table (Reused) */}
+      <div className="card">
+         <div className="card-head">
+            <h3 className="card-h">Strategy Performance Breakdown</h3>
+         </div>
+         <StrategyTable lookbackDays={lookbackDays} />
+      </div>
+
+    </div>
+  )
+}
+
 function WfoIntelligencePanel() {
   const { data: status, loading: sLoading } = usePolling(`${API}/api/wfo/status`, 10000)
   const { data: alphas, loading: aLoading } = usePolling(`${API}/api/wfo/top-alphas`, 30000)
@@ -856,6 +1035,68 @@ function usePolling(url, intervalMs) {
   }, [fetchNow, intervalMs])
 
   return { data, loading, error, lastSync, refetch: fetchNow }
+}
+
+// ---------------------------------------------------------------------------
+// ConfigOverview – Summarized settings for every active strategy
+// ---------------------------------------------------------------------------
+
+function ConfigOverview() {
+  const { data, loading } = useFetch(`${API}/api/config/active`, [])
+  if (loading && !data) return <div className="card">Loading Strategy Configs...</div>
+  if (!data?.strategies) return null
+
+  return (
+    <div className="card">
+       <div className="card-head">
+         <h3 className="card-h">Active Strategy Configs</h3>
+         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <span className="live-dot"><span className="pulse" /></span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{data.total_active} Active</span>
+         </div>
+       </div>
+       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+         {data.strategies.map(s => (
+           <div key={s.slug} style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)', transition: 'transform 0.2s', cursor: 'default' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <div>
+                   <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{s.name}</div>
+                   <div style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.category}</div>
+                </div>
+                <span className="status-pill" style={{ 
+                   fontSize: '0.6rem', 
+                   padding: '2px 6px',
+                   background: s.tier === 'TIER_1' ? 'rgba(0,229,255,0.1)' : 'rgba(255,255,255,0.05)',
+                   color: s.tier === 'TIER_1' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                   border: `1px solid ${s.tier === 'TIER_1' ? 'rgba(0,229,255,0.2)' : 'rgba(255,255,255,0.1)'}`
+                }}>{s.tier}</span>
+             </div>
+             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 10, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {s.pairs.slice(0, 3).map(p => <span key={p} style={{ background: 'rgba(255,255,255,0.05)', padding: '1px 4px', borderRadius: 3 }}>{p}</span>)}
+                {s.pairs.length > 3 && <span>+{s.pairs.length - 3} more</span>}
+                <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{s.timeframes.join(', ')}</span>
+             </div>
+             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', fontSize: '0.7rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 8 }}>
+                {Object.entries(s.parameters).slice(0, 4).map(([k,v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ opacity: 0.5 }}>{k.replace(/_/g, ' ')}:</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{typeof v === 'boolean' ? (v ? 'YES' : 'NO') : v}</span>
+                  </div>
+                ))}
+             </div>
+             <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.65rem', color: s.mode === 'trade' ? 'var(--success)' : 'var(--warning)', fontWeight: 700 }}>
+                   {s.mode.toUpperCase()} MODE
+                </span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Lot: {s.lot_size}</span>
+             </div>
+           </div>
+         ))}
+       </div>
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -1910,7 +2151,10 @@ function AccountsTab({ lookbackDays }) {
       {/* Account switcher */}
       <div className="card" style={{ padding: '1rem 1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 700, fontSize: '1rem' }}>Account Profile</span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Account Profile</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Sync your MT5 history below</span>
+          </div>
           {loadingAccounts ? (
             <span style={{ color: 'var(--text-secondary)' }}>Loading accounts...</span>
           ) : (
@@ -1939,12 +2183,30 @@ function AccountsTab({ lookbackDays }) {
               ))}
             </div>
           )}
-          {selectedAccount && (
-            <span style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-              {selectedAccount.broker} &middot; {selectedAccount.currency} &middot; Balance: {selectedAccount.initial_balance?.toLocaleString()}
-            </span>
-          )}
+          
+          <button 
+            className={`bt-apply ${syncing ? 'loading' : ''}`} 
+            onClick={handleSync} 
+            disabled={syncing}
+            style={{ 
+              marginLeft: 'auto', 
+              background: 'var(--accent-primary)', 
+              color: '#000', 
+              fontWeight: 700,
+              padding: '0.5rem 1.25rem'
+            }}
+          >
+            {syncing ? 'Syncing...' : 'SYNC MT5 HISTORY'}
+          </button>
         </div>
+        {selectedAccount && (
+          <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+             <span><strong>Broker:</strong> {selectedAccount.broker}</span>
+             <span><strong>Currency:</strong> {selectedAccount.currency}</span>
+             <span><strong>Initial Balance:</strong> {selectedAccount.initial_balance?.toLocaleString()}</span>
+             {selectedAccount.notes && <span><strong>Notes:</strong> {selectedAccount.notes}</span>}
+          </div>
+        )}
       </div>
 
       {/* KPI strip */}
@@ -2186,7 +2448,7 @@ function SignalsTab() {
 // Main App
 // ---------------------------------------------------------------------------
 
-const TABS = ['Overview', 'Strategies', 'Backtests', 'Accounts', 'Signals', 'Logs']
+const TABS = ['Overview', 'Performance', 'Strategies', 'Backtests', 'Accounts', 'Signals', 'Logs']
 
 export default function App() {
   const [tab, setTab] = useState('Overview')
@@ -2231,7 +2493,7 @@ export default function App() {
         <div className="header-left">
           <div className="logo-mark">T</div>
           <span className="logo-text">TRADEPANEL</span>
-          <span className="logo-sub">HUB v2.0</span>
+          <span className="logo-sub">HUB v2.1-PERF</span>
         </div>
 
         {/* Tabs */}
@@ -2279,6 +2541,8 @@ export default function App() {
           <>
             <KpiStrip lookbackDays={lookbackDays} />
             
+            <ConfigOverview />
+
             <div className="two-col" style={{ gridTemplateColumns: '3fr 2fr' }}>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <WfoIntelligencePanel />
@@ -2343,6 +2607,11 @@ export default function App() {
         {/* -- ACCOUNTS TAB -- */}
         {tab === 'Accounts' && (
           <AccountsTab lookbackDays={lookbackDays} />
+        )}
+
+        {/* -- PERFORMANCE TAB -- */}
+        {tab === 'Performance' && (
+          <PerformanceDashboard lookbackDays={lookbackDays} />
         )}
 
         {/* -- SIGNALS TAB -- */}

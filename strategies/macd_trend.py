@@ -106,7 +106,6 @@ class MACDTrendStrategy(BaseStrategy):
             & macro_up
             & rsi_ok_long
         )
-
         sell_cond = (
             macd_cross_down
             & hist_slope_down
@@ -115,6 +114,13 @@ class MACDTrendStrategy(BaseStrategy):
             & macro_down
             & rsi_ok_short
         )
+
+        # Layer 3 — ATR ceiling (skip MACD crosses triggered by gap/news events)
+        df['atr']     = ta.atr(df['high'], df['low'], df['close'], length=14)
+        df['atr_avg'] = df['atr'].rolling(20).mean()
+        buy_cond, sell_cond = self.apply_atr_ceiling(df, buy_cond, sell_cond)
+        # Layer 5 — Prev-bar momentum (the bar before the MACD cross must be directional)
+        buy_cond, sell_cond = self.apply_prev_bar_momentum(df, buy_cond, sell_cond)
 
         df.loc[buy_cond,  'signal'] =  1
         df.loc[sell_cond, 'signal'] = -1

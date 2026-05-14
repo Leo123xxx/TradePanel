@@ -36,6 +36,7 @@ class RSIExtremesScalp(BaseStrategy):
             "vol_spike_mult":      1.5, # restored to 1.5
             "session_start_utc":   7,  # NEW: London open
             "session_end_utc":    17,  # NEW: NY close
+            "trend_period":      200,  # NEW: secondary trend filter
         }
         super().__init__(
             name="rsi_extremes_scalp",
@@ -67,8 +68,13 @@ class RSIExtremesScalp(BaseStrategy):
             adx_df    = ta.adx(df['high'], df['low'], df['close'], length=14)
             df['adx'] = adx_df["ADX_14"]
         except Exception:
-            df['adx'] = 15.0
+            df['adx'] = adx_df["ADX_14"]
         not_trending = df['adx'] <= adx_max
+
+        # Trend filter
+        df['trend_ma'] = ta.sma(df['close'], length=self.params.get("trend_period", 200))
+        trend_up = df['close'] > df['trend_ma']
+        trend_down = df['close'] < df['trend_ma']
 
         # Volume spike gate — genuine capitulation / blow-off requires volume
         if vol_mult > 0 and 'tick_volume' in df.columns:
@@ -90,18 +96,28 @@ class RSIExtremesScalp(BaseStrategy):
             (df['prev_rsi'] <= oversold) &
             (df['rsi'] > df['prev_rsi']) &
             (df['rsi'] > (oversold + min_move)) &
-            not_trending & vol_ok & in_session
+            not_trending & vol_ok & in_session & trend_up
         )
-        df.loc[buy_signal, 'signal'] = 1
-
         sell_signal = (
             (df['prev_rsi'] >= overbought) &
             (df['rsi'] < df['prev_rsi']) &
             (df['rsi'] < (overbought - min_move)) &
-            not_trending & vol_ok & in_session
+            not_trending & vol_ok & in_session & trend_down
         )
+
+        # Layer 1 — VWAP gate (confirm institutional fair value)
+        buy_signal, sell_signal = self.apply_vwap_gate(df, buy_signal, sell_signal)
+        # Layer 3 — ATR ceiling (skip news spikes where RSI extremes are meaningless)
+        if 'atr' not in df.columns:
+            df['atr']     = __import__('ta_compat').atr(df['high'], df['low'], df['close'], length=14)
+            df['atr_avg'] = df['atr'].rolling(20).mean()
+        buy_signal, sell_signal = self.apply_atr_ceiling(df, buy_signal, sell_signal)
+
+        df.loc[buy_signal,  'signal'] = 1
         df.loc[sell_signal, 'signal'] = -1
 
+        # Layer 4 — Cooldown suppression (mean-reversion scalp needs longer cooldown)
+        df = self.apply_cooldown(df)
         return df
 
     def validate_params(self) -> bool:

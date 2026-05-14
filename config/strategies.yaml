@@ -13,6 +13,14 @@ active:
 - hikkake_trap
 - dual_ema_momentum
 - rsi_2
+- bb_squeeze_scalp
+- ema_ribbon_trend
+- ma_crossover
+- vwap_momentum
+- fast_ma_scalper
+- rsi_extremes_scalp
+- macd_zero_scalp
+- volatility_breakout_scalp
 dual_ema_fractal:
   name: Dual EMA Fractal Breaker
   category: Trend Following
@@ -155,8 +163,8 @@ ma_crossover:
   regime:
   - TRENDING
   - ANY
-  enabled: false
-  tier: TIER_3
+  enabled: true
+  tier: TIER_1
   pairs:
   - EURUSD
   - AUDUSD
@@ -188,12 +196,13 @@ ma_crossover:
       adx_filter: 30
       confirm_timeframe: D1
     GBPUSD:
+      allow_long: false
       adx_filter: 28
       sl_atr_mult: 1.1
     GBPUSD:H4:
       allow_long: false
     GBPUSD:H1:
-      allow_short: false
+      allow_long: false
     EURUSD:
       adx_filter: 28
       confirm_timeframe: D1
@@ -475,6 +484,8 @@ macd_trend:
       vol_threshold_mult: 1.5
       adx_min: 30
       tp_atr_mult: 2.8
+    EURUSD:
+      enabled: false
     US500:H4:
       allow_short: false
     AUDUSD:
@@ -639,8 +650,8 @@ ema_ribbon_trend:
   regime:
   - TRENDING
   - ANY
-  enabled: false
-  tier: TIER_3
+  enabled: true
+  tier: TIER_1
   pairs:
   - BTCUSD
   - ETHUSD
@@ -981,8 +992,8 @@ vwap_momentum:
   regime:
   - RANGING
   - HIGH_VOL
-  enabled: false
-  tier: TIER_3
+  enabled: true
+  tier: TIER_1
   pairs:
   - GBPUSD
   - EURUSD
@@ -1086,6 +1097,7 @@ hikkake_trap:
       sl_atr_mult: 1.2
       adx_max: 20
     GBPUSD:
+      allow_long: false
       adx_max: 20
       adx_min: 30
       tp_atr_mult: 2.8
@@ -1215,35 +1227,40 @@ fast_ma_scalper:
   - GBPUSD
   - USDJPY
   timeframes:
-  - M5
-  - M15
   - M30
   - H1
   - H2
-  - H4
-  - H12
-  - D1
-  - M1
   parameters:
     fast_period: 5
     slow_period: 12
-    tp_atr_mult: 2.0
+    tp_atr_mult: 3.0
     sl_atr_mult: 1.0
     atr_period: 14
-    min_adx: 22
+    min_adx: 30
+    adx_min: 30
+    rsi_period: 21
+    trend_period: 200
+    stoch_k: 14
+    stoch_d: 3
+    atr_avg_p: 20
+    use_partial_tp: true
+    partial_trigger_pips: 20
+    partial_pct_override: 0.20
     session_start_utc: 8
     session_end_utc: 17
     vol_threshold_mult: 1.2
   pair_overrides:
     XAUUSD:
-      min_adx: 22
+      min_adx: 35
       sl_atr_mult: 1.2
-      adx_min: 30
-      tp_atr_mult: 2.3
+      adx_min: 35
+      tp_atr_mult: 3.0
+      trend_period: 200
     USDJPY:
       min_adx: 25
       adx_min: 30
-      tp_atr_mult: 2.3
+      tp_atr_mult: 2.5
+      trend_period: 200
     GBPUSD:
       adx_min: 30
       tp_atr_mult: 2.3
@@ -1257,7 +1274,7 @@ bb_squeeze_scalp:
   - TRENDING
   - ANY
   enabled: true
-  tier: TIER_1
+  tier: TIER_2
   pairs:
   - XAUUSD
   - USDJPY
@@ -1265,34 +1282,34 @@ bb_squeeze_scalp:
   - US500
   - USTEC
   timeframes:
-  - M5
-  - M15
   - M30
   - H1
   - H2
-  - H4
-  - H12
-  - D1
   parameters:
     bb_period: 20
     bb_std: 2.0
     atr_period: 14
     squeeze_bars: 3
     squeeze_pct: 0.8
-    tp_atr_mult: 2.5
+    tp_atr_mult: 3.0
     sl_atr_mult: 1.0
-    adx_min: 22
-    rsi_period: 14
-    rsi_confirm_long: 56
-    rsi_confirm_short: 44
+    adx_min: 25
+    rsi_period: 97
+    rsi_confirm_long: 50
+    rsi_confirm_short: 50
     ema50_period: 50
+    trend_period: 200
+    stoch_k: 14
+    stoch_d: 3
+    atr_avg_p: 20
     session_start_utc: 7
     session_end_utc: 17
   pair_overrides:
     XAUUSD:
       sl_atr_mult: 1.2
-      adx_min: 30
+      adx_min: 35
       tp_atr_mult: 2.8
+      trend_period: 200
     AUDUSD:
       allow_short: false
     AUDUSD:M15:
@@ -1306,10 +1323,10 @@ bb_squeeze_scalp:
       tp_atr_mult: 2.8
       adx_min: 30
     USTEC:
-      adx_min: 30
+      adx_min: 35
       tp_atr_mult: 2.8
     USDJPY:
-      adx_min: 30
+      adx_min: 35
       tp_atr_mult: 2.8
   mode: trade
   lot_size: 0.5
@@ -1321,30 +1338,33 @@ rsi_extremes_scalp:
   - RANGING
   - CHOPPY
   enabled: true
-  tier: TIER_1
+  tier: TIER_2
   pairs:
   - EURUSD
   - GBPUSD
   - USOIL
   timeframes:
-  - M5
-  - M15
   - M30
   - H1
   - H2
-  - H4
-  - H12
-  - D1
   parameters:
-    rsi_period: 14
-    oversold: 22
-    overbought: 78
+    rsi_period: 21
+    oversold: 35
+    overbought: 65
     atr_period: 14
-    tp_atr_mult: 2.0
+    tp_atr_mult: 3.0
     sl_atr_mult: 1.0
+    adx_min: 20
+    use_partial_tp: true
+    partial_trigger_pips: 20
+    partial_pct_override: 0.20
     min_rsi_move: 5
     adx_max: 25
     vol_spike_mult: 1.5
+    trend_period: 200
+    stoch_k: 14
+    stoch_d: 3
+    atr_avg_p: 20
     session_start_utc: 7
     session_end_utc: 17
   pair_overrides:
@@ -1353,6 +1373,8 @@ rsi_extremes_scalp:
       overbought: 88
       sl_atr_mult: 1.2
       adx_max: 20
+      adx_min: 35
+      trend_period: 200
     GBPUSD:
       allow_long: false
       adx_max: 20
@@ -1386,32 +1408,35 @@ macd_zero_scalp:
   - USDJPY
   - BTCUSD
   timeframes:
-  - M5
-  - M15
   - M30
   - H1
   - H2
-  - H4
-  - H12
-  - D1
-  - M1
   parameters:
     macd_fast: 8
     macd_slow: 17
     macd_signal: 9
     atr_period: 14
-    tp_atr_mult: 2.0
+    tp_atr_mult: 3.0
     sl_atr_mult: 1.0
     volume_filter: 1.0
-    adx_min: 22
+    adx_min: 30
+    rsi_period: 21
+    trend_period: 200
+    stoch_k: 14
+    stoch_d: 3
+    atr_avg_p: 20
+    use_partial_tp: true
+    partial_trigger_pips: 20
+    partial_pct_override: 0.20
     session_start_utc: 8
     session_end_utc: 17
   mode: trade
   lot_size: 0.5
   pair_overrides:
     BTCUSD:
-      adx_min: 30
+      adx_min: 35
       tp_atr_mult: 2.3
+      trend_period: 200
 volatility_breakout_scalp:
   name: Volatility Breakout Scalp
   category: Scalping
@@ -1420,46 +1445,51 @@ volatility_breakout_scalp:
   - HIGH_VOL
   - ANY
   enabled: true
-  tier: TIER_1
+  tier: TIER_2
   pairs:
   - XAUUSD
   - BTCUSD
   - ETHUSD
   timeframes:
-  - M5
-  - M15
   - M30
+  - M45
   - H1
   - H2
-  - H4
-  - H12
-  - D1
-  - M1
   parameters:
     atr_period: 10
     atr_multiplier: 1.1
     momentum_period: 5
-    tp_atr_mult: 2.0
+    tp_atr_mult: 3.5
     sl_atr_mult: 1.0
+    adx_min: 30
+    trend_period: 200
+    stoch_k: 14
+    stoch_d: 3
+    atr_avg_p: 20
+    use_partial_tp: true
+    partial_trigger_pips: 20
+    partial_pct_override: 0.20
     min_volatility_bars: 1
     session_start_utc: 8
     session_end_utc: 17
-    rsi_period: 14
-    rsi_confirm_long: 55
-    rsi_confirm_short: 45
+    rsi_period: 21
   pair_overrides:
     XAUUSD:
       sl_atr_mult: 1.2
+      adx_min: 35
+      trend_period: 200
     BTCUSD:
       atr_multiplier: 2.0
       sl_atr_mult: 1.5
-      adx_min: 30
+      adx_min: 35
       tp_atr_mult: 2.3
+      trend_period: 200
     ETHUSD:
       atr_multiplier: 2.0
       sl_atr_mult: 1.5
-      adx_min: 30
+      adx_min: 35
       tp_atr_mult: 2.3
+      trend_period: 200
   mode: trade
   lot_size: 0.5
 ema_ribbon_scalp:
@@ -1484,7 +1514,6 @@ ema_ribbon_scalp:
   - H4
   - H12
   - D1
-  - M1
   parameters:
     fast_ema: 5
     mid_ema: 10

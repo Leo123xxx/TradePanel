@@ -459,6 +459,7 @@ risk_management:
   strategy_correlation_threshold: 0.7 # Monthly correlation check — alert above this
   use_macro_regime_filter: false # DISABLED for analysis 2026-05-11 — allow all signals
   use_multi_tf_confirmation: true # ENABLED 2026-04-26 — Enable higher-TF trend confirmation
+  delegate_management_to_mt5_ea: true # If true, PaperEngine will not handle BE/Trailing/Partials
   signal_validity_bars: 2 # Minimum period a signal is considered "active"
   trading_hours:
     start: "00:30"
