@@ -95,3 +95,73 @@ async def get_archive_stats():
     except Exception as e:
         logger.error(f"Error in get_archive_stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+@router.get("/logic")
+async def get_strategy_logic():
+    """Returns the hardcoded execution logic steps for active strategies."""
+    # This data mirrors the table in strategy_logic.md
+    logic = [
+        {
+            "strategy": "RSI Pullback",
+            "symbol": "XAUUSD, EURUSD",
+            "timeframe": "H4",
+            "entry": "Price above EMA 200 + RSI < 35 (Long) or Price below EMA 200 + RSI > 65 (Short)",
+            "exit": "Fixed TP/SL based on ATR mult",
+            "filters": "ADX > 20",
+            "management": "Partial TP (1:1) + BE"
+        },
+        {
+            "strategy": "Dual EMA Fractal",
+            "symbol": "EURUSD, XAUUSD",
+            "timeframe": "H1, H4",
+            "entry": "Price above EMA 200 + Fractal Breakout (High) or Price below EMA 200 + Fractal Breakout (Low)",
+            "exit": "ATR-based TP/SL",
+            "filters": "ADX > 25, RSI Confirmation",
+            "management": "Partial TP (1:1) + BE"
+        },
+        {
+            "strategy": "SuperTrend",
+            "symbol": "EURUSD",
+            "timeframe": "H4",
+            "entry": "SuperTrend line flip (Green/Red)",
+            "exit": "Opposite flip or ATR TP/SL",
+            "filters": "ADX > 25",
+            "management": "Partial TP + Trailing BE"
+        },
+        {
+            "strategy": "Gold Breakout",
+            "symbol": "XAUUSD",
+            "timeframe": "H1",
+            "entry": "Volatility Squeeze (BB) + Momentum Breakout",
+            "exit": "High/Low of breakout bar or ATR TP/SL",
+            "filters": "Volume > 1.2x Avg",
+            "management": "Partial TP + BE"
+        },
+        {
+            "strategy": "Session Momentum",
+            "symbol": "EURUSD, XAUUSD",
+            "timeframe": "H1",
+            "entry": "London/NY High/Low Breakout during session overlap",
+            "exit": "Session end or ATR TP/SL",
+            "filters": "Time-window (08:00-16:00 UTC)",
+            "management": "Partial TP + BE"
+        },
+        {
+            "strategy": "RSI Bounce",
+            "symbol": "EURUSD",
+            "timeframe": "H1",
+            "entry": "RSI Oversold (<30) + Bullish Engulfing or RSI Overbought (>70) + Bearish Engulfing",
+            "exit": "Mean reversion to EMA 20",
+            "filters": "Ranging Market (ADX < 20)",
+            "management": "Full TP (No Partials)"
+        },
+        {
+            "strategy": "MA Crossover",
+            "symbol": "EURUSD, GBPUSD",
+            "timeframe": "H1",
+            "entry": "Fast EMA (10) crosses Slow EMA (50)",
+            "exit": "Reversal Cross or ATR TP/SL",
+            "filters": "ADX > 20, RSI > 55/45",
+            "management": "Partial TP + BE"
+        }
+    ]
+    return logic

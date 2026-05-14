@@ -312,39 +312,7 @@ class TelegramBot:
 
     @auth_required
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        msg = (
-            "🤖 <b>TradePanel Commands</b>\n\n"
-            "<b>📊 Account</b>\n"
-            "/status — account + open positions\n"
-            "/balance — balance, equity, margin\n"
-            "/active — open positions with TP/SL levels\n"
-            "/risk — drawdown, margin level, daily P&amp;L\n\n"
-            "<b>📡 Market &amp; Signals</b>\n"
-            "/signals — latest 24h strategy signals\n"
-            "/signal_performance — accuracy of last 7 days\n"
-            "/analysis — multi-TF regime summary\n"
-            "/mode — active strategies list\n"
-            "/data — data coverage per pair\n\n"
-            "<b>🔬 Backtesting &amp; WFO</b>\n"
-            "/backtest_report — last overnight backtest\n"
-            "/best_pairs — top pairs by win rate\n"
-            "/top_strategies — top 5 by Sharpe ratio\n"
-            "/backtest_status — when last backtest ran\n"
-            "/params — parameter tweak suggestions\n"
-            "/wfo — WFO master summary\n"
-            "/demotion — strategies at demotion risk\n\n"
-            "<b>⚙️ Strategy Control</b>\n"
-            "/enable &lt;name&gt; — enable a strategy\n"
-            "/disable &lt;name&gt; — disable a strategy\n\n"
-            "<b>🛠 System</b>\n"
-            "/health — system health + heartbeat\n"
-            "/dashboard — web dashboard link\n"
-            "/backups — show backup status\n"
-            "/extract_chat_id — get your Chat ID\n"
-            "/auth_log — show auth attempts (admin)\n"
-            "/auth_users — show authorized users (admin)\n"
-            "/help — this list"
-        )
+        msg = self.router.get_help()
         await update.message.reply_html(msg)
 
     @auth_required

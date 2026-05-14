@@ -34,13 +34,16 @@ class CommandRouter:
             "/signals — Latest strategy signals (24h)\n"
             "/signal_performance — Accuracy of last 7 days\n"
             "/analysis — Multi-TF market regime summary\n"
-            "/mode — Active strategies and trading mode\n\n"
-            "<b>🔬 Backtesting</b>\n"
+            "/mode — Active strategies and trading mode\n"
+            "/data — Data coverage per pair\n\n"
+            "<b>🔬 Backtesting & WFO</b>\n"
             "/backtest_report — Last overnight backtest summary\n"
             "/best_pairs — Top pairs by win rate\n"
             "/top_strategies — Top 5 strategies by Sharpe\n"
             "/backtest_status — When did last backtest run?\n"
-            "/params — Parameter tweak suggestions\n\n"
+            "/params — Parameter tweak suggestions\n"
+            "/wfo — WFO master summary (pass/fail per strategy)\n"
+            "/demotion — Strategies at demotion risk\n\n"
             "<b>⚙️ Strategy Control</b>\n"
             "/enable &lt;name&gt; — enable a strategy\n"
             "/disable &lt;name&gt; — disable a strategy\n"
@@ -54,6 +57,7 @@ class CommandRouter:
             "/health — System health and last heartbeat\n"
             "/dashboard — Link to web dashboard\n"
             "/backups — Status of DB backups\n"
+            "/extract_chat_id — Get your Chat ID\n"
             "/help — Show this list"
         )
 
@@ -308,7 +312,7 @@ class CommandRouter:
                 total, taken = take_rows[0]
                 rate = (taken / total) * 100
                 if rate < 20:
-                    alerts.append(f"🟡 Take Rate: {rate:.1f}% (<20%)")
+                    alerts.append(f"🟡 Take Rate: {rate:.1f}% (&lt;20%)")
                     severity = max(severity, 1)
                 else:
                     alerts.append(f"🟢 Take Rate: {rate:.1f}%")
@@ -340,7 +344,7 @@ class CommandRouter:
                 results = bt_data.get("results", [])
                 passed = sum(1 for r in results if r.get("status") == "PASS")
                 if passed < 15:
-                    alerts.append(f"🟡 Backtest: {passed} PASS (<15)")
+                    alerts.append(f"🟡 Backtest: {passed} PASS (&lt;15)")
                     severity = max(severity, 1)
                 else:
                     alerts.append(f"🟢 Backtest: {passed} PASS")

@@ -426,6 +426,52 @@ function StrategyTable({ lookbackDays }) {
 }
 
 // ---------------------------------------------------------------------------
+// Strategy Logic Table — NEW
+// ---------------------------------------------------------------------------
+
+function StrategyLogicTable() {
+  const { data, loading } = useFetch(`${API}/api/intelligence/logic`)
+
+  if (loading) return <div className="table-placeholder">Loading strategy logic...</div>
+  if (!data) return null
+
+  return (
+    <div className="table-wrapper" style={{ marginTop: '2rem' }}>
+      <div className="card-head" style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
+        <h3 className="card-h">Strategy Execution Logic</h3>
+        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+          Detailed entry/exit rules and trade management logic
+        </span>
+      </div>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Strategy</th>
+            <th>Symbols</th>
+            <th>Entry Logic</th>
+            <th>Exit Logic</th>
+            <th>Filters</th>
+            <th>Management</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((s, i) => (
+            <tr key={i} className="data-row">
+              <td style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>{s.strategy}</td>
+              <td style={{ fontSize: '0.8rem' }}>{s.symbol}</td>
+              <td style={{ fontSize: '0.8rem', maxWidth: '300px', whiteSpace: 'normal' }}>{s.entry}</td>
+              <td style={{ fontSize: '0.8rem' }}>{s.exit}</td>
+              <td style={{ fontSize: '0.8rem' }}>{s.filters}</td>
+              <td style={{ fontSize: '0.8rem', color: 'var(--success)' }}>{s.management}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Backtest Run History Table — Feature 3
 // ---------------------------------------------------------------------------
 
@@ -2588,6 +2634,7 @@ export default function App() {
               </span>
             </div>
             <StrategyTable lookbackDays={lookbackDays} />
+            <StrategyLogicTable />
           </div>
         )}
 

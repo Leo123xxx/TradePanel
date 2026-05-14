@@ -15,22 +15,7 @@ from backtesting.engine import BacktestEngine
 from backtesting.metrics import BacktestMetrics
 from backtesting.report import StatsReport
 
-# Import strategies (Simplified for demo, but keep STRATEGY_MAP logic)
-# In a real scenario, this would be more dynamic
-from strategies.rsi_bounce import RSIBounceStrategy
-from strategies.hikkake_trap import HikkakeTrap
-from strategies.session_momentum import SessionMomentumStrategy
-from strategies.dual_ema_fractal import DualEMAFractal
-from strategies.ma_crossover import MACrossoverStrategy
-
-STRATEGY_MAP = {
-    "rsi_bounce": RSIBounceStrategy,
-    "hikkake_trap": HikkakeTrap,
-    "session_momentum": SessionMomentumStrategy,
-    "dual_ema_fractal": DualEMAFractal,
-    "ma_crossover": MACrossoverStrategy,
-    # Add others as needed...
-}
+from strategies.registry import registry as STRATEGY_REGISTRY
 
 def run_backtest(strategy_name: str, symbol: str, timeframe: str,
                  lot_size: float = 0.1, initial_balance: float = 10_000.0,
@@ -75,11 +60,11 @@ def run_backtest(strategy_name: str, symbol: str, timeframe: str,
     strat_configs = load_strategies()
     params = strat_configs.get(strategy_name, {}).get("parameters", {})
     
-    if strategy_name not in STRATEGY_MAP:
+    if strategy_name not in STRATEGY_REGISTRY.strategies:
         logger.error(f"Strategy {strategy_name} not found in map.")
         return
 
-    strategy_instance = STRATEGY_MAP[strategy_name](params=params)
+    strategy_instance = STRATEGY_REGISTRY.strategies[strategy_name](params=params)
     bt = BacktestEngine(initial_balance=initial_balance, lot_size=lot_size)
     
     trades_df, signals_df = bt.run(
