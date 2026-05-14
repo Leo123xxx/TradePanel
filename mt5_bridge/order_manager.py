@@ -276,7 +276,7 @@ class OrderManager:
             "tp": float(tp),
             "deviation": 20,
             "magic": magic if magic is not None else self.magic,
-            "comment": comment,
+            "comment": comment[:27],
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }

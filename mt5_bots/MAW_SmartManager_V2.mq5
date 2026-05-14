@@ -27,6 +27,7 @@ enum ENUM_STRAT_PROFILE {
 //--- 2. INPUT PARAMETERS ---
 input group "=== General Settings ==="
 input long   InpTargetMagic       = -1;         // Magic Number to Manage (-1 = ALL trades)
+input bool   InpGlobalManager     = false;      // If true, manages ALL symbols regardless of chart
 input bool   InpDetailedLogs      = true;       // Enable Detailed Audit Logging
 input int    InpTimerMs           = 500;        // Management frequency (ms)
 
@@ -268,7 +269,9 @@ void ProcessManagement() {
     for(int i = PositionsTotal() - 1; i >= 0; i--) {
         ulong ticket = PositionGetTicket(i);
         if(!PositionSelectByTicket(ticket)) continue;
-        if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+        
+        // If InpGlobalManager is false, only manage trades on the current chart symbol.
+        if(!InpGlobalManager && PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
         
         long magic = PositionGetInteger(POSITION_MAGIC);
         if(InpTargetMagic != -1 && magic != InpTargetMagic) continue;
@@ -374,15 +377,15 @@ void ProcessManagement() {
         if(shouldLog && !triggerBE) {
             double targetPips = (profile == PROFILE_SCALP) ? InpScalpBEPips : (beTriggerR * baseRisk / (10*pt));
             if(InpGlobalBEPips > 0 && InpGlobalBEPips < targetPips) targetPips = InpGlobalBEPips;
-            PrintFormat("[SmartManager] #%I64u [%s] Profit: %.1f pips | BE Target: %.1f pips", 
-                        ticket, EnumToString(profile), profitDist/(10*pt), targetPips);
+            PrintFormat("[SmartManager] #%I64u (%s) [%s] Profit: %.1f pips | BE Target: %.1f pips", 
+                        ticket, PositionGetString(POSITION_SYMBOL), EnumToString(profile), profitDist/(10*pt), targetPips);
         }
 
         if(triggerBE) {
             double newBE = (type == POSITION_TYPE_BUY) ? (open + 10 * pt) : (open - 10 * pt);
             if((type == POSITION_TYPE_BUY && sl < newBE) || (type == POSITION_TYPE_SELL && (sl > newBE || sl == 0))) {
                 if(m_trade.PositionModify(ticket, NormalizeDouble(newBE, _Digits), tp)) {
-                    PrintFormat("[SmartManager] BE Secured on #%I64u at %.5f (Profile: %s)", ticket, newBE, EnumToString(profile));
+                    PrintFormat("[SmartManager] BE Secured on #%I64u (%s) at %.5f (Profile: %s)", ticket, PositionGetString(POSITION_SYMBOL), newBE, EnumToString(profile));
                     sl = newBE;
                 }
             }
@@ -443,7 +446,7 @@ bool TakePartial(ulong ticket, double currentVol, double pct, ENUM_STRAT_PROFILE
     double closeVol = MathFloor((currentVol * (pct / 100.0)) / stepLot) * stepLot;
     if(closeVol >= minLot && closeVol < currentVol) {
         if(m_trade.PositionClosePartial(ticket, closeVol)) {
-            if(InpDetailedLogs) PrintFormat("[%s] Partial %d (%.2f lots) closed on #%I64u", EnumToString(profile), stage, closeVol, ticket);
+            if(InpDetailedLogs) PrintFormat("[%s] (%s) Partial %d (%.2f lots) closed on #%I64u", EnumToString(profile), _Symbol, stage, closeVol, ticket);
             return true;
         }
     }
