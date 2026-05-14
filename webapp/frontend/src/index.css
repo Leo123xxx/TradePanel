@@ -1,17 +1,34 @@
 :root {
-  --bg-color: #06080c;
-  --panel-bg: rgba(18, 22, 30, 0.4);
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --border-color: rgba(255, 255, 255, 0.08);
+  --bg-color: #040609;
+  --panel-bg: rgba(13, 17, 23, 0.7);
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --border-color: rgba(255, 255, 255, 0.07);
   --accent-primary: #00f2ff;
-  --accent-secondary: #7000ff;
-  --accent-glow: rgba(0, 242, 255, 0.15);
-  --text-primary: #f0f0f0;
+  --accent-secondary: #8b5cf6;
+  --accent-glow: rgba(0, 242, 255, 0.2);
+  --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --success: #00ff88;
-  --warning: #facc15;
-  --critical: #ff4d4d;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --critical: #ef4444;
   --font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+}
+
+/* ── Typography & Base ── */
+body {
+  background: radial-gradient(circle at 50% 0%, #111827 0%, #040609 100%);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.glow-text {
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.active-glow {
+  box-shadow: 0 0 15px var(--accent-glow);
 }
 
 * {

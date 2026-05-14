@@ -2538,7 +2538,7 @@ export default function App() {
       <header className="header">
         <div className="header-left">
           <div className="logo-mark">T</div>
-          <span className="logo-text">TRADEPANEL</span>
+          <span className="logo-text glow-text">TRADEPANEL</span>
           <span className="logo-sub">HUB v2.1-PERF</span>
         </div>
 
