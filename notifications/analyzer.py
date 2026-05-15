@@ -8,7 +8,19 @@ import ta_compat as ta
 class MarketAnalyzer:
     def __init__(self):
         self.checker = SignalChecker()
-        self.symbols = ["XAUUSD", "EURUSD", "USDJPY", "GBPUSD", "ETHUSD", "BTCUSD"]
+        self.symbols = ["XAUUSD", "EURUSD", "USDJPY", "GBPUSD", "ETHUSD", "BTCUSD"] # Fallback
+        
+        # Load from config.yaml
+        import os, yaml
+        from pathlib import Path
+        try:
+            cfg_path = Path(__file__).parent.parent / "config" / "config.yaml"
+            if cfg_path.exists():
+                with open(cfg_path) as f:
+                    full_cfg = yaml.safe_load(f)
+                self.symbols = [p for p, p_def in full_cfg.get("pairs", {}).items() if p_def.get("enabled", True)]
+        except Exception:
+            pass
 
     def get_analysis_summary(self):
         """Generates a comprehensive market analysis summary."""

@@ -38,7 +38,6 @@ dual_ema_fractal:
   - USDCAD
   - USOIL
   timeframes:
-  - M5
   - M15
   - M30
   - H1
@@ -126,14 +125,14 @@ rsi_pullback:
     fast_ema: 20
     slow_ema: 50
     ema200_period: 200
-    adx_min: 22
+    adx_min: 28
     adx_max: 45
     macd_fast: 12
     macd_slow: 26
     macd_signal: 9
     atr_period: 14
     tp_atr_mult: 3.5
-    sl_atr_mult: 1.2
+    sl_atr_mult: 1.0
     use_breakeven: true
     breakeven_trigger_mult: 1.5
     body_ratio_min: 0.5
@@ -141,11 +140,18 @@ rsi_pullback:
   lot_size: 0.3
   pair_overrides:
     XAUUSD:
-      adx_min: 30
+      adx_min: 32
       tp_atr_mult: 3.8
+      sl_atr_mult: 0.8
+    XAUUSD:D1:
+      enabled: false
+    EURUSD:D1:
+      tp_atr_mult: 4.2
     USDJPY:
       adx_min: 30
       tp_atr_mult: 3.8
+    USDJPY:M30:
+      enabled: false
     XAGUSD:
       adx_min: 30
       tp_atr_mult: 3.8
@@ -172,7 +178,6 @@ ma_crossover:
   - AUDUSD
   - GBPJPY
   timeframes:
-  - M5
   - M15
   - M30
   - H1
@@ -453,7 +458,6 @@ macd_trend:
   - US500
   - USTEC
   timeframes:
-  - M5
   - M15
   - M30
   - H1
@@ -486,6 +490,8 @@ macd_trend:
       confirm_timeframe: H4
       adx_min: 30
       tp_atr_mult: 2.8
+    USDJPY:H12:
+      enabled: false
     US500:
       allow_short: false
       adx_threshold: 28
@@ -499,17 +505,23 @@ macd_trend:
     AUDUSD:
       adx_threshold: 28
       vol_threshold_mult: 1.5
-      adx_min: 30
-      tp_atr_mult: 2.8
+      adx_min: 32
+      tp_atr_mult: 3.2
+    AUDUSD:H2:
+      enabled: false
     GBPJPY:
-      adx_min: 30
-      tp_atr_mult: 2.8
+      adx_min: 32
+      tp_atr_mult: 3.2
     USTEC:
-      adx_min: 30
-      tp_atr_mult: 2.8
+      adx_min: 32
+      tp_atr_mult: 3.2
     USOIL:
-      adx_min: 30
-      tp_atr_mult: 2.8
+      adx_min: 32
+      tp_atr_mult: 3.2
+    USOIL:D1:
+      tp_atr_mult: 4.5
+    US500:D1:
+      tp_atr_mult: 4.5
   mode: trade
   lot_size: 0.3
 gold_momentum_breakout:
@@ -567,10 +579,29 @@ gold_momentum_breakout:
       adx_min: 28
       bb_length: 14
       rsi_buy_min: 55
-      sl_atr_mult: 1.0
-      tp_atr_mult: 3.0
+      sl_atr_mult: 0.8
+      tp_atr_mult: 3.5
       rsi_sell_max: 45
-      vol_threshold_mult: 1.2
+      vol_threshold_mult: 1.5
+    XAUUSD:M5:
+      adx_min: 35
+      vol_threshold_mult: 2.0
+    XAUUSD:M15:
+      adx_min: 32
+      vol_threshold_mult: 1.8
+    XAUUSD:D1:
+      tp_atr_mult: 4.5
+    USOIL:D1:
+      tp_atr_mult: 4.5
+    USOIL:M30:
+      adx_min: 32
+      vol_threshold_mult: 2.0
+    US500:D1:
+      tp_atr_mult: 4.5
+    NVDA:M5:
+      enabled: false
+    NVDA:M15:
+      enabled: false
     NVDA:
       adx_min: 30
       tp_atr_mult: 3.8
@@ -606,7 +637,6 @@ range_breakout:
   - US500
   - USTEC
   timeframes:
-  - M5
   - M15
   - M30
   - H1
@@ -673,7 +703,6 @@ ema_ribbon_trend:
   - MSFT
   - AAPL
   timeframes:
-  - M5
   - M15
   - M30
   - H1
@@ -697,6 +726,8 @@ ema_ribbon_trend:
     BTCUSD:
       tp_atr_mult: 3.5
       sl_atr_mult: 1.2
+    BTCUSD:H4:
+      enabled: false
     ETHUSD:
       tp_atr_mult: 3.8
       sl_atr_mult: 1.5
@@ -718,6 +749,8 @@ ema_ribbon_trend:
     AMD:
       adx_min: 30
       tp_atr_mult: 3.8
+    AMD:M30:
+      enabled: false
     MSFT:
       adx_min: 30
       tp_atr_mult: 3.8
@@ -1281,6 +1314,8 @@ fast_ma_scalper:
       adx_min: 30
       tp_atr_mult: 2.5
       trend_period: 200
+    EURUSD:H2:
+      enabled: false
     GBPUSD:
       adx_min: 30
       tp_atr_mult: 2.3
@@ -1460,6 +1495,10 @@ macd_zero_scalp:
       adx_min: 35
       tp_atr_mult: 2.3
       trend_period: 200
+    BTCUSD:H1:
+      enabled: false
+    EURUSD:H2:
+      enabled: false
 volatility_breakout_scalp:
   name: Volatility Breakout Scalp
   category: Scalping

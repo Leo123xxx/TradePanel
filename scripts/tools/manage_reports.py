@@ -5,8 +5,12 @@ import logging
 from datetime import datetime, timedelta
 from notifications.telegram_bot import TelegramBot
 
-# Paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+BASE_DIR = PROJECT_ROOT
 RESULTS_DIR = os.path.join(BASE_DIR, "results", "overnight")
 ARCHIVE_DIR = os.path.join(BASE_DIR, "results", "archive")
 

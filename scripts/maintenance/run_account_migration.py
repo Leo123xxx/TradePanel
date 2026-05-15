@@ -4,11 +4,13 @@ Applies migrate_account_profiles.sql via psycopg2.
 Usage: python scripts/run_account_migration.py
 """
 import os, sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 import psycopg2
 from dotenv import load_dotenv
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
 
 def main():
     sql_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrate_account_profiles.sql")

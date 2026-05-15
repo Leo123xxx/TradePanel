@@ -924,8 +924,19 @@ class CommandRouter:
                 by_pair[pair][tf] = latest
             now    = datetime.now()
             cutoff = now - timedelta(hours=4)
-            msg = "📡 <b>Data Coverage</b>\n━━━━━━━━━━━━━━━\n"
-            for pair in ["XAUUSD","EURUSD","GBPUSD","USDJPY","XAGUSD","BTCUSD","ETHUSD"]:
+            # Load enabled pairs from config.yaml
+            project_root = Path(__file__).parent.parent
+            cfg_path = project_root / "config" / "config.yaml"
+            enabled_pairs = ["XAUUSD","EURUSD","GBPUSD","USDJPY","XAGUSD","BTCUSD","ETHUSD"] # Fallback
+            if cfg_path.exists():
+                try:
+                    with open(cfg_path) as f:
+                        full_cfg = yaml.safe_load(f)
+                    enabled_pairs = [p for p, p_def in full_cfg.get("pairs", {}).items() if p_def.get("enabled", True)]
+                except Exception as e:
+                    logger.error(f"Error loading pairs from config: {e}")
+
+            for pair in sorted(enabled_pairs):
                 tfs = by_pair.get(pair, {})
                 if not tfs:
                     continue

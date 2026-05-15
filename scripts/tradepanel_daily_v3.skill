@@ -1,0 +1,353 @@
+---
+name: TradePanel Daily Automation (v3)
+description: Daily automation for TradePanel v3.0 — v3 entry hardening, body ratio filters, 22-strategy fleet, 8-container Docker stack
+tags: [trading, automation, backtesting, reporting, telegram, v3]
+---
+
+# TradePanel Daily Automation Suite — v3.0
+**Matches:** TradePanel v3.0.2 (2026-05-14) — Body Ratio Filter, Directional Close Confirmation, 22-strategy fleet
+**Pass thresholds:** WR >= 70% AND Sharpe >= 2.0 AND Trades >= 10
+**WFO OOS thresholds:** Sharpe >= 1.5, WR >= 65%, Trades >= 10 per window (>= 70% of windows must pass)
+**Account currency:** ZAR (Exness). All figures in ZAR.
+**Run time:** 06:04 SAST (04:04 UTC) daily — after overnight backtest completes (~04:00–05:30 SAST Mon–Fri)
+
+---
+
+## FULL SCHEDULER REFERENCE (UTC / SAST)
+
+| Job | UTC | SAST | Days | Script |
+|-----|-----|------|------|--------|
+| Signal outcome check | 23:00 | 01:00+1 | Daily | scheduler/docker_jobs.py: signal_outcome_check |
+| Overnight backtest | 02:00 | 04:00 | Mon–Fri | scripts/backtest/run_overnight_backtest.py |
+| **This automation** | **04:04** | **06:04** | **Daily** | Cowork scheduled task |
+| Data ingest (6-hourly) | 00:05/06:05/12:05/18:05 | 02:05/08:05/14:05/20:05 | Daily | scripts/data/update_market_data.py |
+| WFO bi-weekly | 03:00 | 05:00 | Wed+Sun | scripts/backtest/run_walk_forward.py |
+| Yahoo history fill | 01:30 | 03:30 | Sunday | scripts/data/pull_yahoo_history.py |
+| DB cleanup | 00:30 | 02:30 | Sunday | scheduler/docker_jobs.py: db_cleanup |
+| Daily summary Telegram | 18:00 | 20:00 | Daily | scheduler/docker_jobs.py: daily_summary |
+| Weekly report | 08:00 | 10:00 | Monday | scheduler/docker_jobs.py: weekly_report |
+| Correlation check | 09:00 | 11:00 | Monday | scheduler/docker_jobs.py: correlation_check |
+| COT refresh | 21:00 | 23:00 | Friday | scheduler/docker_jobs.py: cot_refresh |
+| Weekly archive | 23:59 | 01:59+1 | Thursday | scheduler/docker_jobs.py: weekly_archive |
+
+---
+
+## STEP 0 — DETECT REPO PATH
+
+```bash
+find /sessions -maxdepth 3 -name "TradePanel" -type d 2>/dev/null | grep -v ".git\|venv\|__pycache__" | head -1
+```
+
+Store result as REPO. Use $REPO in all subsequent paths.
+
+---
+
+## STEP 1 — CONTAINER HEALTH
+
+```bash
+docker ps --format "{{.Names}}\t{{.Status}}\t{{.RunningFor}}" 2>/dev/null | grep tradepanel
+```
+
+Expected 8 containers: tradepanel-db, tradepanel-backend, tradepanel-frontend, tradepanel-scheduler, tradepanel-telegram, tradepanel-waha, tradepanel-db-backup, tradepanel-adminer
+
+- tradepanel-backend + tradepanel-scheduler missing → CRITICAL
+- tradepanel-telegram missing → CRITICAL
+- tradepanel-waha or tradepanel-db-backup missing → WARN
+
+If backend is running → **Docker mode** (use `docker exec tradepanel-backend python ...`).
+Otherwise → **File mode** (read result files only — skip execution steps).
+
+---
+
+## STEP 2 — SYSTEM HEALTH + CIRCUIT BREAKER
+
+```bash
+curl -s http://localhost:8000/api/health 2>/dev/null
+docker exec tradepanel-backend python -c "
+from data.db_client import DBClient
+from datetime import datetime
+db = DBClient()
+rows = db.execute_query(\"SELECT status, message, timestamp FROM bot_health WHERE event_type='CIRCUIT_BREAKER' ORDER BY timestamp DESC LIMIT 1\")
+if rows: print('CB_STATUS:', rows[0][0], '|', rows[0][1], '| at', rows[0][2])
+else: print('CB_STATUS: NO_ENTRY (normal)')
+" 2>/dev/null
+```
+
+/api/health covers: postgresql (READY/OFFLINE), mt5_bridge (ONLINE/OFFLINE), event_bus (running/stopped).
+- CRITICAL if CB status = PAUSED
+- CRITICAL if event_bus not running
+- CRITICAL if mt5_bridge OFFLINE
+
+---
+
+## STEP 3 — RUN DAILY VALIDATION (Docker mode only)
+
+```bash
+docker exec tradepanel-backend python scripts/core/daily_validation_suite.py --quick 2>&1 | tail -60
+```
+
+---
+
+## STEP 4 — VALIDATION RESULTS
+
+```bash
+ls -lt $REPO/results/daily_validation/ | head -10
+tail -80 $REPO/results/validation_daily.log 2>/dev/null
+```
+
+Read newest `dashboard_*.json`. Extract: total strategies, pass/fail counts, pass rate, last run timestamp.
+
+---
+
+## STEP 5 — RECOMMENDATIONS REPORT
+
+```bash
+ls -lt $REPO/results/recommendations/ | head -5
+```
+
+Read latest `*_recommendations.md`. Summarise:
+- Regressions (PASS→REVIEW): flag immediately
+- New PASSes (WR>=70%, Sharpe>=2.0): highlight
+- WFO Validation Status: PASS vs FAIL vs ERROR
+- Near-PASS (Sharpe>=1.2, WR>=60%): top 3 with exact blocker
+- P1 critical (Sharpe<0, MaxDD>20%): disable today
+- Removal queue (consecutive_fails>=6)
+
+If report > 7 days old, note it as STALE.
+
+---
+
+## STEP 6 — LIVE ACCOUNT STATUS
+
+```bash
+curl -s http://localhost:8000/api/accounts 2>/dev/null
+curl -s "http://localhost:8000/api/accounts/1/kpis?lookback_days=1" 2>/dev/null
+curl -s http://localhost:8000/api/metrics 2>/dev/null | grep -E "tradepanel_account_(equity|balance|drawdown|floating)"
+docker exec tradepanel-backend python -c "
+from data.db_client import DBClient
+from datetime import datetime
+db = DBClient()
+rows = db.execute_query('SELECT timestamp, equity, balance, drawdown_pct, active_positions FROM account_metrics ORDER BY timestamp DESC LIMIT 1')
+if rows:
+    age_mins = (datetime.now() - rows[0][0]).total_seconds() / 60
+    print(f'Last snapshot: {rows[0][0]} | Age: {age_mins:.1f} min | Equity: {rows[0][1]} | Balance: {rows[0][2]} | DD: {rows[0][3]}% | Positions: {rows[0][4]}')
+else:
+    print('NO account_metrics rows')
+" 2>/dev/null
+```
+
+Report: balance ZAR, equity ZAR, floating P&L ZAR, realised P&L today ZAR, daily drawdown %.
+- WARN if drawdown > 10%, CRITICAL if > 15%
+- WARN if account_metrics snapshot > 30 min old
+
+---
+
+## STEP 7 — SIGNAL TAKE RATE
+
+```bash
+curl -s "http://localhost:8000/api/papertrades/signals?lookback_hours=24&limit=200" 2>/dev/null
+```
+
+Calculate: total signals 24h, taken count, take rate %. Breakdown by strategy.
+- WARN if take rate < 20%
+
+---
+
+## STEP 8 — OPEN POSITIONS
+
+```bash
+curl -s "http://localhost:8000/api/papertrades/trades?status=OPENED&limit=20" 2>/dev/null
+```
+
+List open positions. Flag any open > 48h (stale/stuck).
+
+---
+
+## STEP 9 — TELEGRAM + WHATSAPP + ERRORS
+
+```bash
+tail -10 $REPO/logs/telegram_bot.log 2>/dev/null
+curl -s http://localhost:8025/api/sessions/default 2>/dev/null
+curl -s http://localhost:8000/api/whatsapp/status 2>/dev/null
+grep -E "ERROR|CRITICAL|EXCEPTION" $REPO/logs/main.log 2>/dev/null | tail -15
+```
+
+- CRITICAL if Telegram last log > 24h ago
+- WARN if WhatsApp WAHA session not WORKING
+- WARN if > 5 ERROR entries in main.log (24h)
+
+---
+
+## STEP 10 — OVERNIGHT BACKTEST
+
+```bash
+ls -lt $REPO/results/overnight/ | head -5
+curl -s "http://localhost:8000/api/backtests/overnight/status" 2>/dev/null
+```
+
+Read latest `*_backtest_report.md` or `*_yf_backtest_report.md`.
+- WARN if PASS < 15
+- WARN if report > 48h old
+- WARN if ERROR > 5
+- NOTE: v3 baseline file `docs/guides/STRATEGY_BASELINE_SUMMARY.md` is the reference for comparing new results
+
+---
+
+## STEP 11 — WFO RESULTS
+
+```bash
+ls -lt $REPO/results/wfo/ | head -5
+head -60 $REPO/results/wfo_master_summary.md 2>/dev/null
+curl -s http://localhost:8000/api/wfo/status 2>/dev/null
+```
+
+- WARN if WFO last run > 14 days old
+- Flag any overnight PASS with WFO FAIL verdict
+- Manual trigger if stale:
+  ```bash
+  docker exec tradepanel-backend python scripts/backtest/run_walk_forward.py --n_windows 3 --is_pct 0.70 --oos_pct 0.20
+  ```
+
+---
+
+## STEP 12 — STRATEGY INTELLIGENCE
+
+```bash
+curl -s "http://localhost:8000/api/intelligence/best-strategies?limit=15" 2>/dev/null
+```
+
+Report top 5 by maturity + Sharpe. Flag maturity>10 but Sharpe<1.0 (degrading).
+
+---
+
+## STEP 13 — COT DATA FRESHNESS
+
+```bash
+docker exec tradepanel-backend python -c "
+from data.db_client import DBClient
+db = DBClient()
+rows = db.execute_query('SELECT MAX(report_date) FROM cot_data')
+print('Latest COT report_date:', rows[0][0] if rows else 'NO DATA')
+" 2>/dev/null
+```
+
+- WARN if COT data > 8 days old
+
+---
+
+## STEP 14 — REMOVAL COUNTDOWN
+
+```bash
+python3 -c "
+import json
+with open('$REPO/results/demotion_tracker.json') as f:
+    data = json.load(f)
+high = {k:v for k,v in data.items() if v.get('consecutive_fails',0) >= 4}
+print(json.dumps(high, indent=2))
+print(f'Total: {len(data)} | Fails>=4: {len(high)} | Fails>=6: {len({k:v for k,v in data.items() if v.get(\"consecutive_fails\",0)>=6})}')
+" 2>/dev/null
+```
+
+- RED = consecutive_fails >= 6 → disable immediately
+- AMBER = consecutive_fails 4–5 → monitor, prepare disable list
+
+---
+
+## STEP 15 — WEEKLY JOBS AUDIT
+
+```bash
+grep -i "yahoo\|history fill\|correlation\|archiv\|backup" $REPO/logs/main.log 2>/dev/null | tail -10
+docker logs tradepanel-db-backup --tail 5 2>/dev/null
+```
+
+- WARN if db-backup last log > 24h
+- WARN if correlation alert fired (strategy pairs > 0.85)
+
+---
+
+## STEP 16 — WRITE DASHBOARD JSON
+
+Write to: `$REPO/results/daily_validation/dashboard_[YYYYMMDD_HHMMSS].json`
+
+Include all fields: system_health (postgresql/mt5_bridge/event_bus/circuit_breaker/containers), notifications (telegram/whatsapp), account (balance/equity/floating_pnl/realized_pnl/drawdown/positions/metrics_age), signals, validation_summary, overnight_backtest, wfo, strategy_intelligence, cot_data, removal_countdown, recommendations, alerts.
+
+---
+
+## STEP 17 — ALERT SUMMARY
+
+Flag these conditions:
+
+**CRITICAL:** circuit_breaker=PAUSED, backend/scheduler/telegram containers down, event_bus stopped, mt5_bridge OFFLINE, postgresql OFFLINE, daily drawdown > 15%, Telegram bot > 24h silent.
+
+**WARN:** drawdown 10–15%, signal take rate < 20%, PASS count < 15, backtest > 48h old, ERROR count > 5, WhatsApp offline, account_metrics > 30 min stale, WFO > 14 days old, overnight PASS with WFO FAIL, strategy consecutive_fails >= 6, COT > 8 days old, position open > 48h, correlation pair > 0.85.
+
+---
+
+## STEP 18 — WRITE LOG ENTRY
+
+Append to: `$REPO/results/validation_daily.log`
+
+Format:
+```
+[YYYY-MM-DD HH:MM UTC] MODE=docker|file | PASS=n/total | BAL=Rn | EQ=Rn | DD=n% | PNL=Rn | SIG_TAKE=n% | RECO_DATE=YYYYMMDD | REGRESSIONS=n | WFO=ok|stale|n_pass | TG=ok|stale | WA=ok|offline | CB=normal|PAUSED | COT=ok|stale | STATUS=OK|WARN|ALERT|CRITICAL
+```
+
+---
+
+## STEP 19 — AI RECOMMENDATIONS
+
+Synthesise and provide 3–5 actionable recommendations in priority order:
+
+1. Strategy promotions/demotions (overnight + WFO combined verdict)
+2. Lot size candidates (WFO PASS + >= 10 consecutive wins)
+3. Data freshness issues degrading signal quality
+4. Notification channel issues (both Telegram AND WhatsApp must be live 24/7)
+5. Circuit breaker post-mortem if triggered since last run
+6. Correlation risk reduction suggestions
+7. New strategy promotion candidates (maturity>=5, Sharpe>=2.0, WR>=70%, WFO PASS)
+
+---
+
+## V3 ARCHITECTURE NOTES
+
+### Active Strategy Fleet (22 strategies, ~756 combos)
+Tier 1 (TIER_1): dual_ema_fractal, rsi_pullback, stat_arb_gold_silver, gold_momentum_breakout, macd_trend, supertrend, range_breakout, session_momentum, naked_price_action, volatility_squeeze_breakout, ttm_squeeze, dual_ema_momentum, rsi_2, ema_ribbon_trend, ma_crossover, vwap_momentum
+Tier 2 (TIER_2): hikkake_trap, bb_squeeze_scalp, fast_ma_scalper, rsi_extremes_scalp, macd_zero_scalp, volatility_breakout_scalp
+
+### v3.0 Entry Hardening (applied to all 50+ configs)
+- `body_ratio_min: 0.5` — candle body must be >= 50% of bar range (rejects wick-driven entries)
+- Directional close confirmation — candle must close in trade direction before signal fires
+- Cooldown bars between signals (strategy-dependent)
+
+### Key Script Paths (v3)
+- Overnight backtest: `scripts/backtest/run_overnight_backtest.py`
+- Active suite (manual): `scripts/backtest/run_active_suite.py`
+- Near-pass suite: `scripts/backtest/run_near_pass_suite.py`
+- WFO: `scripts/backtest/run_walk_forward.py` or `scripts/backtest/run_wfo_all.py`
+- Validation: `scripts/core/daily_validation_suite.py`
+- Market data: `scripts/data/update_market_data.py`
+- Yahoo fill: `scripts/data/pull_yahoo_history.py`
+- Parquet cache: `scripts/data/refresh_parquet_cache.py`
+
+### CWD Bug (Fixed 2026-05-14)
+`scripts/core/daily_paper_trading_cycle.py` now uses absolute config path via PROJECT_ROOT.
+Previously used relative `config/config.yaml` — failed when scheduler's cwd ≠ repo root.
+
+### 8-Container Docker Stack
+tradepanel-db (pg5433), tradepanel-backend (FastAPI :8000), tradepanel-frontend (React :3000),
+tradepanel-scheduler (APScheduler), tradepanel-telegram (bot), tradepanel-waha (WhatsApp :8025),
+tradepanel-db-backup, tradepanel-adminer (:8080)
+
+### Backtest Runner (offline, no DB)
+`scripts/backtest/run_yfinance_suite.py` — uses yfinance for data, runs full fleet locally.
+Requires internet access from the host. Use `--quick` for H1/H4/D1 only.
+
+---
+
+## CONSTRAINTS
+- Never execute live trades or modify strategy config files
+- All timestamps in UTC; display in SAST (UTC+2) for Leo
+- Account currency is ZAR — all figures in ZAR
+- If Docker unavailable and all result files > 48h old → STATUS=STALE
+- Complete within 12 minutes
+- Repo path changes each session — always detect via Step 0

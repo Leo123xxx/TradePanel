@@ -3,7 +3,7 @@
 
 # Web framework
 fastapi==0.115.5
-uvicorn==0.32.1
+uvicorn==0.47.0
 websockets==14.0
 httpx==0.28.1
 starlette==0.41.3
@@ -15,7 +15,7 @@ psycopg2-binary==2.9.11
 # Config / env
 python-dotenv==1.0.1
 pyyaml==6.0.3
-pydantic==2.12.0
+pydantic==2.13.4
 pydantic-settings==2.8.0
 
 # Scheduler
@@ -26,12 +26,14 @@ nest_asyncio==1.6.0
 python-telegram-bot==22.0
 
 # Data / analysis
-pandas==2.3.3
+pandas==3.0.3
 numpy==2.4.4
 scipy==1.16.1
 pyarrow==16.1.0
+fastparquet==2024.11.0
+polars==1.17.1
 
 # Market data feeds
-requests==2.32.3
+requests==2.34.2
 yfinance==0.2.54
 tradingview_screener==3.1.0

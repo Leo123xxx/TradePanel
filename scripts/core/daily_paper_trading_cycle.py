@@ -14,13 +14,13 @@ import logging
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 logger = logging.getLogger(__name__)
 
 
-def run_cycle(config_path: str = "config/config.yaml") -> bool:
+def run_cycle(config_path: str = str(PROJECT_ROOT / "config" / "config.yaml")) -> bool:
     """
     Execute one detect + execute pass of the PaperEngine.
 

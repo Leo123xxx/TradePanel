@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 import pandas as pd
+import numpy as np
 pd.set_option('future.no_silent_downcasting', True)
 
 # Session hours (UTC) for peak liquidity per pair.
@@ -225,20 +226,29 @@ class BaseStrategy(ABC):
     def apply_cooldown(self, df: pd.DataFrame, cooldown_bars: int = None) -> pd.DataFrame:
         """
         Layer 4 — Cooldown Bar Suppression.
-        After any signal fires, suppress new signals for cooldown_bars bars.
-        Prevents rapid re-entries in choppy whipsaw conditions.
+        Optimized for performance using numpy array processing.
         """
         bars = cooldown_bars or self.params.get('cooldown_bars', 0)
-        if bars <= 0:
+        if bars <= 0 or 'signal' not in df.columns:
             return df
-        arr = df['signal'].values.copy()
-        last_bar = -bars - 1
-        for i in range(len(arr)):
-            if arr[i] != 0:
-                if i - last_bar <= bars:
-                    arr[i] = 0
-                else:
-                    last_bar = i
+        
+        # Working with raw numpy arrays is much faster than pandas Series
+        signals = df['signal'].values
+        if not np.any(signals):
+            return df
+            
+        arr = signals.copy()
+        last_idx = -bars - 1
+        
+        # Finding indices of non-zero signals to avoid iterating over every bar
+        nonzero_indices = np.nonzero(arr)[0]
+        
+        for i in nonzero_indices:
+            if i - last_idx <= bars:
+                arr[i] = 0
+            else:
+                last_idx = i
+                
         df = df.copy()
         df['signal'] = arr
         return df

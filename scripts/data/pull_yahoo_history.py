@@ -41,8 +41,10 @@ import os
 import argparse
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 import pandas as pd
 from dotenv import load_dotenv

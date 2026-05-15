@@ -5,8 +5,9 @@ import zlib
 from datetime import datetime, timedelta
 import json
 
-# Add project root to sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -61,16 +62,22 @@ def sync_mt5_account():
         (account_info.balance, account_info.currency, f"Live Sync: {account_info.login} / {account_info.server}", account_id)
     )
 
-    # 3. Fetch History (Deals)
-    # Fetch from Jan 2024 to get full account history
-    from_date = datetime(2024, 1, 1)
+    # 3. Fetch History (Deals) - Incremental Sync
+    # Get the latest close_time or open_time from DB to determine the starting point
+    last_sync_res = db.execute_query("SELECT MAX(close_time) FROM trades WHERE mode = 'DEMO' AND status = 'CLOSED'")
+    last_sync_time = last_sync_res[0][0] if last_sync_res and last_sync_res[0][0] else datetime(2024, 1, 1)
+    
+    # Give a small overlap (5 mins) to ensure no trades are missed due to edge cases
+    from_date = last_sync_time - timedelta(minutes=5)
     to_date = datetime.now() + timedelta(days=1)
+    
+    print(f"Syncing deals from {from_date.strftime('%Y-%m-%d %H:%M:%S')}...")
     
     deals = mt5.history_deals_get(from_date, to_date)
     if deals is None:
         print("No history deals found or error occurred.")
     else:
-        print(f"Found {len(deals)} history deals. Syncing...")
+        print(f"Found {len(deals)} history deals in range. Syncing...")
         sync_deals(db, deals, account_id, from_date, to_date)
 
     # 4. Fetch Open Positions
@@ -86,51 +93,35 @@ def sync_mt5_account():
 
 def sync_deals(db, deals, account_id, from_date, to_date):
     """
-    MT5 Deals represent executions. We want to reconstruct 'Trades' (Entry to Exit).
-    Simplification: We look for Out-deals and find their corresponding In-deal or just log them.
-    Actually, let's just log every 'Out' deal as a closed trade if it has a profit.
+    MT5 Deals represent executions. We reconstruct 'Trades' (Entry to Exit).
+    Optimized: Batch inserts and incremental check.
     """
-    inserted = 0
-    updated = 0
+    new_trades = []
     
     # Get strategy mapping
     strategy_rows = db.execute_query("SELECT strategy_id, name FROM strategies")
     name_to_id = {r[1]: r[0] for r in strategy_rows}
     
-    # Magic Number Map (from zlib.adler32 logic in PaperEngine)
-    # We don't have the registry here easily, but we can reverse it from the DB
-    magic_to_id = {}
-    for name, s_id in name_to_id.items():
-        magic = zlib.adler32(name.encode()) % 1000000
-        magic_to_id[magic] = s_id
+    # Cache Magic Numbers
+    magic_to_id = {zlib.adler32(name.encode()) % 1000000: s_id for name, s_id in name_to_id.items()}
+
+    # Fetch all existing tickets in this range to avoid duplicates in memory
+    existing_tickets = {r[0] for r in db.execute_query(
+        "SELECT mt5_ticket FROM trades WHERE close_time >= %s", (from_date,)
+    )}
 
     for d in deals:
-        # We only care about DEAL_ENTRY_OUT (closing a position) to record a full trade
-        # entry=1 is OUT, entry=0 is IN
-        if d.entry != 1: 
+        if d.entry != 1: # Only care about OUT deals
             continue
             
-        # Check if already exists by position_id (stored in mt5_ticket)
-        exists = db.execute_query("SELECT trade_id FROM trades WHERE mt5_ticket = %s", (d.position_id,))
-        if exists:
+        if d.position_id in existing_tickets:
             continue
 
-        # Map magic to strategy
         strategy_id = magic_to_id.get(d.magic)
-        
-        # Calculate P&L (gross_pnl is d.profit)
-        # Exness Demo is ZAR, but d.profit is in account currency.
         pnl = d.profit + d.swap + d.commission
         
-        # Direction from d.type (DEAL_TYPE_BUY = 0, DEAL_TYPE_SELL = 1)
-        # Note: An OUT deal of type BUY means it was closing a SELL position.
-        # So we need to find the IN deal to get the original direction.
-        # For now, we'll simplify: if profit > 0 and type=BUY, it was probably a sell close.
-        # Better: get the position ID.
-        
-        # Look for the IN deal for this position
-        # We search the whole history range to find the entry deal
-        pos_deals = mt5.history_deals_get(from_date, to_date, position=d.position_id)
+        # Find the IN deal for this position
+        pos_deals = mt5.history_deals_get(from_date - timedelta(days=30), to_date, position=d.position_id)
         if pos_deals:
             in_deal = next((x for x in pos_deals if x.entry == 0), None)
             if in_deal:
@@ -138,26 +129,29 @@ def sync_deals(db, deals, account_id, from_date, to_date):
                 entry_price = in_deal.price
                 open_time = datetime.fromtimestamp(in_deal.time)
             else:
-                # If we can't find the entry deal, we skip this to avoid partial trades
                 continue
         else:
             continue
 
+        import uuid
+        new_trades.append((
+            str(uuid.uuid4()), strategy_id, account_id, d.symbol, direction, d.volume,
+            entry_price, d.price, open_time, datetime.fromtimestamp(d.time),
+            pnl, 'CLOSED', d.position_id, 'LIVE' if account_id == 2 else 'DEMO'
+        ))
+
+    if new_trades:
         query = """
             INSERT INTO trades 
             (trade_id, strategy_id, account_id, pair, direction, lot_size, 
              entry_price, exit_price, open_time, close_time, net_pnl, 
              status, mt5_ticket, mode)
-            VALUES (gen_random_uuid(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES %s
         """
-        db.execute_query(query, (
-            strategy_id, account_id, d.symbol, direction, d.volume,
-            entry_price, d.price, open_time, datetime.fromtimestamp(d.time),
-            pnl, 'CLOSED', d.position_id, 'LIVE' if account_id == 2 else 'DEMO'
-        ))
-        inserted += 1
-
-    print(f"  Deals: {inserted} new trades synced.")
+        db.execute_batch(query, new_trades)
+        print(f"  Deals: {len(new_trades)} new trades synced via batch.")
+    else:
+        print("  Deals: No new trades to sync.")
 
 def sync_positions(db, positions, account_id):
     """Syncs currently open positions to the trades table."""

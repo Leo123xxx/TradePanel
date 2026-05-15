@@ -4,8 +4,9 @@ import subprocess
 import time
 from datetime import datetime
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 def print_banner(text):
     print("\n" + "="*80)
@@ -15,7 +16,7 @@ def print_banner(text):
 def run_script(script_path, args=[]):
     print(f"Running: {script_path} {' '.join(args)}...")
     env = os.environ.copy()
-    env["PYTHONPATH"] = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.pathsep + env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(PROJECT_ROOT) + os.pathsep + env.get("PYTHONPATH", "")
     cmd = [sys.executable, script_path] + args
     # Use capture_output=False to see real-time streaming to stdout
     result = subprocess.run(cmd, capture_output=False, env=env)

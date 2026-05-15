@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.lib.logger import setup_logger
-from scripts.lib.db_client import DatabaseClient
+from data.db_client import DBClient
 from scripts.lib.config_loader import load_strategies
 from backtesting.engine import BacktestEngine
 from backtesting.metrics import BacktestMetrics
@@ -34,13 +34,12 @@ def run_backtest(strategy_name: str, symbol: str, timeframe: str,
         data.set_index('timestamp', inplace=True)
     else:
         logger.info(f"Fetching data from Database for {symbol} {timeframe}...")
-        db = DatabaseClient("backtest")
+        db = DBClient()
         rows = db.execute_query(
             "SELECT timestamp, open, high, low, close, tick_volume FROM market_data "
             "WHERE pair = %s AND timeframe = %s ORDER BY timestamp",
             (symbol, timeframe)
         )
-        db.close()
         
         if not rows:
             logger.error(f"No data found for {symbol} {timeframe}")

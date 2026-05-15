@@ -19,6 +19,15 @@ echo.
 echo ============================================================
 echo   TradePanel V3 — Daily Data Sync
 echo ============================================================
+echo [0/3] Verifying dependencies and environment...
+%PY_EXE% -m scripts.lib.dependency_check
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo [ERROR] Dependency check failed. Please fix the issues above.
+    pause
+    exit /b %ERRORLEVEL%
+)
+echo [OK] Dependencies verified.
 echo.
 
 echo [1/3] Pulling new history from Yahoo Finance...

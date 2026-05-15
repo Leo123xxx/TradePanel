@@ -199,8 +199,10 @@ class PaperEngine:
         self._run_loop(mode='execute')
 
     def _run_loop(self, mode='full'):
-        """Generic loop over symbols."""
+        """Generic loop over symbols with parallel processing and caching."""
         try:
+            from concurrent.futures import ThreadPoolExecutor
+            
             all_symbols = set()
             for strat_cfg in self.strategies_cfg:
                 all_symbols.update(strat_cfg.get('pairs', []))
@@ -209,7 +211,13 @@ class PaperEngine:
                 print("Failed to connect to MT5. Skipping iteration.")
                 return
 
-            # Check Circuit Breaker (20% DD)
+            # 1. Global Position Cache: Fetch once per loop
+            self.cached_positions = mt5.positions_get() or []
+            
+            # 2. Reset Indicator Cache for this cycle
+            self.indicator_cache = {}
+
+            # 3. Check Circuit Breaker (20% DD)
             acc_info = mt5.account_info()
             if acc_info:
                 current_equity = acc_info.equity
@@ -224,21 +232,31 @@ class PaperEngine:
                             "VALUES ('CIRCUIT_BREAKER', 'PAUSED', '20% DD limit exceeded - New trades prevented', %s)",
                             (datetime.now(),)
                         )
-                        # The RiskManager _is_bot_paused() will now block all new entries.
-                        # Existing trades are allowed to run to SL/TP.
 
-            for strat_name, strategy in self.active_strategies.items():
-                strat_cfg = next((s for s in self.strategies_cfg if s['name'] == strat_name), None)
-                if not strat_cfg:
-                    continue
-                    
-                for symbol in strat_cfg.get('pairs', []):
-                    for tf_str in strat_cfg.get('timeframes', []):
-                        mt5_tf = getattr(mt5, f"TIMEFRAME_{tf_str}", mt5.TIMEFRAME_H1)
-                        self._process_symbol(strat_name, strategy, symbol, mt5_tf, mode=mode)
+            # 4. Balanced Parallel Processing
+            # Use max 5 threads to avoid overwhelming MT5 terminal
+            num_workers = min(len(all_symbols) or 1, 5)
+            tasks = []
+            
+            with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                for strat_name, strategy in self.active_strategies.items():
+                    strat_cfg = next((s for s in self.strategies_cfg if s['name'] == strat_name), None)
+                    if not strat_cfg: continue
+                        
+                    for symbol in strat_cfg.get('pairs', []):
+                        for tf_str in strat_cfg.get('timeframes', []):
+                            mt5_tf = getattr(mt5, f"TIMEFRAME_{tf_str}", mt5.TIMEFRAME_H1)
+                            tasks.append(executor.submit(
+                                self._process_symbol, strat_name, strategy, symbol, mt5_tf, mode=mode
+                            ))
+                
+                # Wait for all tasks to complete
+                for task in tasks:
+                    task.result()
 
         except Exception as e:
             print(f"[PaperEngine] [FAIL] Error in _run_loop ({mode}): {e}")
+            traceback.print_exc()
         finally:
             self.connector.disconnect()
 
@@ -255,15 +273,20 @@ class PaperEngine:
                         print(f"[BACKOFF] {strat_name} on {symbol}: Waiting {wait_secs:.0f}s before retry.")
                     return
 
-            # 1. Fetch current bot positions
+            # 1. Fetch current bot positions from cache
             positions = self._get_bot_positions(symbol)
             
-            # 2. Get latest market data and calculate ATR (needed for both BE and Entry)
-            df = self.signal_checker.get_latest_data(symbol, mt5_tf, count=50)
-            latest_atr = None
-            if df is not None and not df.empty:
-                df['atr'] = ta.atr(df['high'], df['low'], df['close'], length=14)
-                latest_atr = df['atr'].iloc[-1]
+            # 2. Get market data and indicators from cache or MT5
+            cache_key = f"{symbol}_{mt5_tf}"
+            if cache_key in self.indicator_cache:
+                df, latest_atr = self.indicator_cache[cache_key]
+            else:
+                df = self.signal_checker.get_latest_data(symbol, mt5_tf, count=100)
+                latest_atr = None
+                if df is not None and not df.empty:
+                    df['atr'] = ta.atr(df['high'], df['low'], df['close'], length=14)
+                    latest_atr = df['atr'].iloc[-1]
+                self.indicator_cache[cache_key] = (df, latest_atr)
 
             # 3. IF positions exist, manage them (Breakeven & Reversal)
             if positions:
@@ -620,20 +643,16 @@ class PaperEngine:
         print(f"[PaperEngine] Recovered trade {trade_id} for ticket {pos.ticket}")
 
     def _get_bot_positions(self, symbol):
-        """Returns only positions opened by this bot (non-zero magic)."""
-        all_positions = mt5.positions_get(symbol=symbol) or []
+        """Returns only positions opened by this bot from the global cache."""
+        # Use cached positions instead of calling MT5 again
+        all_positions = [p for p in self.cached_positions if p.symbol == symbol]
         
-        # Calculate active strategy magics
-        bot_magics = {zlib.adler32(name.encode()) % 1000000 
-                      for name in self.active_strategies}
+        # Calculate active strategy magics (cached if possible)
+        if not hasattr(self, '_bot_magics_cache'):
+            self._bot_magics_cache = {zlib.adler32(name.encode()) % 1000000 
+                                     for name in self.active_strategies}
         
-        bot_positions = [p for p in all_positions if p.magic in bot_magics]
-        
-        # Log skipping of manual positions
-        for p in all_positions:
-            if p.magic == 0:
-                print(f"[PaperEngine] Skipping manual position ticket={p.ticket} magic=0")
-        
+        bot_positions = [p for p in all_positions if p.magic in self._bot_magics_cache]
         return bot_positions
 
     def _log_trade_open(self, strat_name, symbol, direction, lot, result,
